@@ -744,4 +744,5 @@ hace conexiones que no van a una IP de microsoft (posible codigo inyectado).
 -[Jerarquia] poder buscar por TTL de los procesos
 
 ## Autor ✒️
-* **Roberto Amado** - *Desarrollo e inteligencia de detección* - [robertoamado](https://twitter.com/ramado78)
+* **Roberto Amado** - *Desarrollo e inteligencia de detección* - [@ramado78](https://twitter.com/ramado78)
+  * **Presentaciones** - *Rootedcon 2020 presentación* [pdf](https://t.co/aSjG6CpG6s?amp=1) 
