@@ -1,5 +1,5 @@
-
-# Syspce - *Sysmon Processes Correlation Engine*
+![](Images/Syspce2.PNG)
+# *Sysmon Processes Correlation Engine*
 
 "Sysmon Processes Correlation Engine" (Syspce) es un complemento de la herramienta 
 de monitorización de entornos Windows Sysmon, capaz de añadir una capa de 
