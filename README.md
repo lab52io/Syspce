@@ -53,7 +53,7 @@ Syspce puede utilizarse con diversas finalidades:
 
 ### Instalación 🔧
 
-1. Desplegamos python 2.7 de la web oficial [Python Download](https://www.python.org/download/releases/2.7/)
+1. Desplegamos Python 2.7 de la web oficial [Python Download](https://www.python.org/download/releases/2.7/)
 2. Instalamos dependencia con Pip
 ```
 pip install pywin32
