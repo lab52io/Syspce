@@ -72,7 +72,7 @@ Previa a la ejecución del correlador y para que sea capaz de encontrar el
 fichero local de log dentro de la estructura del eventlog es necesario 
 añadir una clave de registro haciendo doble click en el fichero:
 
-	#clave_reg.reg
+	#registry_key.reg
 	
 Esto es debido a que la libreria de lectura del eventlog de python no es capaz
 de trabajar en rutas diferentes a la localizada en los registro System y 
