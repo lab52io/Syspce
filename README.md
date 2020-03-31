@@ -58,6 +58,10 @@ Syspce puede utilizarse con diversas finalidades:
 ```
 pip install pywin32
 ```
+    O podemos instalarlo de la carpeta \Dependencies
+```
+pip install pywin32-227-cp27-cp27m-win_amd64.whl
+```
 3. El entorno esta listo, pero antes necesitamos saber un par de cosas más...
 
 El correlador presenta 3 ficheros de configuración donde se pueden definir 
