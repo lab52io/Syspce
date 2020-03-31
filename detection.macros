@@ -1,0 +1,213 @@
+
+[
+	{"OFFICE_PROCESS":[	"winword.exe",
+						"powerpnt.exe",
+						"excel.exe",
+						"outlook.exe",
+						"msaccess.exe"
+					],
+	"SCRIPTING_ENGINES_AND_SHELLS":["\\cmd.exe",
+						"\\powershell.exe",
+						"\\wscript.exe",
+						"\\cscript.exe",
+						"\\mshta.exe"
+					],
+					
+	"EMAIL_AGENTS": ["notes.exe",
+					"outlook.exe",
+					"thunderbird.exe"
+					],
+					
+	"WEB_BROWSERS": ["MicrosoftEdge.exe",
+					"Firefox.exe",
+					"iexplore.exe",
+					"Chrome.exe"
+					],
+					
+	"PROCESS_QUERY_INFORMATION": ["0x14",
+					"0x1000"
+					],
+	
+	"SYSTEM_PROCESS_ON_USER_SESSION": ["LogonUI.exe",
+										"consent.exe",
+										"winlogon.exe",
+										"smss.exe",
+										"dllhost.exe",
+										"csrss.exe",
+										"utilman.exe",
+										"vmware"
+									],
+									
+	"NO_SYSTEM_P_OPENS_SYSTEM_P":["ProcessHacker.exe",
+									"Procexp.exe"
+									],
+									
+	"PRIVILEGED_USERS": ["Administrator",
+					"Administrador",
+					"NT AUTHORITY\\SYSTEM"],	
+					
+	"LOW_INTEGRITY": ["Medium",
+						"Low"],
+					
+	"REGISTRY_PERSISTENCE":["software\\microsoft\\windows\\currentversion\\explorer\\user shell folders\\startup"
+					],
+	"OFFICE_NORMAL_PARENTS":[	"svchost.exe",
+								"explorer.exe",
+								"cmd.exe"
+					],
+	"UAC_NORMAL_PARENTS":[	"C:\\Windows\\System32\\RuntimeBroker.exe",
+								"C:\\Windows\\explorer.exe"
+					],
+					
+	"MODULE_SIGNATURE_STATUS":["Valid", "Unavailable"],
+	
+	"EXPLORER_IMAGE_LOADED_PATH": ["C:\\Windows\\",
+									"C:\\Program Files\\",
+									"C:\\Program Files (x86)\\",
+									"C:\\PROGRA~1\\",
+									".exe",
+									"\\OneDrive\\"
+								],
+								
+	"EXPLORER_CONNECT_PIPES":["\\srvsvc", 
+							"\\MsFteWds",
+							"\\wkssvc",
+							"\\TDLN-3840-41"
+							],
+	
+	"EXPLORER_REG_TARGET_OBJECT" : ["MuiCache",
+									"Explorer",
+									"\\Bag",
+									"Action Center",
+									"Internet",
+									"OneDrive",
+									"TrayNotify",
+									"UIStatusCache",
+									"\\Stats",
+									"SysTray",
+									"ActivityDataModel",
+									"UserData",
+									"Notifications",
+									"SettingSync",
+									"Cached",
+									"PUUActive",
+									"SystemAppData",
+									"Control Panel",
+									"Cortana",
+									"CurrentVersion",
+									"MrtCache",
+									"\\Windows Search\\",
+									"\\DWM\\",
+									"\\bam\\", 
+									"\\USBSTOR\\"],
+									
+	"EXPLORER_DST_PORTS":["80", "443", "3128"],	
+	
+	"EXPLORER_ACCESS_PROCESS_SOURCE_PROCESS":["svchost",
+									"MsMpEng.exe",
+									 "\\system32\\csrss.exe",
+									 "\\system32\\lsass.exe",
+									 "C:\\Windows\\explorer.exe"
+									 ],
+									 
+	"EXPLORER_THREAD_CREATED_FROM_REMOTE_PROCESS":[
+									 "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+									 "C:\\Windows\\System32\\svchost.exe"
+									 ],	
+									 						 
+	"EXPLORER_PARENT_IMAGE": ["C:\\Windows\\System32\\userinit.exe",
+							"C:\\Windows\\System32\\winlogon.exe",
+							"C:\\Windows\\explorer.exe",
+							"ProcessHacker.exe",
+							"C:\\Windows\\System32\\svchost.exe"],
+							
+	"LSASS_THREAD_CREATED_FROM_REMOTE_PROCESS":[
+									 "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+									 "C:\\Windows\\System32\\svchost.exe",
+									 "C:\\Windows\\System32\\services.exe",
+									 "C:\\Windows\\System32\\csrss.exe",
+									 "sysmon"
+									 ],		
+									 
+	"LSASS_FILE_CREATE":["\\AppData\\Local\\Microsoft\\",
+						"\\AppData\\Roaming\\Microsoft\\",
+						"C:\\Windows\\debug\\PASSWD.LOG",
+						"\\AppData\\LocalLow\\Microsoft\\",
+						"Policy.vpol"
+						], 
+						
+	"LSASS_CREATE_PIPES":["\\lsass",
+						"\\Winsock2\\CatalogChangeListener"
+						], 
+						
+	"LSASS_CONNECTION_DST_PORTS":["80","5000"
+						],	
+						
+	"LSASS_CONNECT_PIPES":["\\wkssvc"
+						],
+						
+	"WINLOGON_CHILDS":["C:\\Windows\\System32\\AtBroker.exe",
+						"C:\\Windows\\System32\\Utilman.exe",
+						"C:\\Windows\\System32\\fontdrvhost.exe",
+						"C:\\Windows\\System32\\LogonUI.exe",
+						"C:\\Windows\\System32\\taskmgr.exe",
+						"C:\\Windows\\System32\\dwm.exe",
+						"C:\\Windows\\System32\\userinit.exe",
+						"C:\\Windows\\explorer.exe"
+						],
+
+	"WINLOGON_OPEN_PROCESS":["C:\\Windows\\System32\\AtBroker.exe",
+						"C:\\Windows\\System32\\Utilman.exe",
+						"C:\\Windows\\System32\\fontdrvhost.exe",
+						"C:\\Windows\\System32\\LogonUI.exe",
+						"C:\\Windows\\System32\\taskmgr.exe",
+						"C:\\Windows\\System32\\dwm.exe",
+						"C:\\Windows\\System32\\userinit.exe",
+						"C:\\Windows\\System32\\consent.exe",
+						"C:\\Windows\\explorer.exe"
+						],
+						
+	"WINLOGON_THREAD_CREATED_TO_REMOTE_PROCESS":[
+									 "C:\\Windows\\System32\\wininit.exe",
+									 "C:\\Windows\\System32\\services.exe",
+									 "C:\\Windows\\System32\\csrss.exe"
+									 ],
+	"WINLOGON_OPENED_BY":[
+									 "C:\\Windows\\System32\\svchost.exe",
+									 "C:\\Windows\\System32\\lsass.exe"
+									 ],
+									 
+	"WINLOGON_THREAD_CREATED_FROM_REMOTE_PROCESS":[
+									 "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
+									 "C:\\Windows\\System32\\svchost.exe"
+									 ],
+									 
+	"WINLOGON_REG_TARGET_OBJECT" : ["Accessibility",
+									"ThemeManager",
+									"HKCR",
+									"Explorer\\PostBootReminders",
+									"MuiCached",
+									"BootLanguages",
+									"AppCompatFlags",
+									"ActiveComputerName",
+									"\\DWM",
+									"\\Hardware Profiles\\",
+									"\\GraphicsDrivers\\",
+									"VolatileNotifications"
+									],
+									
+	"WINLOGON_REG_TARGET_OBJECT_SET" : ["Accessibility",
+									"ThemeManager",
+									"Keyboard",
+									"Explorer\\PostBootReminders",
+									"MuiCached",
+									"BootLanguages",
+									"AppCompatFlags",
+									"ActiveComputerName",
+									"\\DWM",
+									"\\Hardware Profiles\\",
+									"\\GraphicsDrivers\\",
+									"VolatileNotifications"
+									]
+	}									
+]

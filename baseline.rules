@@ -1,0 +1,154 @@
+	[{
+	"explorer.exe":{ 	"max_ttl": 1000000,"min_ttl": 20, "Points": 10,
+	
+						"1":{"Points": 30,
+							"Image":{"Points": 100, "Value": "C:\\Windows\\explorer.exe"}, 
+							"ParentImage":{"Points": 50, "Value": "EXPLORER_PARENT_IMAGE"},
+							"-User":{"Points": 100, "Value": "system"},
+							"CurrentDirectory":{"Points": 100, "Value": "C:\\Windows\\"},
+							"-TerminalSessionId":{"Points": 100, "Value": "0"},
+							"IntegrityLevel":{"Points": 100, "Value": "Medium"},
+							"Company":{"Points": 100, "Value": "Microsoft Corporation"},
+							"Description":{"Points": 100, "Value": "Windows Explorer"},
+							"OriginalFileName":{"Points": 100, "Value": "EXPLORER.EXE"}
+							},
+							
+						"100":{"Points": 10, "N": 20, "Seconds": 3600},
+						
+						"2":{"Points": 5, "N": 30, "Seconds": 86400,
+							"TargetFilename":{"Points": 5, "Value": "AppData"}
+							},
+
+						"3":{"Points": 20, "N": 12, "Seconds": 86400,
+							"DestinationPort": {"Points": 20, "Value": "EXPLORER_DST_PORTS"},
+							"Initiated": {"Points": 30, "Value": "true"}
+							},
+						
+						"7":{"Points": 10,
+							"ImageLoaded": {"Points": 10, "Value": "EXPLORER_IMAGE_LOADED_PATH"},
+							"SignatureStatus": {"Points": 50, "Value": "MODULE_SIGNATURE_STATUS"}
+							},
+						"-8":{"Points": 100},
+						
+						"108":{"Points": 10,
+							"SourceImage":{"Points": 30, "Value": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe"}},
+							
+						"9":{"Points": 10, "N": 100, "Seconds": 86400,
+							"Device":{"Points": 100, "Value": "\\Device\\HarddiskVolume"}
+							},
+												
+						"11":{"Points": 10, "N": 100, "Seconds": 86400},
+						
+						"-14":{"Points": 10},
+						
+						"-15":{"Points": 10},
+													
+						"-17":{"Points": 60},		
+						
+						"18":{"Points": 20, "N": 20, "Seconds": 3600,
+							"PipeName":{"Points": 50, "Value": "EXPLORER_CONNECT_PIPES"}
+							}				
+					},
+					
+	"lsass.exe":{ 	"max_ttl": 1000000,"min_ttl": 20, "Points": 10,
+						"1":{"Points": 100,
+							"Image":{"Points": 100, "Value": "C:\\WINDOWS\\system32\\lsass.exe"}, 
+							"ParentImage":{"Points": 100, "Value": "C:\\Windows\\System32\\wininit.exe"},
+							"CurrentDirectory":{"Points": 100, "Value": "C:\\Windows\\System32\\"},
+							"User":{"Points": 100, "Value": "system"},
+							"TerminalSessionId":{"Points": 100, "Value": "0"},
+							"IntegrityLevel":{"Points": 100, "Value": "system"}
+							},
+							
+							
+						"100":{"Points": 30, "N": 3, "Seconds": 86400,
+							"ChildImage":{"Points": 100, "Value": "C:\\Windows\\System32\\efsui.exe"}
+						},
+						
+						"-2":{"Points": 100},
+						
+						"3":{"Points": 30, "N": 20, "Seconds": 3600},
+						
+						"7":{"Points": 30, "N": 120, "Seconds": 86400,
+							"ImageLoaded": {"Points": 100, "Value": "c:\\Windows\\System32\\"},
+							"SignatureStatus": {"Points": 50, "Value": "MODULE_SIGNATURE_STATUS"}
+							},
+							
+						"-8":{"Points": 100},
+						
+						"108":{"Points": 10, "N": 5, "Seconds": 86400,
+							"SourceImage": {"Points": 20, "Value": "LSASS_THREAD_CREATED_FROM_REMOTE_PROCESS"}
+						},
+						
+						"9":{"Points": 30, "N": 50, "Seconds": 3600,
+							"Device":{"Points": 100, "Value": "\\Device\\HarddiskVolume"}
+							},	
+						
+						"11":{"Points": 30, "N": 50, "Seconds": 3600,
+							"TargetFilename": {"Points": 10, "Value": "LSASS_FILE_CREATE"}
+						},
+						
+						"-14":{"Points": 100},
+						
+						"-15":{"Points": 100},
+						
+						"17":{"Points": 30,	"N": 6, "Seconds": 3600,
+							"PipeName":{"Points": 50, "Value": "LSASS_CREATE_PIPES"}
+							},
+						
+						"18":{"Points": 30,	"N": 5, "Seconds": 3600,
+							"PipeName":{"Points": 50, "Value": "LSASS_CONNECT_PIPES"}
+							}
+				},
+	"winlogon.exe":{ 	"max_ttl": 1000000,"min_ttl": 20, "Points": 10,
+						"1":{"Points": 100,
+							"Image":{"Points": 100, "Value": "C:\\WINDOWS\\system32\\winlogon.exe"}, 
+							"ParentImage":{"Points": 100, "Value": "C:\\Windows\\System32\\smss.exe"},
+							"CurrentDirectory":{"Points": 100, "Value": "C:\\Windows\\System32"},
+							"User":{"Points": 100, "Value": "system"},
+							"-TerminalSessionId":{"Points": 100, "Value": "0"},
+							"IntegrityLevel":{"Points": 100, "Value": "system"}
+							},
+							
+							
+						"100":{"Points": 30,
+							"ChildImage":{"Points": 100, "Value": "WINLOGON_CHILDS"}
+						},
+						
+						"-2":{"Points": 100},
+						
+						"-3":{"Points": 100},
+						
+						"7":{"Points": 30, "N": 60, "Seconds": 86400,
+							"ImageLoaded": {"Points": 100, "Value": "c:\\Windows\\System32\\"},
+							"SignatureStatus": {"Points": 50, "Value": "MODULE_SIGNATURE_STATUS"}
+							},
+							
+						"8":{"Points": 10, "N": 4, "Seconds": 86400,
+							"TargetImage": {"Points": 20, "Value": "WINLOGON_THREAD_CREATED_TO_REMOTE_PROCESS"}
+						},
+						
+						"108":{"Points": 10, "N": 3, "Seconds": 86400,
+							"SourceImage": {"Points": 20, "Value": "WINLOGON_THREAD_CREATED_FROM_REMOTE_PROCESS"}
+						},
+						
+						"9":{"Points": 20, "N": 15, "Seconds": 3600,
+							"Device":{"Points": 100, "Value": "\\Device\\HarddiskVolume"}
+							},	
+							
+						"10":{"Points": 10,
+							"TargetImage":{"Points": 100, "Value": "WINLOGON_OPEN_PROCESS"}
+							},
+						
+						"-11":{"Points": 100},
+						
+							
+						"-14":{"Points": 100},
+						
+						"-15":{"Points": 100},
+						
+						"-17":{"Points": 100},
+						
+						"-18":{"Points": 100}
+				}					
+	}]

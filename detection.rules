@@ -1,0 +1,117 @@
+
+[
+	{"RuleID":0, "Rulename":"cmd executed", "Content": [ 
+												{"1c":{"Image":"paint.exe"}}
+
+											]},
+											
+	{"RuleID":1, "Rulename":"Suspicious lsass childs becouse threat created", "Content": [ 
+												{"110c":{"Image":"lsass"},"108c":{"Image":"lsass"}},
+												{"1":{"Image":"*"}}
+											]},
+
+	{"RuleID":3, "Rulename":"Suspicious explorer childs activity", "Content": [ 
+												{"1c":{"Image":"explorer.exe"}},
+												{"8c":{"Image":"*"}}
+											]},
+																				
+	{"RuleID":5, "Rulename":"[Bypass UAC] Elevated process from lower integrity process", "Content": [ 
+												{"1c":{"IntegrityLevel":"LOW_INTEGRITY"}},
+												{"1":{"IntegrityLevel":"High", "-ParentCommandLine":"UAC_NORMAL_PARENTS"}}
+											]},
+												
+	{"RuleID":6, "Rulename":"Cross session process creation 1->0", "Content": [ 
+												{"1c":{"TerminalSessionId":"1"}},
+												{"1":{"TerminalSessionId":"0"}}
+											]},
+											
+	{"RuleID":7, "Rulename":"Thread created to Session 0 process by a Session 1 process", "Content": [
+												{"-1c":{"TerminalSessionId":"0"}, "8c":{"TargetSession":"0"}}
+												]},	
+												
+	{"RuleID":8, "Rulename":"Successful phising attack", "Content": [ 
+												{"1c":{"Image":"EMAIL_AGENTS"}},
+												{"1c":{"Image":"OFFICE_PROCESS"},"3c":{"Image":"OFFICE_PROCESS"}},
+												{"1c":{"Image":"SCRIPTING_ENGINES_AND_SHELLS"}}
+											]},	
+											
+	{"RuleID":9, "Rulename":"Malicious Office Document", "Content": [ 
+												{"1c":{"Image":"OFFICE_PROCESS"}},
+												{"1c":{"Image":"SCRIPTING_ENGINES_AND_SHELLS"}}
+											]},	
+											
+	{"RuleID":10, "Rulename":"Suspicious Office process parent", "Content": [ 
+												{"1c":{"Image":"OFFICE_PROCESS", "-ParentCommandLine":"OFFICE_NORMAL_PARENTS"}}
+
+											]},		
+	{"RuleID":11, "Rulename":"Suspicious Office process create a startup", "Content": [ 
+												{"1c":{"Image":"OFFICE_PROCESS"}},
+												{"12c":{"TargetObject":"REGISTRY_PERSISTENCE"}}
+											]},
+
+	{"RuleID":12, "Rulename":"[1] Suspicious DNS resolution from parent in APPDATA", "Content": [ 
+												{"1c":{"Image":"\\AppData\\"}},
+												{"22c":{"Image":"*"}}
+											]},
+											
+	{"RuleID":13, "Rulename":"Precess created by injected Thread", "Content": [ 
+												{"1c":{"CreationType":"InjectedThread"}}
+											]},
+											
+	{"RuleID":14, "Rulename":"Process created by a stolen privileged Token", "Content": [ 
+												{"1c":{"-User":"PRIVILEGED_USERS"}},
+												{"1c":{"User":"PRIVILEGED_USERS"}}
+											]},	
+												
+	{"RuleID":15, "Rulename":"Web browser execution in service Session", "Content": [
+												{"N":3, "Seconds":900},
+												{"1c":{"TerminalSessionId":"0", "Image":"WEB_BROWSERS"}}
+											]},				
+												
+	{"RuleID":16, "Rulename":"[2] Suspicious Connection from parent in APPDATA", "Content": [ 
+												{"3c":{"Image":"\\AppData\\"}}
+
+											]},
+											
+	{"RuleID":17, "Rulename":"Possible bogus injected code in lssas because too many werfaults", "Content": [ 
+												{"1c":{"Image":"wininit.exe"}},
+												{"N":2, "Seconds":86400},
+												{"1":{"Image":"lsass.exe"}},
+												{"1":{"Image":"werfault.exe"}}
+											]},
+											
+	{"RuleID":18, "Rulename":"Too manny explorer crashes, possible bogus injected code", "Content": [
+												{"1c":{"Image":"winlogon.exe"}},
+												{"N":3, "Seconds":86400},
+												{"1":{"Image":"explorer.exe"}}
+											]},
+											
+	{"RuleID":19, "Rulename":"System process on user session (priv scalation)", "Content": [ 
+												{"1c":{"-TerminalSessionId":"0", "User":"System","-Image":"SYSTEM_PROCESS_ON_USER_SESSION"}}
+											]},
+											
+	{"RuleID":20, "Rulename":"User process create system process", "Content": [ 
+												{"1c":{"-TerminalSessionId":"0", "-User":"System"}},
+												{"1":{"User":"System"}}
+											]},
+											
+	{"RuleID":21, "Rulename":"Accessing to a System token from sesion 1(priv scalation)", "Content": [ 
+												{"1c":{"User":"system"},"110c":{"-SourceUser":"system", "-SourceImage":"NO_SYSTEM_P_OPENS_SYSTEM_P","GrantedAccess":"PROCESS_QUERY_INFORMATION"}}
+											]},
+	{"RuleID":22, "Rulename":"Potential DCOM execution (lateral mov)", "Content": [ 
+												{"1c":{"Image":"C:\\WINDOWS\\system32\\svchost.exe", "CommandLine":"DcomLaunch"}},
+												{"1":{"Image":"OFFICE_PROCESS", "CommandLine":"embedding"}},
+												{"1":{"Image":"*"}}
+											]},
+	{"RuleID":23, "Rulename":"User process spawns a system process (priv scalation)", "Content": [ 
+												{"1c":{"-TerminalSessionId":"0", "-User":"System"}},
+												{"1c":{"-TerminalSessionId":"0", "User":"System"}}
+											]},	
+	{"RuleID":24, "Rulename":"Application executed from USB", "Content": [ 
+												{"1c":{"Image":"explorer.exe"}},
+												{"1":{"-Image":"c:\\"}}
+											]}											
+]
+
+
+
