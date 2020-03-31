@@ -49,8 +49,16 @@ Syspce puede utilizarse con diversas finalidades:
 ### Pre-requisitos 📋
 
  - Python 2.7
+ - pywin32 227
 
 ### Instalación 🔧
+
+1. Desplegamos python 2.7 de la web oficial [Python Download](https://www.python.org/download/releases/2.7/)
+2. Instalamos dependencia con Pip
+```
+pip install pywin32
+```
+3. El entorno esta listo, pero antes necesitamos saber un par de cosas más...
 
 El correlador presenta 3 ficheros de configuración donde se pueden definir 
 sus reglas:
