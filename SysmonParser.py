@@ -46,6 +46,8 @@ def parseEventlogIDx(schema, event, server):
 
 		except Exception, e:
 			log.error("Probably wrong Sysmon Schema version %s " % str(e))
+			log.error("Use: #sysmon -s > schemaVersion.xml")
+			log.error("		#python sysmonCorrelator.py -s schemaVersion.xml")
 			exit(1)
 		i += 1
 		

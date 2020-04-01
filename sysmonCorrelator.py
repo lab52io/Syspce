@@ -42,8 +42,14 @@ __author__ = '@ramado78'
 
 
 import re
-import win32evtlog
-import win32event
+try:
+	import win32evtlog
+	import win32event
+except:
+	print "Missing dependencies win32evtlog, consider install pywin32"
+	print "#pip install pywin32"
+	exit(1)
+
 import pprint
 import json
 from time import sleep
