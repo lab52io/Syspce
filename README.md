@@ -58,7 +58,7 @@ Syspce puede utilizarse con diversas finalidades:
 ```
 pip install pywin32
 ```
-    O podemos instalarlo de la carpeta \Dependencies
+    O podemos instalarlo de la carpeta \Dependencies del propio repo
 ```
 pip install pywin32-227-cp27-cp27m-win_amd64.whl
 ```
