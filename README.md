@@ -432,7 +432,9 @@ que queremos alertar procesos creados por hilos inyectados Ej.
 {"RuleID":3, "Rulename":"Precess created by injected Thread", "Content": [
                     {"1c":{"CreationType":"InjectedThread"}}
                     ]}
-```									
+```
+![](Images/realparent.png)
+
 Un ejemplo de resultado de ejecución con un positivo en detección sería el 
 siguiente:
 ```
@@ -502,6 +504,8 @@ tiene 100 puntos y por cada acción que se realiza fuera de su normalidad se
 le resta una cantidad que es definida en cada acción en su configuración. Si un
 proceso llega a tener 0 puntos durante su ejecución o incluso un valor negativo 
 se alerta.
+
+![](Images/baseline_engine.png)
 
 A continuación com ejemplo se muestra la definición de la normalidad del
 proceso explorer.exe
