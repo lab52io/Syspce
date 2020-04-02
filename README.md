@@ -46,6 +46,11 @@ Syspce puede utilizarse con diversas finalidades:
 3. Como herramienta para probar reglas de correlación previas a su 
 	implementación en un sistema de correlación como SPLUNK, QRADAR...
 
+4. Soporte en un proceso de Threat Hunting buscando actividad maliciosa
+    en ficheros .evtx descargados de equipos sospechosos.
+
+5. Integrado en entornos sandbox como complemento de detección.
+
 ### Pre-requisitos 📋
 
  - Python 2.7
