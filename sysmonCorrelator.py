@@ -274,7 +274,13 @@ def readFromEvtx(path_evtx, root, baseline):
 				req_parsed = {}
 				if event.EventID in EVENTLOG_EVENTID:
 					req_parsed = parseEventlogIDx(SYSMON_SCHEMA, event, server)
-					actions_list = getListOfActions(req_parsed)
+					try:
+						actions_list = getListOfActions(req_parsed)
+					except:
+						log.error("Missing Sysmon/Operational registry key")
+						log.error("Add key located in RegistryKey directory")
+						log.error("See README for more info")
+						exit(1)
 					for action in actions_list:
 						pnode = addToProcessTree(action, root)
 						
@@ -381,7 +387,14 @@ def monitEventlog(root, args, engine, baseline):
 				req_parsed = {}
 				if event.EventID in EVENTLOG_EVENTID:
 					req_parsed = parseEventlogIDx(SYSMON_SCHEMA, event, server)
-					actions_list = getListOfActions(req_parsed)
+					try:
+						actions_list = getListOfActions(req_parsed)
+					except:
+						log.error("Missing Sysmon/Operational registry key")
+						log.error("Add key located in RegistryKey directory")
+						log.error("See README for more info")
+						exit(1)
+
 					for action in actions_list:
 						pnode = addToProcessTree(action, root)
 						# Baseline engine actions
