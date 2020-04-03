@@ -1,6 +1,6 @@
 
 [
-	{"RuleID":0, "Rulename":"cmd executed", "Content": [ 
+	{"RuleID":0, "Rulename":"Paint executed (testing purposes)", "Content": [ 
 												{"1c":{"Image":"paint.exe"}}
 
 											]},
