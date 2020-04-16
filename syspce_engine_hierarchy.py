@@ -1,52 +1,84 @@
 import logging
 import hashlib
-import Bucket
+from syspce_bucket import Bucket
+from syspce_bucket import BucketSystem
+from syspce_engine import Engine
+from syspce_message import *
+from syspce_output import Output_
 
 log = logging.getLogger('sysmoncorrelator')
 
 #----------------------------------------------------------------------------#
 # Clase que implementa el engine de deteccion                                #
 #----------------------------------------------------------------------------#
-class ProcessHierarchyEngine(object):
-	def __init__(self, detection_rules, detection_macros, output):
+
+
+class HierarchyEngine(Engine):
+	def __init__(self, data_buffer_in, data_condition_in,
+				 processes_tree, tree_condition_in, src,
+				 detection_rules, detection_macros):
+
 		# Detection rules vector
 		# Process search is based on  "contains" filter and case insensitive.
 		# Example: cmd.exe matches Image:"c:\Windows\System32\CMD.exe"
 
+		Engine.__init__(self, data_buffer_in,
+					   data_condition_in,
+					   src)
+
+		self.name = 'Hierarchy Engine'
+
+		self.module_id = Module.HIERARCHY_ENGINE
+
 		self.detection_rules = detection_rules
 		
 		self.detection_macros = detection_macros
+
+		self.processes_tree = processes_tree
+
+		self.tree_condition_in = tree_condition_in
 		
 		self.alerts_notified = []
 		
-		self.buckets = Bucket.BucketSystem()
+		self.buckets = BucketSystem()
 		
 		self.actions_matched = {}
 		
-		self.output = output
-		
 		self.total_alerts = 0
-	
-	def run(self, root):
-	
+
+
+	def do_action(self):
+		out = Output_()
 		for rule in self.detection_rules:
 		
 			# dictionary used for printing and output matched alerts
 			self.actions_matched = {}
 			
-			# processing each rule 
-			anom_res = self.processRule(root, rule)
+			with self.tree_condition_in:
+				# processing each rule 
+				anom_res = self.processRule(rule)
+				self.tree_condition_in.notify_all()
 			
 			if anom_res:
 				# presenting the results
-				self.output.processResult(anom_res)
+				# logfile + eventlog
+				out.process_result_hierarchy(anom_res) 
+
+				#sending alerts as a string
+				self.send_message(out.format_result_hierarchy(anom_res)) 
 
 				# lets disable already notified actions
 				for anomaly in anom_res:
 					self.setAlertToAction(anomaly['ProcessChain'], False)
 					self.total_alerts += 1
-					
-		return self.total_alerts
+
+			if not self._running:
+				break
+
+		self.terminate()
+		log.debug("%s Terminated." % (self.name))
+
+		#return self.total_alerts
 		
 	def getAnomalyID(self, machine, ruleid, pchain):
 		
@@ -57,15 +89,15 @@ class ProcessHierarchyEngine(object):
 		anomalyid = hashlib.sha1(anomalyid).hexdigest()
 		return anomalyid		
 		
-	def processRule(self, root, rule):
+	def processRule(self, rule):
 
 		res = []
 	
 		#recorremos cada una de las maquinas
-		for machine in root:
+		for machine in self.processes_tree:
 		
 			#first element to process
-			process_list = [root[machine]['nodo_root']]
+			process_list = [self.processes_tree[machine]['nodo_root']]
 			
 			ntimes_enabled = False
 			for event in rule['Content']:
@@ -289,3 +321,4 @@ class ProcessHierarchyEngine(object):
 			if process.guid in self.actions_matched:
 				for action in self.actions_matched[process.guid]:
 					action['Alert'] = enable
+

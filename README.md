@@ -55,18 +55,25 @@ Syspce puede utilizarse con diversas finalidades:
 
  - Python 2.7
  - pywin32 227
-
+ - enum34
+ - pyreadline
+ - volatility261
+ - pycrypto
+ - distorm3
 ### Instalación 🔧
 
 1. Desplegamos Python 2.7 de la web oficial [Python Download](https://www.python.org/download/releases/2.7/)
 2. Instalamos dependencia con Pip
 ```
 pip install pywin32
+pip install enum34 --user
+pip install pyreadline
+pip install volatility261
+pip install pycrypto
+
+descarga e instala de aquí [distorm3](https://github.com/gdabah/distorm/releases/tag/v3.3.4)
 ```
-    O podemos instalarlo de la carpeta \Dependencies del propio repo
-```
-pip install pywin32-227-cp27-cp27m-win_amd64.whl
-```
+
 3. El entorno esta listo, pero antes necesitamos saber un par de cosas más...
 
 El correlador presenta 3 ficheros de configuración donde se pueden definir 

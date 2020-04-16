@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 log = logging.getLogger('sysmoncorrelator')
 
-def getImageFileName(image):
+def get_image_fileName(image):
 	ImageFileName = ''
 	
 	try:
@@ -14,7 +14,7 @@ def getImageFileName(image):
 		
 	return ImageFileName
 
-def getSysmonXmlSchema(xmlfile):
+def get_sysmon_xml_schema(xmlfile):
 	
 	try:
 		tree = ET.parse(xmlfile)
@@ -26,14 +26,14 @@ def getSysmonXmlSchema(xmlfile):
 	
 	return events
 
-def parseEventlogIDx(schema, event, server):
+def parse_eventlog_IDx(schema, event, server):
 	event_details = {'computer': server, 'idEvent': event.EventID}
 	message = event.StringInserts
 	
 	i = 0
 	if not message:
-                log.error("Add registry key, in order to read sysmon event log")
-                exit(1)
+		log.error("Add registry key, in order to read sysmon event log")
+		exit(1)
 
 	for line in message:
 		#special case for error 255
@@ -41,7 +41,7 @@ def parseEventlogIDx(schema, event, server):
 			event.EventID = 0
 		try:
 			event_parameter = schema[event.EventID][i].attrib['name']
-			event_parameter = normalizeEventParameter(event_parameter)
+			event_parameter = normalize_event_parameter(event_parameter)
 			event_details[ event_parameter ] = line
 
 		except Exception, e:
@@ -59,7 +59,7 @@ def parseEventlogIDx(schema, event, server):
 	Event 8, 10, 1 -> 108, 110, 100
 	So if we find an ID 8 we need to return both 8 and the new one 108
 '''
-def getListOfActions(action):
+def get_list_of_actions(action):
 	action_list = [action]
 	
 	newreq = action.copy()
@@ -120,14 +120,14 @@ def getListOfActions(action):
 	return action_list
 	
 
-def normalizeEventParameter(parameter):
+def normalize_event_parameter(parameter):
 	#Special case for events 10 and 8. Ej. SourceImage -> Image
 	parameter = parameter.replace('Source', '')
 	parameter = parameter.replace('GUID', 'Guid')
 	
 	return parameter
 	
-def getAcctionFromID(id):
+def get_action_from_id(id):
 	
 	if id == 1:
 		return "PROCESS CREATED"
@@ -170,7 +170,7 @@ def getAcctionFromID(id):
 	else:
 		return "UNKNOW ACTION"
 
-def getDefaultParameterFromID(id):
+def get_default_parameter_from_id(id):
 	
 	if id == 1:
 		return "Image"
@@ -212,5 +212,3 @@ def getDefaultParameterFromID(id):
 		return "SourceImage"
 	else:
 		return "UNKNOW ACTION"
-
-	

@@ -1,19 +1,38 @@
 import logging
-from SysmonParser import *
 import os
-import Bucket
 from datetime import timedelta
+
+from syspce_parser import *
+from syspce_bucket import Bucket
+from syspce_bucket import BucketSystem
+from syspce_engine import Engine
+from syspce_message import *
+from syspce_output import Output_
+
 log = logging.getLogger('sysmoncorrelator')
 
 #----------------------------------------------------------------------------#
 # Baseline class for anomaly behaviour detection                             #
 #----------------------------------------------------------------------------#
-class BaselineEngine(object):
-	def __init__(self, active = True, baseline_rules = [],
-					baseline_macros = {}):
-					
-		self.active = active
+class BaselineEngine(Engine):
+	def __init__(self, data_buffer_in, data_condition_in,
+				 processes_tree, tree_condition_in, src,
+				 baseline_rules, baseline_macros, events):
+
+		Engine.__init__(self, data_buffer_in,
+					   data_condition_in,
+					   src)	
 		
+		self.name = 'Baseline Engine'
+
+		self.module_id = Module.BASELINE_ENGINE
+		
+		self.events = events
+		
+		self.processes_tree = processes_tree
+
+		self.tree_condition_in = tree_condition_in
+
 		self.baseline_rules = baseline_rules
 		
 		self.baseline_macros = baseline_macros
@@ -26,53 +45,65 @@ class BaselineEngine(object):
 		
 		self.ImageFileName = ""
 		
-		self.buckets = Bucket.BucketSystem()
-		
-	def runActionCheck(self, pnode, paction):
-		if self.active:
-			self.total_sub_points = 0
-			self.suspicious_actions = []
-			
-			
-			
-			self.ImageFileName = pnode.ImageFileName
-			
-			# no baseline config for this process image
-			if self.ImageFileName not in self.baseline_rules:
-				# process isn't in the baseline yet
-				return False
-		
-			# setting Image Baseline as a default points
-			self.default_points = self.baseline_rules[self.ImageFileName]\
-																	["Points"]
-			
-			must_subtract = False
-			
-			# Cheking list of process actions rules 
-			if self.__checkProcessActionToBaseline(paction):
-				must_subtract = True
-			
-			# Case Process termination, special final process checks  
-			if paction["idEvent"] == 5 and \
-									self.__processTerminationChecks(paction,
-																	pnode):
-				must_subtract = True
-			
-			if must_subtract:
-				# some action was anomaly let's record it on the process node
-				pnode.add_suspicious_action(self.suspicious_actions)
+		self.buckets = BucketSystem()
 
-				# subtract points to current process
-				pnode.subtract_points( self.total_sub_points )
-				log.debug("[%s (%s)] Sustracting -%s points due to action %s" % \
-						(pnode.ImageFileName,
-						pnode.pid,
-						self.total_sub_points,
-						paction["idEvent"]))
+	def do_action(self):
+		for event in self.events:
+			computer = event['computer']
 
-		else:
-			#log.debug("Baseline Engine off")
-			pass
+			with self.tree_condition_in:
+				node_root = self.processes_tree[computer]['nodo_root']
+				pnode = node_root.get_node_by_guid(event['ProcessGuid'])
+				if pnode:
+					self.run_action_check(pnode, event)
+					self.__fire_alert(pnode)
+				self.tree_condition_in.notify_all()
+
+			if not self._running:
+				break
+
+		log.debug("%s Terminated." % (self.name))
+
+	def run_action_check(self, pnode, paction):
+
+		self.total_sub_points = 0
+		self.suspicious_actions = []
+			
+		self.ImageFileName = pnode.ImageFileName
+			
+		# no baseline config for this process image
+		if self.ImageFileName not in self.baseline_rules:
+			# process isn't in the baseline yet
+			return False
+		
+		# setting Image Baseline as a default points
+		self.default_points = self.baseline_rules[self.ImageFileName]\
+																["Points"]
+			
+		must_subtract = False
+			
+		# Cheking list of process actions rules 
+		if self.__checkProcessActionToBaseline(paction):
+			must_subtract = True
+			
+		# Case Process termination, special final process checks  
+		if paction["idEvent"] == 5 and \
+								self.__processTerminationChecks(paction,
+																pnode):
+			must_subtract = True
+			
+		if must_subtract:
+			# some action was anomaly let's record it on the process node
+			pnode.add_suspicious_action(self.suspicious_actions)
+
+			# subtract points to current process
+			pnode.subtract_points( self.total_sub_points )
+			log.debug("[%s (%s)] Sustracting -%s points due to action %s" % \
+					(pnode.ImageFileName,
+					pnode.pid,
+					self.total_sub_points,
+					paction["idEvent"]))
+
 	
 	def __checkProcessActionToBaseline(self, paction):
 
@@ -294,7 +325,7 @@ class BaselineEngine(object):
 						#let's record why we subtract point 
 						s_action = {"EventType":5,
 											"Status":"Action not found after PT",
-											"Action":getAcctionFromID(\
+											"Action":get_action_from_id(\
 																int(action)),
 											"Points": subp * -1
 											}
@@ -302,30 +333,17 @@ class BaselineEngine(object):
 						result = True
 		return result
 		
-	def fireAlert(self, pnode):
+	def __fire_alert(self, pnode):
+		out = Output_()
+
 		if pnode.points <= 0:
 			if not pnode.notified:
 				s_actions = pnode.get_suspicious_actions()
-				self.__printresults(pnode, s_actions)
+				out.process_result_baseline(pnode, s_actions)
+				self.send_message(out.format_result_baseline(pnode, s_actions)) 
 				pnode.setNotified()
+
 				return True
 				
 		return False
 		
-	def __printresults(self, pnode, s_actions):
-		log.info("")
-		log.info("BASELINE ENGINE ALERT [%s]: %s" % (pnode.pid, 
-														pnode.ImageFileName ))
-		log.info("--> Process Points: %s" % pnode.points)
-		log.info("--> Parent CL: %s" % pnode.acciones["1"][0]\
-														["ParentCommandLine"])
-		for action in s_actions:
-			if not action.has_key('PointsLeft'):
-				param = getAcctionFromID(int(action['EventType']))
-				log.info("--> %s" % param)
-				
-				for attr in action:
-					log.info("----> %s: %s" % (attr, action[attr]))
-
-	def getStatus(self):
-		return self.active
