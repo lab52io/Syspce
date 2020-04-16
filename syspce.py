@@ -14,6 +14,8 @@ from syspce_manager_input import InputManager
 from syspce_manager_engine import EngineManager
 from syspce_manager_control import ControlManager
 
+#python syspce.py -m file:///C:\Users\ramad\Desktop\josemi\cridex.vmem -p WinXPSP2x86
+
 class Syspce(object):
 
     def __init__(self):

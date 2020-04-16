@@ -26,7 +26,7 @@ class InputVolatility(Input):
 		self.config = conf.ConfObject()
 		self.config.PROFILE = profile
 		self.config.LOCATION = filepath
-
+		#self.config.parse_options() # Cambiar josemi
 		registry.PluginImporter()
 		registry.register_global_options(self.config, commands.Command)
 		registry.register_global_options(self.config, addrspace.BaseAddressSpace)
@@ -46,10 +46,11 @@ class InputVolatility(Input):
 		## PSLIST
 		for process in p.calculate():
 			## Mapping to event id sysmon 1
+			self.p1['computer'] = 'localhost' # Comabiar Josemi
 			self.p1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine)
 			self.p1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
 			self.p1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
-			self.p1['IdEvent'] = 1
+			self.p1['idEvent'] = 1 # Comabiar Josemi
 			self.p1['UtcTime'] = str(process.CreateTime)
 			self.p1['ProcessId'] = str(int(process.UniqueProcessId))
 			self.p1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))

@@ -79,28 +79,29 @@ class EngineManager(Manager_):
 
 		# Execute engines
 
-		# Hierarchy Engine
-		hierarchy_engine = HierarchyEngine(self.data_buffer_in,
-							   self.data_condition_in,
-							   self.processes_tree,
-							   self.tree_condition_in,
-							   src,
-							   detection_rules,
-							   macros)
+		if self.hierarchy_engine_enabled:
+			# Hierarchy Engine
+			hierarchy_engine = HierarchyEngine(self.data_buffer_in,
+											   self.data_condition_in,
+											   self.processes_tree,
+											   self.tree_condition_in,
+											   src,
+											   detection_rules,
+											   macros)
 
-		hierarchy_engine.start()
+			hierarchy_engine.start()
 
-		self.modules_list.append(hierarchy_engine)
+			self.modules_list.append(hierarchy_engine)
 
 		# Baseline Engine
-
-		baseline_engine = BaselineEngine(self.data_buffer_in,
-							   self.data_condition_in,
-							   self.processes_tree,
-							   self.tree_condition_in,
-							   src,
-							   baseline_rules,
-							   macros, events)
+		if self.baseline_engine_enabled:
+			baseline_engine = BaselineEngine(self.data_buffer_in,
+											 self.data_condition_in,
+											 self.processes_tree,
+											 self.tree_condition_in,
+											 src,
+											 baseline_rules,
+											 macros, events)
 
 		baseline_engine.start()
 
