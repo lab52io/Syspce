@@ -75,7 +75,7 @@ class Job(threading.Thread):
 
 				elif message._origin == Module.INPUT_MANAGER:
 					try:
-						#print message._content
+						print message._content
 						self.configure_EM(self._EM_original_message_type,
 										  self._EM_original_message_sub_type,
 										  self._EM_original_content)
