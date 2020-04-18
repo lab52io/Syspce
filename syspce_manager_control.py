@@ -4,7 +4,7 @@ from syspce_manager import Manager_
 from syspce_message import *
 from syspce_job import Job
 from syspce_console import Console
-
+from time import sleep
 log = logging.getLogger('sysmoncorrelator')
 
 class ControlManager(Manager_):
@@ -44,8 +44,11 @@ class ControlManager(Manager_):
 
 			### ENGINES RESULTS
 			# Results from a eventlog/evtx search user command
-			elif message._subtype == MessageSubType.FILTER_DATA:
+			elif message._type == MessageType.ALERT and \
+				 message._subtype == MessageSubType.DETECT and \
+				 message._src == Module.FILTER_ENGINE:
 				self.console.print_search_result(message._content[0])
+
 
 			elif message._type == MessageType.ALERT and \
 				 message._subtype == MessageSubType.DETECT and \
@@ -146,7 +149,7 @@ class ControlManager(Manager_):
 
 		read_eventlog_job = Job(self.data_buffer_in, 
 								self.data_condition_in,
-								JobType.SINGLE_ACTION,
+								JobType.DAEMON,
 								MessageSubType.FILTER_DATA,
 								origin)
 

@@ -21,7 +21,8 @@ class Console(threading.Thread):
 		self.data_buffer_in = data_buffer_in
 		self.data_condition_in = data_condition_in
 		self._running = False
-
+		self.history_file = 'console_history.log'
+		
 		self.name = 'Console'
 		self.module_id = Module.CONSOLE
 		self.output = Output_(log)
@@ -30,6 +31,12 @@ class Console(threading.Thread):
 		self._running = True	
 		log.debug("%s working..." % (self.name))
 		# Command console initialitation
+
+		readline.parse_and_bind('tab: complete')
+		readline.set_history_length(100)
+
+		if os.path.exists(self.history_file):
+			readline.read_history_file(self.history_file)
 
 		readline.set_completer(BufferAwareCompleter(
 		{'run':['module'],
@@ -54,15 +61,17 @@ class Console(threading.Thread):
 		 'quit':[],
 		}).complete)
 
-		readline.parse_and_bind('tab: complete')
-		readline.set_history_length(100)
 
-		if os.path.exists('console_history.log'):
-			readline.read_history_file('console_history.log')
+
+
 
 		while self._running:
+			
 		    try:
-			    command = unicode(raw_input("SYSPCE#>"), 'utf-8')
+				command = unicode(raw_input("SYSPCE#>"), 'utf-8')
+				
+				readline.add_history(command)
+
 		    except ValueError, e:
 			    print "Error al introducir comando: %s" % str(e)
 			    command = "exit"
@@ -84,7 +93,7 @@ class Console(threading.Thread):
 			    print 'show results'
 
 		    elif(command == "exit"):
-				
+				readline.write_history_file(self.history_file)
 				self.terminate()
 				self.stop_all()
 		    else:
@@ -92,7 +101,9 @@ class Console(threading.Thread):
 				
 		log.debug("%s terminated." % (self.name))
 
-
+	def print_hola(self):
+		readline.insert_text("Hola")
+		readline.redisplay()
 	def print_search_result(self, results):
 		pprint.pprint(results)
 
@@ -207,7 +218,7 @@ class BufferAwareCompleter(object):
             
             if not words:
                 self.current_candidates = sorted(self.options.keys())
-                self.current_candidates = readline.get_history_items()
+                #self.current_candidates = readline.get_history_items()
             else:
                 try:
                     if begin == 0:

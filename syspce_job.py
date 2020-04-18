@@ -32,7 +32,12 @@ class Job(threading.Thread):
 		self._CM_message = None
 
 		self._CM_original_content = []
+		self._CM_original_message_type = -1
+		self._CM_original_message_sub_type = -1
+
 		self._EM_original_content = []
+		self._EM_original_message_type = -1
+		self._EM_original_message_sub_type = -1
 
 	def run(self):
 		self._running = True	
@@ -70,10 +75,15 @@ class Job(threading.Thread):
 
 				elif message._origin == Module.INPUT_MANAGER:
 					try:
-						print message._content
+						#print message._content
+						self.configure_EM(self._EM_original_message_type,
+										  self._EM_original_message_sub_type,
+										  self._EM_original_content)
+
 						self._EM_message._content = list(self._EM_original_content)
 						self._EM_message._content += message._content
 						self._EM_message.send()
+
 						log.debug("%s - sent message to ENGINE MANAGER " % (self.name))
 					except Exception, e:
 						log.error("%s - failed:  %s " % (self.name, e))
@@ -81,12 +91,17 @@ class Job(threading.Thread):
 
 				elif message._origin == Module.ENGINE_MANAGER:
 					try:
+						self.configure_CM(self._CM_original_message_type,
+										  self._CM_original_message_sub_type,
+										  self._CM_original_content)
+
 						self._CM_message._content = list(self._CM_original_content)
 						self._CM_message._content += message._content
 						self._CM_message._type = message._type
 						self._CM_message._subtype = message._subtype
 						self._CM_message._src = message._src
 						self._CM_message.send()
+
 						log.debug("%s - sent message to CONTROL MANAGER " % (self.name))
 					except Exception, e:
 						log.error("%s - failed:  %s " % (self.name, e))
@@ -109,6 +124,9 @@ class Job(threading.Thread):
 
 	def configure_EM(self,message_type, message_sub_type, content):
 		self._EM_original_content = content
+		self._EM_original_message_type = message_type
+		self._EM_original_message_sub_type = message_sub_type
+
 		self._EM_message = Message(self.data_buffer_in,
 								   self.data_condition_in,
 								   message_type,
@@ -120,6 +138,8 @@ class Job(threading.Thread):
 
 	def configure_CM(self, message_type, message_sub_type, content):
 		self._CM_original_content = content
+		self._CM_original_message_type = message_type
+		self._CM_original_message_sub_type = message_sub_type
 
 		self._CM_message = Message(self.data_buffer_in,
 								   self.data_condition_in,

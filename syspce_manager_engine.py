@@ -21,7 +21,7 @@ class EngineManager(Manager_):
 		self.module_id = Module.ENGINE_MANAGER
 		self.messages_accepted = [MessageType.COMMAND, MessageType.DATAIN]
 		self.hierarchy_engine_enabled = True
-		self.baseline_engine_enabled = True
+		self.baseline_engine_enabled = False
 
 		self.processes_tree = {}
 		self.tree_condition_in = threading.Condition()
@@ -103,9 +103,9 @@ class EngineManager(Manager_):
 											 baseline_rules,
 											 macros, events)
 
-		baseline_engine.start()
+			baseline_engine.start()
 
-		self.modules_list.append(baseline_engine)
+			self.modules_list.append(baseline_engine)
 
 
 

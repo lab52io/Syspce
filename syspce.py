@@ -1,5 +1,44 @@
+# -*- coding: utf-8 -*-
+'''                                                                                
+  ___ _   _ ___ _ __ ___   ___  _ __                                                  
+ / __| | | / __| '_ ` _ \ / _ \| '_ \                                                 
+ \__ \ |_| \__ \ | | | | | (_) | | | |                                                
+ |___/\__, |___/_| |_| |_|\___/|_| |_|_          _                 _                  
+       __/ |                         | |        | |               (_)                 
+  _ __|___/_ ___   ___ ___  ___ ___  | |__   ___| |__   __ ___   ___  ___  _   _ _ __ 
+ | '_ \| '__/ _ \ / __/ _ \/ __/ __| | '_ \ / _ \ '_ \ / _` \ \ / / |/ _ \| | | | '__|
+ | |_) | | | (_) | (_|  __/\__ \__ \ | |_) |  __/ | | | (_| |\ V /| | (_) | |_| | |   
+ | .__/|_|  \___/ \___\___||___/___/ |_.__/ \___|_| |_|\__,_| \_/ |_|\___/ \__,_|_|   
+ | |                     | |     | |                                                  
+ |_|__ ___  _ __ _ __ ___| | __ _| |_ ___  _ __                                       
+  / __/ _ \| '__| '__/ _ \ |/ _` | __/ _ \| '__|                                      
+ | (_| (_) | |  | | |  __/ | (_| | || (_) | |                                         
+  \___\___/|_|  |_|  \___|_|\__,_|\__\___/|_|                                         
+
+ 
+ This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
+
 __version__ = '1.2.0'
 __author__ = '@ramado78'
+
+'''
+- Date: 18/12/2019
+- Bugs suggestions: ramado@s2grupo.es
+- Web: https://lab52.io
+'''
 
 import threading
 import logging
@@ -38,6 +77,7 @@ class Syspce(object):
                      'profile' : '',
                      'search_filter' : {},
                      'filter_attribute' : '',
+                     'baseline_enabled' : ''
                      }
 
     def parse_arguments(self):
@@ -105,7 +145,7 @@ class Syspce(object):
         else:
             loglevel = logging.INFO
 
-        '''
+        ''' 
         logging.basicConfig(level=loglevel,
 						    filename= 'syspce.log',
                             format='%(asctime)s [%(levelname)s] %(message)s',
@@ -115,7 +155,7 @@ class Syspce(object):
         logging.basicConfig(level=loglevel,
                             format='%(asctime)s [%(levelname)s] %(message)s',
                             datefmt='%d/%m/%Y %H:%M:%S ')
-        
+       
         
         log = logging
 
@@ -202,6 +242,10 @@ class Syspce(object):
         if args.profile:
             self.config_['profile'] = args.profile[0]
 
+        # Memedump profile
+        if args.baseline:
+            self.config_['baseline_enabled'] = True
+
     def start(self):
         """Initialization Function"""
 
@@ -218,6 +262,9 @@ class Syspce(object):
         control_manager.start()
 
         init_message = Message(self.data_buffer_in, self.data_condition_in)
+
+        if self.config_['baseline_enabled']:
+            engine_manager.baseline_engine_enabled = True
 
         if self.config_['search_filter']:
             control_manager.search_event(self.config_['evtx_file'],

@@ -47,11 +47,11 @@ class FilterEngine(Engine):
 									
 				if match:
 					if self.filter_attribute:
-							self.send_message(event[self.filter_attribute])	
+						self.send_message(event[self.filter_attribute])	
 					else:
 						self.send_message(event)
 
 			except Exception, e:
-				log.error('Filtering Engine %s' % e)
+				pass
 
 		self.terminate()

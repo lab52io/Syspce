@@ -1,0 +1,12 @@
+Version 1.2
+-----------
+Complete new internal architecture. Asynchronous inter module communication.
+- Added console
+- Added support for volatility events
+
+Version 1.1
+-----------
+Initial Version
+
+- Hierarchy Engine 
+- Baseline Engine
