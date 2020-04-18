@@ -50,7 +50,7 @@ class InputVolatility(Input):
 			self.p1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine)
 			self.p1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
 			self.p1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
-			self.p1['idEvent'] = 1 # Comabiar Josemi
+			self.p1['idEvent'] = 1 # Cambiar Josemi
 			self.p1['UtcTime'] = str(process.CreateTime)
 			self.p1['ProcessId'] = str(int(process.UniqueProcessId))
 			self.p1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
