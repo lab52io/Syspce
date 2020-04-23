@@ -5,6 +5,8 @@ from syspce_message import *
 from syspce_job import Job
 from syspce_console import Console
 from time import sleep
+import threading
+
 log = logging.getLogger('sysmoncorrelator')
 
 class ControlManager(Manager_):
@@ -19,8 +21,13 @@ class ControlManager(Manager_):
 		self.messages_accepted = [MessageType.COMMAND, 
 								  MessageType.ALERT,
 								  MessageType.COMMAND_RES,
-								  MessageType.DATAIN]       
-		self.console = Console(data_buffer_in, data_condition_in)
+								  MessageType.DATAIN]  
+		
+		# console printing sync
+		self.output_lock = threading.Lock()
+
+		self.console = Console(data_buffer_in, data_condition_in, 
+							   self.output_lock)
 		self.console.start()
 		self.modules_list.append(self.console)
 
@@ -32,15 +39,20 @@ class ControlManager(Manager_):
 			if message._subtype == MessageSubType.TERMINATE:
 				self._terminate()
 
-			### USER COMMANDS
+			### CONSOLE/NETWORK COMMANDS
 			# Read from a evtx/eventlog user command
 			elif message._subtype == MessageSubType.READ_FROM_FILE:
 				self.read_evtx(message._content[0],
 							   message._content[1], message._origin)
 
+			# Read memory from volatility module user command
 			elif message._subtype == MessageSubType.READ_FROM_MEMDUMP:
 				self.read_memdump(message._content[0],
 								  message._content[1], message._origin)
+
+			# List active Jobs
+			elif message._subtype == MessageSubType.SHOW_JOBS:
+				self.show_jobs(message._origin)
 
 			### ENGINES RESULTS
 			# Results from a eventlog/evtx search user command
@@ -70,7 +82,7 @@ class ControlManager(Manager_):
 		read_evtx_job = Job(self.data_buffer_in, 
 							self.data_condition_in,
 							JobType.SINGLE_ACTION,
-							MessageSubType.FILTER_DATA,
+							MessageSubType.READ_FROM_FILE,
 							origin)
 
 		read_evtx_job.configure_IM(MessageType.COMMAND,
@@ -150,7 +162,7 @@ class ControlManager(Manager_):
 		read_eventlog_job = Job(self.data_buffer_in, 
 								self.data_condition_in,
 								JobType.DAEMON,
-								MessageSubType.FILTER_DATA,
+								MessageSubType.READ_FROM_EVENTLOG,
 								origin)
 
 		read_eventlog_job.configure_IM(MessageType.COMMAND,
@@ -168,3 +180,15 @@ class ControlManager(Manager_):
 
 		read_eventlog_job.start()
 		self.modules_list.append(read_eventlog_job)
+
+    def show_jobs(self, origin):
+		result = ""
+
+		for module in self.modules_list:
+			if "Job_" in module.name:
+				result += "\n\t" +  module.name + "\n"
+				result += "\t\tStatus:\t" + str(module._running) + "\n"
+				result += "\t\tType:\t" + str(module.job_type).split(".")[1] + "\n"
+				result += "\t\tTask:\t" + str(module.task_type).split(".")[1] + "\n"
+
+		self.console.print_command_result(result)

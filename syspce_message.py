@@ -23,6 +23,7 @@ class MessageSubType(Enum):
     FILTER_DATA = 4
     DETECT = 5
     READ_FROM_MEMDUMP = 6
+    SHOW_JOBS = 7
 
 class JobType(Enum):
     UNKNOW = 0

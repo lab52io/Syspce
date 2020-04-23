@@ -66,7 +66,7 @@ class InputEvtx(Input):
 			records = win32evtlog.ReadEventLog(h_log, flags,0)
 			num_events += len(records)
 
-			print 'Progress: %d/%d \r' % (num_events, total_events),
+			#print 'Progress: %d/%d \r' % (num_events, total_events),
 
 			for event in records:
 				req_parsed = {}
