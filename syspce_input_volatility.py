@@ -2,6 +2,7 @@ import logging
 from syspce_input import Input
 from syspce_message import *
 import threading
+import uuid
 
 import volatility.conf as conf
 import volatility.registry as registry
@@ -42,6 +43,8 @@ class InputVolatility(Input):
 		# Getting process information 
 		p = taskmods.PSList(self.config)
 		self.p1 = {}
+
+		# MAIN
 		
 		## PSLIST
 		for process in p.calculate():
@@ -61,7 +64,8 @@ class InputVolatility(Input):
 			self.p1['IsWow64'] = str(process.IsWow64)
 			self.p1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
 			self.p1['NumThreads'] = str(int(process.ActiveThreads))
-			self.p1['DllPath'] = str(int(process.ActiveThreads))
+			self.p1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
+			self.p1['ProcessGuid'] = str(uuid.uuid4())
 
 			self.vprocess.append(self.p1)
 			self.p1 = {}
@@ -71,7 +75,7 @@ class InputVolatility(Input):
 				if p['ParentProcessId'] == x['ProcessId']:
 					p['ParentImage'] = x['Image']
 					p['ParentCommandLine'] = x['CommandLine']
-		
+					p['ParentProcessGuid'] = x['ProcessGuid']
 		
 		events_list = self.vprocess
 		
