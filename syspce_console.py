@@ -6,13 +6,15 @@ import json
 import os
 import re
 import pprint
-
 from syspce_message import *
 
 
 log = logging.getLogger('sysmoncorrelator')
 
+
 class Console(threading.Thread):
+	''' Console user module '''
+
 	def __init__(self, data_buffer_in,
 					   data_condition_in,
 					   output_lock):
@@ -24,9 +26,11 @@ class Console(threading.Thread):
 		self._running = False
 		self.name = 'Console'
 		self.module_id = Module.CONSOLE
-		self.output_lock = output_lock
+		self.output_lock = output_lock	
 
 	def run(self):
+		''' Thread console main code'''
+
 		self._running = True	
 		log.debug("%s working..." % (self.name))
 
@@ -48,16 +52,25 @@ class Console(threading.Thread):
 		    elif(("show commands" in command) or ("help" in command)):
 			    self.help()
 
-		    elif(command == "exit"):
+		    elif(re.match("^jobs stop ", command)):
+				try:
+					job_name = command.split('jobs stop ')[1].replace(' ','')
+					self.job_stop(job_name)
+				except Exception, e:
+					self.s_print('Command error %s' % e)
+
+		    elif(command == "exit" or command == "quit"):
 				self.terminate()
-				self.stop_all()
+				self.quit()
 
 				
 		log.debug("%s terminated." % (self.name))
 
 	## COMMAND METHODS
 	##################
+
 	def help(self):
+		''' Basic console help message'''
 
 		help = '''
 		 ---------------------------------------------------------------------------------------------------
@@ -66,13 +79,15 @@ class Console(threading.Thread):
 	 
 		COMMANDS
 		--------
-		jobs 			- Show current active JObs
-		help 			- List commads helps
-		exit|quit 		- Bye bye. 
+		jobs 			 - Show current active Jobs
+		jobs stop [Name] - Stops a Job by job name
+		help 			 - List commads helps
+		exit|quit 		 - Bye bye. 
 		'''
 		self.s_print(help)
 
-	def stop_all(self):
+	def quit(self):
+		''' Terminate all modules and program execution '''
 
 		end_message = Message(self.data_buffer_in, self.data_condition_in)
 
@@ -114,6 +129,17 @@ class Console(threading.Thread):
 						  Module.CONSOLE,
 						  [])
 
+	def job_stop(self, name):
+		''' Stops a Job by name'''
+
+		job_stop_message = Message(self.data_buffer_in, self.data_condition_in)
+
+		job_stop_message.send(MessageType.COMMAND,
+							  MessageSubType.STOP_JOB,
+							  Module.CONSOLE,
+							  Module.CONTROL_MANAGER,
+							  Module.CONSOLE,
+							  [name])
 	## ADDITIONAL METHODS
 	#####################
 
@@ -133,8 +159,10 @@ class Console(threading.Thread):
 	def print_notification(self, results):
 		self.s_print("\nNOTIFICATION RES: %s" % results)
 
-	# Safe print
 	def s_print(self, string):
+		''' Safe print method avoiding collisions when printing out to
+			console
+		'''
 		self.output_lock.acquire()
 		print string
 		self.output_lock.release()

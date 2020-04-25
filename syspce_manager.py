@@ -12,7 +12,7 @@ class Manager_(threading.Thread):
 		threading.Thread.__init__(self)
 		self.data_buffer_in = data_buffer_in
 		self.data_condition_in = data_condition_in
-		self.modules_list = []
+		self.modules_list = {}
 
 		self._running = False
 
@@ -27,11 +27,18 @@ class Manager_(threading.Thread):
 
 		while self._running:
 			with self.data_condition_in:
+
+				# get only messages to our module
 				messages = self._read_messages(self.data_buffer_in)
-				while not messages:
+
+				while not messages and self._running:
+					# check if all modules did their jobs
+					self.check_alive_modules()
+
 					log.debug("%s - Wainting for commands/data " % (self.name))
-					self.data_condition_in.wait()
+					self.data_condition_in.wait(1)
 					messages = self._read_messages(self.data_buffer_in)
+
 			self._process_messages(messages)
 
 		log.debug("%s terminated." % (self.name))
@@ -58,20 +65,89 @@ class Manager_(threading.Thread):
 
 		return message_list
 
+	def send_message(self, destination, message_subtype,
+					 origin, content):
+
+		message = Message(self.data_buffer_in, self.data_condition_in)
+		message.send(MessageType.COMMAND,
+                     message_subtype,
+                     self.module_id,
+                     destination,
+					 origin,
+					 [content])
+
 	def _process_messages(self, message_list):
 		# To be implemented by the subclass
 		pass
 
-	def add_working_module(self, module, job):
-		pass
-		#self.modules_list.append({job:[module]})
+	def add_working_module(self, job_name, modules):
+		''' Associate which modules are related to one job
+			Dicckey jobname , module is a list of object
+			modules.
+		'''
+		if self.modules_list.has_key(job_name):
+			self.modules_list[job_name] += modules
+		else:
+			self.modules_list[job_name] = modules
+
+	def stop_job_modules(self, job_name):
+		''' Stops a job, one job can involve multiple modules'''
+		log.debug("%s stoping modules from %s" % (self.name, job_name))
+
+		if self.modules_list.has_key(job_name):
+			for module in self.modules_list[job_name]:
+				if module.is_alive():
+					module.terminate()
+					module.join()
+
+			# if I'm CM dont send to myself job done
+			if self.name != Module.CONTROL_MANAGER:
+					
+				#Inform that all done to the Job module 
+				self.send_message(job_name, MessageSubType.JOB_DONE,
+									self.module_id, [])
+
+			del self.modules_list[job_name]
+
+		else:
+			log.debug("%s module %s dosen't exist" % (self.name, job_name))
 
 	def _terminate(self): 
-		for module in self.modules_list:
-			if module.is_alive():
-				module.terminate()
-				module.join()
+		for job_name in self.modules_list:
+			for module in self.modules_list[job_name]:
+				if module.is_alive():
+					log.debug("%s terminating %s %s" % (self.name, module.name, module.ident))
+					module.terminate()
+					module.join()
 
 		self._running = False
+	
+	def check_alive_modules(self):
+		''' Checks if all modules in modules list are alive
+			and decide if a Job is done (1 Job -> N worker modules)
+			if done then notify to current Job held by CM
+		'''
 
+		jobs_list = self.modules_list.keys()
 
+		if not jobs_list:
+			log.debug("[%s] No jobs alive" % (self.name))
+
+		for job_name in jobs_list:
+			all_modules_done = True
+
+			for module in self.modules_list[job_name]:
+				if module.is_alive():
+					log.debug("[%s] module  %s alive" % (self.name,module.name))
+					all_modules_done = False
+
+			if all_modules_done:
+				log.debug("[%s] All modules from %s did their work" % (self.name,job_name))
+				del self.modules_list[job_name]
+
+				# if I'm CM dont send to myself job done
+				if self.name != Module.CONTROL_MANAGER:
+					
+					#Inform that all done to the Job module 
+					self.send_message(job_name, MessageSubType.JOB_DONE,
+									  self.module_id, [])

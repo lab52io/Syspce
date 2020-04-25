@@ -22,8 +22,12 @@ class InputManager(Manager_):
  
     def _process_messages(self, message_list):
 		for message in message_list:
+
 			if message._subtype == MessageSubType.TERMINATE:
 				self._terminate()
+
+			elif message._subtype == MessageSubType.STOP_JOB:
+				self.stop_job_modules(message._src)
 
 			elif message._subtype == MessageSubType.READ_FROM_FILE:
 				self._read_evtx( message._src, 
@@ -46,7 +50,7 @@ class InputManager(Manager_):
 							   filepath,
 							   schema)
 		input_evtx.start()
-		self.modules_list.append(input_evtx)
+		self.add_working_module(src, [input_evtx])
 
     def _read_eventlog(self, src, schema):
 		input_eventlog = InputEventlog(self.data_buffer_in,
@@ -54,7 +58,7 @@ class InputManager(Manager_):
 									   src,
 									   schema)
 		input_eventlog.start()
-		self.modules_list.append(input_eventlog)
+		self.add_working_module(src, [input_eventlog])
 
     def _read_memdump(self, src, memdump, profile):
 
@@ -62,7 +66,5 @@ class InputManager(Manager_):
 										self.data_condition_in,
 										src, memdump,profile)
 		input_memdump.start()
-		self.modules_list.append(input_memdump)
-
-
-
+		
+		self.add_working_module(src, [input_memdump])

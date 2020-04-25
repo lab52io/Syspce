@@ -145,7 +145,7 @@ class Syspce(object):
         else:
             loglevel = logging.INFO
 
-
+        '''
         logging.basicConfig(level=loglevel,
 						    filename= 'syspce.log',
                             format='%(asctime)s [%(levelname)s] %(message)s',
@@ -155,7 +155,7 @@ class Syspce(object):
         logging.basicConfig(level=loglevel,
                             format='%(asctime)s [%(levelname)s] %(message)s',
                             datefmt='%d/%m/%Y %H:%M:%S ')
-        '''        
+        
         
         log = logging
 
@@ -272,6 +272,7 @@ class Syspce(object):
                                       self.config_['search_filter'],
                                       self.config_['filter_attribute'],
                                       Origin.SYSPCE_CORE)
+
         elif self.config_['evtx_file']:
             control_manager.read_evtx(self.config_['evtx_file'],
                                       self.config_['detection_rules'],

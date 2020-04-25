@@ -86,5 +86,7 @@ class InputEvtx(Input):
 					for action in actions_list:
 						events_list.append(action)
 
-		self.send_message(events_list)
+		if self._running:
+			self.send_message(events_list)
 		self.terminate()
+		log.debug("%s terminated." % (self.name))

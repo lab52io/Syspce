@@ -52,6 +52,7 @@ class BaselineEngine(Engine):
 			computer = event['computer']
 
 			with self.tree_condition_in:
+				log.debug("%s Running..." % (self.name))
 				node_root = self.processes_tree[computer]['nodo_root']
 				pnode = node_root.get_node_by_guid(event['ProcessGuid'])
 				if pnode:

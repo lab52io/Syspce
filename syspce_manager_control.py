@@ -23,13 +23,16 @@ class ControlManager(Manager_):
 								  MessageType.COMMAND_RES,
 								  MessageType.DATAIN]  
 		
-		# console printing sync
+		# Console printing sync
 		self.output_lock = threading.Lock()
 
 		self.console = Console(data_buffer_in, data_condition_in, 
 							   self.output_lock)
 		self.console.start()
-		self.modules_list.append(self.console)
+
+		# Let's registre which modules are working, 
+		# needed later for stop them 
+		self.add_working_module(self.console.name, [self.console])
 
     def _process_messages(self, message_list):
 		for message in message_list:
@@ -53,6 +56,10 @@ class ControlManager(Manager_):
 			# List active Jobs
 			elif message._subtype == MessageSubType.SHOW_JOBS:
 				self.show_jobs(message._origin)
+
+			# List active Jobs
+			elif message._subtype == MessageSubType.STOP_JOB:
+				self.stop_job(message._content[0], message._origin)
 
 			### ENGINES RESULTS
 			# Results from a eventlog/evtx search user command
@@ -99,7 +106,7 @@ class ControlManager(Manager_):
 								   [])
 
 		read_evtx_job.start()
-		self.modules_list.append(read_evtx_job)
+		self.add_working_module(read_evtx_job.name, [read_evtx_job])
 
     def read_memdump(self, filepath, profile,  detection_rules,
 				     detection_macros,  baseline_rules,
@@ -125,8 +132,7 @@ class ControlManager(Manager_):
 								      [])
 
 		read_memdump_job.start()
-		self.modules_list.append(read_memdump_job)
-
+		self.add_working_module(read_memdump_job.name, [read_memdump_job])
 
     def search_event(self, filepath, schema, 
 					 search_filter, filter_attribute, origin):
@@ -152,8 +158,7 @@ class ControlManager(Manager_):
 									  [])
 
 		search_event_job.start()
-		self.modules_list.append(search_event_job)
-
+		self.add_working_module(search_event_job.name, [search_event_job])
 
     def read_eventlog(self, detection_rules,
 					  detection_macros,  baseline_rules,
@@ -179,16 +184,40 @@ class ControlManager(Manager_):
 									   [])
 
 		read_eventlog_job.start()
-		self.modules_list.append(read_eventlog_job)
+		self.add_working_module(read_eventlog_job.name, [read_eventlog_job])
 
     def show_jobs(self, origin):
 		result = ""
 
-		for module in self.modules_list:
-			if "Job_" in module.name:
-				result += "\n\t" +  module.name + "\n"
-				result += "\t\tStatus:\t" + str(module._running) + "\n"
-				result += "\t\tType:\t" + str(module.job_type).split(".")[1] + "\n"
-				result += "\t\tTask:\t" + str(module.task_type).split(".")[1] + "\n"
+		for job_name in self.modules_list:
+			m = self.modules_list[job_name][0]
+
+			if "Job_" in job_name:
+				result += "\n\t" +  job_name + "\n"
+				result += "\t\tJob running:\t" + str(m._running) + "\n"
+				result += "\t\tIM job done:\t" + str(m.IM_job_done) + "\n"
+				result += "\t\tEM job done:\t" + str(m.EM_job_done) + "\n"
+				result += "\t\tType:\t" + str(m.job_type).split(".")[1] + "\n"
+				result += "\t\tTask:\t" + str(m.task_type).split(".")[1] + "\n"
+		if not result:
+			result += "\n\t No jobs running"
 
 		self.console.print_command_result(result)
+
+    def stop_job(self, job_name, origin):
+		''' Sends a stop order to the Job by Job_name'''
+		job = None
+
+		for module_name in self.modules_list:
+			if job_name == module_name:
+				job = self.modules_list[module_name][0]
+
+		if job:
+			self.send_message(job.name, MessageSubType.STOP_JOB,
+							  origin, [])
+
+			#del self.modules_list[job_name]
+
+			self.console.print_command_result("\n\t" + job_name + " stopped")
+		else:
+			self.console.print_command_result("\n\t" + job_name + " not found")
