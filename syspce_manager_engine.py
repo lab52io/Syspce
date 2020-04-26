@@ -33,7 +33,10 @@ class EngineManager(Manager_):
 			
 			if message._subtype == MessageSubType.TERMINATE:
 				self._terminate()
-			
+
+			elif message._subtype == MessageSubType.STOP_JOB:
+				self.stop_job_modules(message._src)	
+				
 			# Filter engine, filter data from user
 			elif message._subtype == MessageSubType.FILTER_DATA:
 
@@ -61,7 +64,7 @@ class EngineManager(Manager_):
 							   events)
 
 		filter_event.start()
-		self.modules_list.append(filter_event)
+		self.add_working_module(src, [filter_event])
 
     def _detect(self, src, detection_rules, baseline_rules, macros, events):
 		# add data to tree 
@@ -74,11 +77,9 @@ class EngineManager(Manager_):
 		manage_tree.set_method(manage_tree.add_events_to_tree, events)
 		manage_tree.start()
 
-		self.modules_list.append(manage_tree)
-
+		self.add_working_module(src, [manage_tree])
 
 		# Execute engines
-
 		if self.hierarchy_engine_enabled:
 			# Hierarchy Engine
 			hierarchy_engine = HierarchyEngine(self.data_buffer_in,
@@ -91,7 +92,7 @@ class EngineManager(Manager_):
 
 			hierarchy_engine.start()
 
-			self.modules_list.append(hierarchy_engine)
+			self.add_working_module(src, [hierarchy_engine])
 
 		# Baseline Engine
 		if self.baseline_engine_enabled:
@@ -105,7 +106,7 @@ class EngineManager(Manager_):
 
 			baseline_engine.start()
 
-			self.modules_list.append(baseline_engine)
+			self.add_working_module(src, [baseline_engine])
 
 
 

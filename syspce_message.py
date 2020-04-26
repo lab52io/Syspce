@@ -24,6 +24,8 @@ class MessageSubType(Enum):
     DETECT = 5
     READ_FROM_MEMDUMP = 6
     SHOW_JOBS = 7
+    STOP_JOB = 8
+    JOB_DONE = 9
 
 class JobType(Enum):
     UNKNOW = 0

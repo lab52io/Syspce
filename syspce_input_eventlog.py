@@ -46,7 +46,8 @@ class InputEventlog(Input):
 	
 		while self._running:
 			events_read = []
-		
+			events_list = []
+
 			while self._running:
 				aux = win32evtlog.ReadEventLog(h_log, flags, 0)
 				#print 'Progress: %d/%d \r' % (num_events, total_events),
@@ -54,7 +55,7 @@ class InputEventlog(Input):
 					break
 				events_read += aux
 
-			if events_read:
+			if events_read and self._running:
 
 				num_events += len(events_read)
 				log.debug("Read from eventlog: %d  - Total readed: %d \r" %\
@@ -83,6 +84,7 @@ class InputEventlog(Input):
 				if (num_events >= total_events):
 				
 					log.debug("Waiting for events on eventlog")
-					win32event.WaitForSingleObject(h_evt, -1)
+					#win32event.WaitForSingleObject(h_evt, -1)
+					win32event.WaitForSingleObject(h_evt, 1000)
 
 		log.debug("%s terminated." % (self.name))

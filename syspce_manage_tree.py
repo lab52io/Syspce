@@ -28,6 +28,8 @@ class ManageTree(InfoTree):
 	def add_events_to_tree(self, list_of_events):
 
 		with self.tree_condition_in:
+			log.debug("%s %s Running with %d events ..." % (self.name, self.ident, len(list_of_events)))
+
 			for event in list_of_events:
 				self.add_event_to_tree(event)
 
@@ -41,7 +43,9 @@ class ManageTree(InfoTree):
 
 		self.send_message("Added all events to processes tree")
 		#self.print_tree(self.processes_tree['localhost']['nodo_root'])
-	
+		log.debug("Added all events to processes tree")
+		log.debug("%s %s terminated." % (self.name, self.ident))
+
 	#Testing new algorithm
 	def add_events_to_tree2(self, list_of_events):
 		with self.tree_condition_in:
@@ -80,10 +84,10 @@ class ManageTree(InfoTree):
 						
 			# Tree Node with process datails
 			node = Node(processId, commandline, ProcessGuid, Image)
-
+			'''
 			log.debug("Adding new process to the processtree PID %s: %s" % \
 						(node.pid, node.ImageFileName))
-			
+			'''
 			#Lo asignamos a la root de ese equipo ya que no existia con 
 			#anterioridad el host
 			if not req['computer'] in self.processes_tree:
@@ -109,20 +113,20 @@ class ManageTree(InfoTree):
 															ParentProcessGuid)
 					
 					self.processes_tree[req['computer']]['process_list'].append(ProcessGuid)
-					
+					'''
 					log.debug("Process added to parent: %s parent %s" %\
 															(node.ImageFileName,
 															node.padre.pid))
-					
+					'''
 				#Si no existe entonces al nodo root
 				else:
 					self.processes_tree[req['computer']]['process_list'].append(ProcessGuid)
 					self.processes_tree[req['computer']]['nodo_root'].add_child(node)
-					
+					'''
 					log.debug("Process added to root node: %s parent %s" %\
 															(node.ImageFileName,
 															node.padre.pid))
-					
+					'''
 				#finalmente incrementamos el contador de procesos	
 				self.processes_tree[req['computer']]['total_processes'] += 1
 

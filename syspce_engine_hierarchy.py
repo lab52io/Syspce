@@ -55,6 +55,8 @@ class HierarchyEngine(Engine):
 			self.actions_matched = {}
 			
 			with self.tree_condition_in:
+				log.debug("%s Running..." % (self.name))
+
 				# processing each rule 
 				anom_res = self.processRule(rule)
 				self.tree_condition_in.notify_all()

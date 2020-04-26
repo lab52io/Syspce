@@ -50,4 +50,4 @@ class InfoTree(threading.Thread):
 
     def terminate(self): 
 		self._running = False
-		log.debug("%s ending..." % (self.name))
+		log.debug("%s %s ending..." % (self.name , self.ident))
