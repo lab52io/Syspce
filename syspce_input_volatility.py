@@ -8,8 +8,10 @@ import volatility.conf as conf
 import volatility.registry as registry
 import volatility.utils as utils
 import volatility.plugins.taskmods as taskmods
+import volatility.plugins.privileges as privm
 import volatility.commands as commands
 import volatility.addrspace as addrspace
+
 
 log = logging.getLogger('sysmoncorrelator')
 
@@ -35,17 +37,14 @@ class InputVolatility(Input):
 		self.module_id = Module.INPUT_VOLATILITY
 
 
-
 	def do_action(self):
 
-		self.vprocess = []
-		# Getting process information 
-		p = taskmods.PSList(self.config)
+		# Plugin pslist volatility 
+		proc = taskmods.PSList(self.config)
 		self.p1 = {}
+		self.vprocess = []
 
-		# MAIN
-		## PSLIST
-		for process in p.calculate():
+		for process in proc.calculate():
 			## Mapping to event id sysmon 1
 			self.p1['computer'] = 'localhost' 
 			self.p1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine)
@@ -64,6 +63,9 @@ class InputVolatility(Input):
 			self.p1['NumThreads'] = str(int(process.ActiveThreads))
 			self.p1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
 			self.p1['ProcessGuid'] = str(uuid.uuid4())
+			self.p1['ParentImage'] = ""
+			self.p1['ParentCommandLine'] = ""
+			self.p1['ParentProcessGuid'] = ""
 
 			self.vprocess.append(self.p1)
 			self.p1 = {}
@@ -74,7 +76,42 @@ class InputVolatility(Input):
 					p['ParentImage'] = x['Image']
 					p['ParentCommandLine'] = x['CommandLine']
 					p['ParentProcessGuid'] = x['ProcessGuid']
+
+		# Plugin privs volatility
+		priv = privm.Privs(self.config)
 		
+		self.pi = {}
+		self.pi2 = {}
+		self.priv_vector = []
+
+		for privs in priv.calculate():
+			privileges = privs.get_token().privileges()
+			self.pi['ProcessId'] = str(int(privs.UniqueProcessId))
+			for value, present, enabled, default in privileges:
+				try:
+					name, desc = privm.PRIVILEGE_INFO[int(value)]
+				except KeyError:
+					continue
+				attributes = []
+				if present:
+					attributes.append("Present")
+				if enabled:
+					attributes.append("Enabled")
+					self.pi2[str(name)] = "enabled"
+					self.pi.update(self.pi2)
+					self.pi2 = {}
+				if default:
+					attributes.append("Default")
+				
+				
+			self.priv_vector.append(self.pi)
+			self.pi = {}
+
+		for p in self.vprocess:
+			for x in self.priv_vector:
+				if p['ProcessId'] == x['ProcessId']:
+						p.update(x)
+
 		events_list = self.vprocess
 		
 		self.send_message(events_list)
