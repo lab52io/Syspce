@@ -3,6 +3,7 @@ from syspce_input import Input
 from syspce_message import *
 import threading
 import uuid
+import hashlib
 
 import volatility.conf as conf
 import volatility.registry as registry
@@ -36,10 +37,11 @@ class InputVolatility(Input):
 		self.name = 'Input Volatility'
 		self.module_id = Module.INPUT_VOLATILITY
 
-
 	def do_action(self):
 
 		# Plugin pslist volatility 
+		###########################
+
 		proc = taskmods.PSList(self.config)
 		self.p1 = {}
 		self.vprocess = []
@@ -67,8 +69,19 @@ class InputVolatility(Input):
 			self.p1['ParentCommandLine'] = ""
 			self.p1['ParentProcessGuid'] = ""
 
+			result = hashlib.md5(self.p1["ProcessId"]+self.p1["ParentProcessId"]+self.p1["computer"]+self.p1["UtcTime"])
+			self.p1['SyspceId'] = result.hexdigest()
+
 			self.vprocess.append(self.p1)
 			self.p1 = {}
+			self.modules = []
+
+			## Modules 
+			for module in process.get_load_modules():
+				if module is not None:
+					self.modules.append(str(module.FullDllName))
+
+			self.p1['modules'] = self.modules
 
 		for p in self.vprocess:
 			for x in self.vprocess:
@@ -78,6 +91,8 @@ class InputVolatility(Input):
 					p['ParentProcessGuid'] = x['ProcessGuid']
 
 		# Plugin privs volatility
+		###########################
+
 		priv = privm.Privs(self.config)
 		
 		self.pi = {}
@@ -111,6 +126,10 @@ class InputVolatility(Input):
 			for x in self.priv_vector:
 				if p['ProcessId'] == x['ProcessId']:
 						p.update(x)
+
+
+		# To Send to the CORE
+		############################
 
 		events_list = self.vprocess
 		
