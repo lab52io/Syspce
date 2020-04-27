@@ -47,6 +47,7 @@ import json
 import signal
 from time import sleep
 
+from syspce_console import Console
 from syspce_parser import get_sysmon_xml_schema
 from syspce_message import *
 from syspce_manager_input import InputManager
@@ -63,22 +64,24 @@ class Syspce(object):
 
         self.console_buffer_in = []
 
+        self.output_lock = threading.Lock()
+
         self.data_condition_in = threading.Condition()
 
         self.console_buffer_in = threading.Condition()
 
-        self.config_ = {'sysmon_schema':'',
-                     'detection_rules' : {},
-                     'detection_macros' : {},
-                     'baseline_rules' : {},
-                     'daemon': False,
-                     'evtx_file' : '',
-                     'memdump' : '',
-                     'profile' : '',
-                     'search_filter' : {},
-                     'filter_attribute' : '',
-                     'baseline_enabled' : ''
-                     }
+        self.config_ = {'sysmon_schema':'sysmonSchema3.4.xml',
+                        'detection_rules' : {},
+                        'detection_macros' : {},
+                        'baseline_rules' : {},
+                        'daemon': False,
+                        'evtx_file' : '',
+                        'memdump' : '',
+                        'profile' : '',
+                        'search_filter' : {},
+                        'filter_attribute' : '',
+                        'baseline_enabled' : ''
+                        }
 
     def parse_arguments(self):
         """Initialization Function"""
@@ -161,13 +164,16 @@ class Syspce(object):
 
 	    # Configuring Schema version for parser default 3.4
         if args.schema:
-            self.config_['sysmon_schema'] = get_sysmon_xml_schema(args.schema[0])
+            self.config_['sysmon_schema'] = get_sysmon_xml_schema(
+                                                args.schema[0])
             log.info("Using schema " + args.schema[0] + " for log parsing")
 
         else:
-            m = "Using default Sysmon config schema 3.4, this can afect log parsing"
+            m = "Using default Sysmon config schema 3.4, \
+                 this can afect log parsing"
             log.warning(m)
-            self.config_['sysmon_schema'] = get_sysmon_xml_schema('sysmonSchema3.4.xml')
+            self.config_['sysmon_schema'] = get_sysmon_xml_schema(
+                                                self.config_['sysmon_schema'])
 
 	    #Cheking correct parsing
         if len(self.config_['sysmon_schema']) == 0:
@@ -249,6 +255,10 @@ class Syspce(object):
     def start(self):
         """Initialization Function"""
 
+        
+        console = Console(self.data_buffer_in, self.data_condition_in, 
+							   self.output_lock, self.config_)
+
         input_manager = InputManager(self.data_buffer_in,
                                      self.data_condition_in)
         input_manager.start()
@@ -258,10 +268,12 @@ class Syspce(object):
         engine_manager.start()
 
         control_manager = ControlManager(self.data_buffer_in,
-                                         self.data_condition_in)
+                                         self.data_condition_in,
+                                         console,
+                                         self.output_lock)
         control_manager.start()
 
-        init_message = Message(self.data_buffer_in, self.data_condition_in)
+        #init_message = Message(self.data_buffer_in, self.data_condition_in)
 
         if self.config_['baseline_enabled']:
             engine_manager.baseline_engine_enabled = True
@@ -303,8 +315,8 @@ class Syspce(object):
                                       self.config_['sysmon_schema'],
                                       Origin.SYSPCE_CORE)
 
-
-
+        #blocking call
+        console.run()
 
         input_manager.join()
         engine_manager.join()

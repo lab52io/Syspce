@@ -324,3 +324,123 @@ class HierarchyEngine(Engine):
 				for action in self.actions_matched[process.guid]:
 					action['Alert'] = enable
 
+####################################################
+###################NUEVO
+
+	def processRule_(self, rule):
+
+		res = []
+	
+		#recorremos cada una de las maquinas
+		for machine in self.processes_tree:
+		
+			#first element to process
+			process_list = self.processes_tree[machine]
+			
+			ntimes_enabled = False
+			'''
+							"Content": [
+					{ "1c": { "Image": "explorer.exe" } },
+					{ "8c": { "Image": "*" } }
+					]
+			'''
+			for event in rule['Content']:
+			
+				if event.has_key("N") and event.has_key("Seconds"):
+				
+					ntimes_enabled = True
+	
+					for process in process_list:
+						pchain = self.getProcessChain(process, machine)
+						bucket_name = self.getAnomalyID(machine, rule['RuleID'],
+														pchain)
+				
+						bucket = self.buckets.getBucket(bucket_name)
+						
+						if not bucket:
+							log.debug("bucket created %s" % bucket_name)
+							bucket = self.buckets.createBucket(bucket_name, 
+												event["N"],
+												event["Seconds"])
+
+				else:
+					process_list_tmp = process_list.keys()
+
+					process_list = []
+					for process in process_list_tmp:
+						matchlist = []
+
+						# "c" significa continua buscando en todo el hilo de 
+						# procesos una accion de ese tipo. Si no tiene "c" 
+						# entonces lo busca en el proceso actual (nodo).
+
+						if 'c' in event.keys()[0]:
+
+							self.search_all_childs_actions(process, 
+															event,
+															matchlist													
+															)
+						else:
+							self.searchChildActions(process,
+															event,
+															matchlist)
+
+						process_list += matchlist
+					
+			# process_list now has all nodes (processes) that mached 
+			# filter criteria
+			if process_list:
+
+				for process in process_list:
+					pchain = self.getProcessChain(process, machine)
+					
+					# it has been notified yet?
+					anom_id = self.getAnomalyID(machine, rule['RuleID'], pchain)
+					
+					if anom_id not in self.alerts_notified:	
+					
+						result = True 
+						if ntimes_enabled:
+							# True - there are more than "n" actions in 
+							#a time period	
+							bucket = self.findBucket(process, machine, 
+													rule['RuleID'])
+													
+							if 	bucket.actionExists(
+										process.acciones["1"][0]["UtcTime"]):	
+								result = False	
+	
+							else:
+								log.debug("Inserted %s in bucket %s" % 
+													(rule['RuleID'], 
+													bucket.bucket_name))
+								result = bucket.insertAction(
+											process.acciones["1"][0]["UtcTime"])
+												
+
+						if result:
+							self.alerts_notified.append(anom_id)
+							res.append({'Computer': machine,
+										'ProcessChain': pchain,
+										'Rulename': rule['Rulename'],
+										'RuleID': rule['RuleID']})
+										
+							self.setAlertToAction(pchain, True)
+					else:
+						log.debug("Alert already notified %s" % anom_id)
+				
+		return res	
+
+	def getProcessChain(self, src_process_guid, machine):
+		pchain = []
+
+		while True:
+			pnode = self.processes_tree[machine][src_process_guid]
+			pchain.append(pnode)
+
+			if not self.processes_tree[machine].has_key(pnode.ParentProcessGuid):
+				break
+			else:
+				src_process_guid = pnode.ParentProcessGuid
+
+		return pchain

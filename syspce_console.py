@@ -1,25 +1,32 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import unicode_literals
 import threading
 import logging
 import json
 import os
 import re
 import pprint
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import FileHistory
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.shortcuts import CompleteStyle, prompt
+
 from syspce_message import *
 
 
 log = logging.getLogger('sysmoncorrelator')
 
 
-class Console(threading.Thread):
+#class Console(threading.Thread):
+class Console(object):
 	''' Console user module '''
 
 	def __init__(self, data_buffer_in,
 					   data_condition_in,
-					   output_lock):
+					   output_lock, config):
 
-		threading.Thread.__init__(self)
+		#threading.Thread.__init__(self)
 		self.data_buffer_in = data_buffer_in
 		self.data_condition_in = data_condition_in
 
@@ -27,6 +34,31 @@ class Console(threading.Thread):
 		self.name = 'Console'
 		self.module_id = Module.CONSOLE
 		self.output_lock = output_lock	
+		self.config = config
+		self.console_history = FileHistory('history.dat')
+		self.session = PromptSession(history=self.console_history,
+									 auto_suggest=AutoSuggestFromHistory(),
+									 enable_history_search=True)
+
+		self.syspce_completer = WordCompleter(
+				[
+					"run",
+					"jobs",
+					"stop_job",
+					"show_config",
+					"show_alerts",
+					"exit",
+				],
+				meta_dict={
+					"run": "It keeps on monitoring Sysmon log from Eventlog",
+					"jobs": "Show current active Jobs",
+					"stop_job": "Stops a Job by job name",
+					"show_config": "Show current config",
+					"show_alerts": "Show alerts detected",
+					"exit": "Bye bye",
+				},
+				ignore_case=True,
+				)
 
 	def run(self):
 		''' Thread console main code'''
@@ -37,7 +69,11 @@ class Console(threading.Thread):
 		while self._running:
 			
 		    try:
-				command = unicode(raw_input("SYSPCE#>"), 'utf-8')
+				#command = unicode(raw_input("SYSPCE#>"), 'utf-8')
+				command = self.session.prompt('SYSPCE#>',
+								completer=self.syspce_completer,
+								complete_style=CompleteStyle.MULTI_COLUMN)
+
 		    except ValueError, e:
 			    print "Input error: %s" % str(e)
 			    command = "exit"
@@ -45,16 +81,17 @@ class Console(threading.Thread):
 		    #Logica de control de los comandos de la consola	
 		    if (command == "jobs"): # ejecuta la busqueda con los inputs del usuario
 				self.jobs()	
-			
-		    elif(re.match("^run module", command)):
-				self.s_print('run module')
+		
+		    elif(re.match("^run", command)):
+				self.run_eventlog()
+				self.s_print('Runnig sysmon eventlog events monitoring')
 			
 		    elif(("show commands" in command) or ("help" in command)):
 			    self.help()
 
-		    elif(re.match("^jobs stop ", command)):
+		    elif(re.match("^stop_job ", command)):
 				try:
-					job_name = command.split('jobs stop ')[1].replace(' ','')
+					job_name = command.split('stop_job ')[1].replace(' ','')
 					self.job_stop(job_name)
 				except Exception, e:
 					self.s_print('Command error %s' % e)
@@ -129,6 +166,22 @@ class Console(threading.Thread):
 						  Module.CONSOLE,
 						  [])
 
+	def run_eventlog(self):
+		''' It keeps on monitoring Sysmon log from Eventlog'''
+
+		jobs_message = Message(self.data_buffer_in, self.data_condition_in)
+
+		jobs_message.send(MessageType.COMMAND,
+						  MessageSubType.READ_FROM_EVENTLOG,
+						  Module.CONSOLE,
+						  Module.CONTROL_MANAGER,
+						  Module.CONSOLE,
+						  [self.config['detection_rules'],
+						   self.config['detection_macros'],
+						   self.config['baseline_rules'],
+						   self.config['sysmon_schema'],
+						  ])
+
 	def job_stop(self, name):
 		''' Stops a Job by name'''
 
@@ -144,7 +197,10 @@ class Console(threading.Thread):
 	#####################
 
 	def print_search_result(self, results):
-		self.s_print(pprint.pformat(results))
+		f = open('salida', 'a')
+		f.write(pprint.pformat(results))
+		f.close()
+		#self.s_print(pprint.pformat(results))
 
 	def print_alert_hierarchy(self, alerts):
 		for alert in alerts:
