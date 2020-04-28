@@ -10,6 +10,7 @@ import volatility.registry as registry
 import volatility.utils as utils
 import volatility.plugins.taskmods as taskmods
 import volatility.plugins.privileges as privm
+import volatility.plugins.malware.psxview as psxv
 import volatility.commands as commands
 import volatility.addrspace as addrspace
 
@@ -127,6 +128,21 @@ class InputVolatility(Input):
 				if p['ProcessId'] == x['ProcessId']:
 						p.update(x)
 
+		# Plugin psxview volatility
+		###########################
+		# Apply-rules isn't working .. 
+		# self.config.update("APPLY-RULES", "True")
+		command = psxv.PsXview(self.config)
+		zu = []
+		for offset, process, ps_sources in command.calculate():
+			# Tenemos que mejorar la logica que indica que un proceso es zombie por ahora esta:
+			if str(offset in ps_sources["pslist"]) == "False" and str(offset in ps_sources["psscan"]) == "True":
+				zu.append(int(process.UniqueProcessId))
+			
+		for p in self.vprocess:
+			for x in zu:
+				if p['ProcessId'] == str(x):
+						p['Zombie'] = "True"
 
 		# To Send to the CORE
 		############################

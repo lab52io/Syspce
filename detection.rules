@@ -284,9 +284,16 @@
 	},
 	{
 		"RuleID": 25,
-		"Rulename": "SeImpersonatePrivilege enables (testing purposes)",
+		"Rulename": "SeDebugPrivilege enables (testing purposes)",
 		"Content": [
-			{ "1c": { "SeImpersonatePrivilege": "enabled" } }
+			{ "1c": { "SeDebugPrivilege": "enabled" } }
+		]
+	},
+	{
+		"RuleID": 26,
+		"Rulename": "Zombie process (testing purposes)",
+		"Content": [
+			{ "1c": { "Zombie": "True" } }
 		]
 	}
 
