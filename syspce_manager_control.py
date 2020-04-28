@@ -3,7 +3,7 @@ import logging
 from syspce_manager import Manager_
 from syspce_message import *
 from syspce_job import Job
-from syspce_console import Console
+#from syspce_console import Console
 from time import sleep
 import threading
 
@@ -11,7 +11,8 @@ log = logging.getLogger('sysmoncorrelator')
 
 class ControlManager(Manager_):
 
-    def __init__(self, data_buffer_in, data_condition_in):
+    def __init__(self, data_buffer_in, data_condition_in,
+				 console, output_lock):
 
 		Manager_.__init__(self, data_buffer_in,
 					   data_condition_in)
@@ -23,6 +24,10 @@ class ControlManager(Manager_):
 								  MessageType.COMMAND_RES,
 								  MessageType.DATAIN]  
 		
+		self.console = console
+		self.output_lock = output_lock
+
+		'''
 		# Console printing sync
 		self.output_lock = threading.Lock()
 
@@ -33,7 +38,7 @@ class ControlManager(Manager_):
 		# Let's registre which modules are working, 
 		# needed later for stop them 
 		self.add_working_module(self.console.name, [self.console])
-
+		'''
     def _process_messages(self, message_list):
 		for message in message_list:
 
@@ -43,10 +48,18 @@ class ControlManager(Manager_):
 				self._terminate()
 
 			### CONSOLE/NETWORK COMMANDS
-			# Read from a evtx/eventlog user command
+			# Read from a evtx user command
 			elif message._subtype == MessageSubType.READ_FROM_FILE:
 				self.read_evtx(message._content[0],
 							   message._content[1], message._origin)
+
+			# Read from a eventlog user command
+			elif message._subtype == MessageSubType.READ_FROM_EVENTLOG:
+				self.read_eventlog(message._content[0],
+								   message._content[1],
+								   message._content[2],
+								   message._content[3],
+								   message._origin)
 
 			# Read memory from volatility module user command
 			elif message._subtype == MessageSubType.READ_FROM_MEMDUMP:
