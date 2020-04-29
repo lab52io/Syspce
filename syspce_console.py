@@ -35,6 +35,7 @@ class Console(object):
 		self.module_id = Module.CONSOLE
 		self.output_lock = output_lock	
 		self.config = config
+
 		self.console_history = FileHistory('history.dat')
 		self.session = PromptSession(history=self.console_history,
 									 auto_suggest=AutoSuggestFromHistory(),
@@ -70,6 +71,7 @@ class Console(object):
 			
 		    try:
 				#command = unicode(raw_input("SYSPCE#>"), 'utf-8')
+
 				command = self.session.prompt('SYSPCE#>',
 								completer=self.syspce_completer,
 								complete_style=CompleteStyle.MULTI_COLUMN)
@@ -197,10 +199,7 @@ class Console(object):
 	#####################
 
 	def print_search_result(self, results):
-		f = open('salida', 'a')
-		f.write(pprint.pformat(results))
-		f.close()
-		#self.s_print(pprint.pformat(results))
+		self.s_print(pprint.pformat(results))
 
 	def print_alert_hierarchy(self, alerts):
 		for alert in alerts:
