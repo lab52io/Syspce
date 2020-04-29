@@ -40,7 +40,6 @@ class HierarchyEngine(Engine):
 
 		self.p_tree.set_macros(self.detection_macros)
 
-		self.alerts_notified = []
 		
 		self.buckets = BucketSystem()
 		
@@ -92,12 +91,7 @@ class HierarchyEngine(Engine):
 			new_candidates = ptree.keys()
 			
 			ntimes_enabled = False
-			'''
-			"Content": [
-					{ "1c": { "Image": "explorer.exe" } , "3c": { "Image": "explorer.exe" }},
-					{ "8c": { "Image": "*" } }
-					]
-			'''
+
 			process_list = []
 			for i, filter_dicc in enumerate(rule['Content']):
 
@@ -123,11 +117,16 @@ class HierarchyEngine(Engine):
 					if i:
 						if 'c' in filter_dicc.keys()[0]:
 							new_candidates = []
-							self.p_tree.get_all_childs(ptree, process_list, new_candidates)
+							self.p_tree.get_all_childs(ptree,
+													   process_list,
+													   new_candidates)
 						else:
-							new_candidates = self.p_tree.get_direct_childs(ptree, process_list)
+							new_candidates = self.p_tree.get_direct_childs(ptree,
+																		   process_list)
 
-					process_list = self.p_tree.get_candidates(ptree, new_candidates, filter_dicc)
+					process_list = self.p_tree.get_candidates(ptree,
+															  new_candidates,
+															  filter_dicc)
 
 			# process_list now has all nodes (processes) that mached 
 			# filter criteria
@@ -141,7 +140,7 @@ class HierarchyEngine(Engine):
 					# it has been notified yet?
 					anom_id = self.get_anomaly_id(machine, rule['RuleID'], pchain)
 					
-					if anom_id not in self.alerts_notified:	
+					if anom_id not in self.p_tree.alerts_notified:	
 					
 						result = True 
 						if ntimes_enabled:
@@ -163,7 +162,7 @@ class HierarchyEngine(Engine):
 												
 
 						if result:
-							self.alerts_notified.append(anom_id)
+							self.p_tree.alerts_notified.append(anom_id)
 							res.append({'Computer': machine,
 										'ProcessChain': pchain,
 										'Rulename': rule['Rulename'],

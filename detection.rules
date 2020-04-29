@@ -301,7 +301,16 @@
 			},
 			{ "1": { "Image": "powershell.exe" } }
 		]
+	},
+
+	{
+		"RuleID": 27,
+		"Rulename": "Zombie (testing purposes)",
+		"Content": [
+			{ "1": { "Zombie": "True" } }
+		]
 	}
+
 
 ]
 

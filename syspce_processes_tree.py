@@ -1,6 +1,7 @@
 import logging
 import threading
 import datetime
+import hashlib
 
 from syspce_parser import get_image_fileName
 
@@ -14,6 +15,7 @@ class ProcessesTree(object):
 		self.tree_condition_in = threading.Condition()
 		self.detection_macros = []
 		self.actions_matched = {}
+		self.alerts_notified = []
 
 	def set_macros(self, detection_macros):
 		self.detection_macros = detection_macros
@@ -49,6 +51,15 @@ class ProcessesTree(object):
 				# Adding new attribute process TTL
 				process_ttl = {"ProcessTTL": "Running"}	
 				events_list[i].update(process_ttl)
+
+				# Adding syspce ID for correlate with volatility
+				result = hashlib.md5(events_list[i]["ProcessId"] + \
+					events_list[i]["ParentProcessId"] + \
+				    events_list[i]["computer"] + \
+					events_list[i]["UtcTime"])
+
+				events_list[i]['SyspceId'] = result.hexdigest()
+
 
 			i += 1
 
@@ -387,4 +398,3 @@ class Node_(object):
 		
 	def setNotified(self):
 		self.notified = True
-
