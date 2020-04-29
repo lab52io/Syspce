@@ -15,8 +15,8 @@ log = logging.getLogger('sysmoncorrelator')
 
 class HierarchyEngine(Engine):
 	def __init__(self, data_buffer_in, data_condition_in,
-				 processes_tree, tree_condition_in, src,
-				 detection_rules, detection_macros):
+				 processes_tree, src, detection_rules,
+				 detection_macros):
 
 		# Detection rules vector
 		# Process search is based on  "contains" filter and case insensitive.
@@ -34,15 +34,15 @@ class HierarchyEngine(Engine):
 		
 		self.detection_macros = detection_macros
 
-		self.processes_tree = processes_tree
+		self.p_tree = processes_tree
 
-		self.tree_condition_in = tree_condition_in
-		
+		self.process_tree = self.p_tree.processes_tree
+
+		self.p_tree.set_macros(self.detection_macros)
+
 		self.alerts_notified = []
 		
 		self.buckets = BucketSystem()
-		
-		self.actions_matched = {}
 		
 		self.total_alerts = 0
 
@@ -52,14 +52,14 @@ class HierarchyEngine(Engine):
 		for rule in self.detection_rules:
 		
 			# dictionary used for printing and output matched alerts
-			self.actions_matched = {}
 			
-			with self.tree_condition_in:
+			
+			with self.p_tree.tree_condition_in:
 				log.debug("%s Running..." % (self.name))
 
 				# processing each rule 
-				anom_res = self.processRule(rule)
-				self.tree_condition_in.notify_all()
+				anom_res = self._process_rule(rule)
+				self.p_tree.tree_condition_in.notify_all()
 			
 			if anom_res:
 				# presenting the results
@@ -71,7 +71,7 @@ class HierarchyEngine(Engine):
 
 				# lets disable already notified actions
 				for anomaly in anom_res:
-					self.setAlertToAction(anomaly['ProcessChain'], False)
+					self.p_tree.setAlertToAction(anomaly['ProcessChain'], False)
 					self.total_alerts += 1
 
 			if not self._running:
@@ -80,9 +80,115 @@ class HierarchyEngine(Engine):
 		self.terminate()
 		log.debug("%s Terminated." % (self.name))
 
-		#return self.total_alerts
-		
-	def getAnomalyID(self, machine, ruleid, pchain):
+	def _process_rule(self, rule):
+
+		res = []
+	
+		#recorremos cada una de las maquinas
+		for machine in self.p_tree.processes_tree:
+			ptree = self.p_tree.processes_tree[machine]
+
+			#first element to process
+			new_candidates = ptree.keys()
+			
+			ntimes_enabled = False
+			'''
+			"Content": [
+					{ "1c": { "Image": "explorer.exe" } , "3c": { "Image": "explorer.exe" }},
+					{ "8c": { "Image": "*" } }
+					]
+			'''
+			process_list = []
+			for i, filter_dicc in enumerate(rule['Content']):
+
+				if filter_dicc.has_key("N") and filter_dicc.has_key("Seconds"):
+				
+					ntimes_enabled = True
+	
+					for process in process_list:
+						pchain = self.get_process_chain(process, machine)
+						bucket_name = self.get_anomaly_id(machine, rule['RuleID'],
+														pchain)
+				
+						bucket = self.buckets.getBucket(bucket_name)
+						
+						if not bucket:
+							log.debug("bucket created %s" % bucket_name)
+							bucket = self.buckets.createBucket(bucket_name, 
+												filter_dicc["N"],
+												filter_dicc["Seconds"])
+
+				else:
+					# not first filter line
+					if i:
+						if 'c' in filter_dicc.keys()[0]:
+							new_candidates = []
+							self.p_tree.get_all_childs(ptree, process_list, new_candidates)
+						else:
+							new_candidates = self.p_tree.get_direct_childs(ptree, process_list)
+
+					process_list = self.p_tree.get_candidates(ptree, new_candidates, filter_dicc)
+
+			# process_list now has all nodes (processes) that mached 
+			# filter criteria
+			if process_list:
+
+				for process in process_list:
+					pchain = self.get_process_chain(process, machine)
+
+					pnode =  ptree[process]
+
+					# it has been notified yet?
+					anom_id = self.get_anomaly_id(machine, rule['RuleID'], pchain)
+					
+					if anom_id not in self.alerts_notified:	
+					
+						result = True 
+						if ntimes_enabled:
+							# True - there are more than "n" actions in 
+							#a time period	
+							bucket = self.find_bucket(pnode, machine, 
+													rule['RuleID'])
+													
+							if 	bucket.actionExists(
+										pnode.acciones["1"][0]["UtcTime"]):	
+								result = False	
+	
+							else:
+								log.debug("Inserted %s in bucket %s" % 
+													(rule['RuleID'], 
+													bucket.bucket_name))
+								result = bucket.insertAction(
+											pnode.acciones["1"][0]["UtcTime"])
+												
+
+						if result:
+							self.alerts_notified.append(anom_id)
+							res.append({'Computer': machine,
+										'ProcessChain': pchain,
+										'Rulename': rule['Rulename'],
+										'RuleID': rule['RuleID']})
+										
+							self.p_tree.setAlertToAction(pchain, True)
+					else:
+						log.debug("Alert already notified %s" % anom_id)
+				
+		return res	
+
+	def get_process_chain(self, src_process_guid, machine):
+		pchain = []
+
+		while True:
+			pnode = self.p_tree.processes_tree[machine][src_process_guid]
+			pchain.append(pnode)
+
+			if not self.p_tree.processes_tree[machine].has_key(pnode.ParentProcessGuid):
+				break
+			else:
+				src_process_guid = pnode.ParentProcessGuid
+
+		return pchain
+	def get_anomaly_id(self, machine, ruleid, pchain):
 		
 		anomalyid = machine + str(ruleid)
 		for process in pchain:
@@ -91,356 +197,22 @@ class HierarchyEngine(Engine):
 		anomalyid = hashlib.sha1(anomalyid).hexdigest()
 		return anomalyid		
 		
-	def processRule(self, rule):
-
-		res = []
-	
-		#recorremos cada una de las maquinas
-		for machine in self.processes_tree:
-		
-			#first element to process
-			process_list = [self.processes_tree[machine]['nodo_root']]
 			
-			ntimes_enabled = False
-			for event in rule['Content']:
-			
-				if event.has_key("N") and event.has_key("Seconds"):
-				
-					ntimes_enabled = True
-					for process in process_list:
-						pchain = process.getProcessChain()
-						bucket_name = self.getAnomalyID(machine, rule['RuleID'],
-														pchain)
-				
-						bucket = self.buckets.getBucket(bucket_name)
-						
-						if not bucket:
-							log.debug("bucket created %s" % bucket_name)
-							bucket = self.buckets.createBucket(bucket_name, 
-												event["N"],
-												event["Seconds"])
-
-				else:
-					process_list_tmp = list(process_list)
-
-					process_list = []
-					for process in process_list_tmp:
-						matchlist = []
-
-						# "c" significa continua buscando en todo el hilo de 
-						# procesos una accion de ese tipo. Si no tiene "c" 
-						# entonces lo busca en el proceso actual (nodo).
-
-						if 'c' in event.keys()[0]:
-
-							self.search_all_childs_actions(process, 
-															event,
-															matchlist													
-															)
-						else:
-							self.searchChildActions(process,
-															event,
-															matchlist)
-
-						process_list += matchlist
-					
-			# process_list now has all nodes (processes) that mached 
-			# filter criteria
-			if process_list:
-
-				for process in process_list:
-					pchain = process.getProcessChain()
-					
-					# it has been notified yet?
-					anom_id = self.getAnomalyID(machine, rule['RuleID'], pchain)
-					
-					if anom_id not in self.alerts_notified:	
-					
-						result = True 
-						if ntimes_enabled:
-							# True - there are more than "n" actions in 
-							#a time period	
-							bucket = self.findBucket(process, machine, 
-													rule['RuleID'])
-													
-							if 	bucket.actionExists(
-										process.acciones["1"][0]["UtcTime"]):	
-								result = False	
-	
-							else:
-								log.debug("Inserted %s in bucket %s" % 
-													(rule['RuleID'], 
-													bucket.bucket_name))
-								result = bucket.insertAction(
-											process.acciones["1"][0]["UtcTime"])
-												
-
-						if result:
-							self.alerts_notified.append(anom_id)
-							res.append({'Computer': machine,
-										'ProcessChain': pchain,
-										'Rulename': rule['Rulename'],
-										'RuleID': rule['RuleID']})
-										
-							self.setAlertToAction(pchain, True)
-					else:
-						log.debug("Alert already notified %s" % anom_id)
-				
-		return res	
-	
-	'''Devuelve un vector con todas las acciones de un tipo (Ej.tipo 3)
-	dado un nodo concreto (proceso). 
-	'''
-	def searchChildActions(self, obj, filter_list, matchlist):
-		# Getting all childs from a process
-		for child in obj.hijo:
-			match = True
-
-			for type_action in filter_list.keys():
-
-				match =  self.checkAction(type_action, child, filter_list)
-				if not match:
-					break
-					
-			if match:		
-				matchlist.append(child)
-				
-	def search_all_childs_actions(self, obj, filter_list, matchlist):
-		# Getting all childs from a process
-		for nodo in obj.hijo:
-			match = True
-			for type_action in filter_list.keys():  								
-
-				match = self.checkAction(type_action, nodo, filter_list)
-				if not match:
-					break
-					
-			if match:
-				matchlist.append(nodo)
-				
-			self.search_all_childs_actions(nodo,filter_list, matchlist)	
-
-	'''Method that checks rule acctions (1,3...) against process acctions
-	'''	
-	def checkAction(self, type_action, nodo, filter_list): 
-		
-		#  Acction types could have "c" (continue) and "-" (reverse, not)
-		# modifiers let's remove them, Example:
-		# {"1c":{"Image":"winword"},"-3":{"Image":"winword"}}
-		
-		
-		t_action = type_action.replace('c','')
-
-		if "-" in type_action:
-			t_action = t_action.replace('-','')
-			acction_reverse = True
-		else:
-			acction_reverse = False
-			
-		if (nodo.acciones[t_action] != []):   
-
-			# Checking all specific acctions from a process
-			for acc in nodo.acciones[t_action]:
-				# Getting all the filters from a rule
-				
-				result = True
-				
-				for filter in filter_list[type_action]:
-				
-					# Filter property could have "-" modifier as well
-					acc_filter = filter.replace('-','')
-					if "-" in filter:
-						filter_reverse = True		
-					else:
-						filter_reverse = False
-					
-					final_reverse = acction_reverse^filter_reverse
-					
-					# Finally comparing if a rule filter match a process action
-					if not (acc.has_key(acc_filter)) or \
-								not self.checkFilterMatch( 
-											filter_list[type_action][filter], 
-											acc[acc_filter], final_reverse):
-						
-						result =  False
-						break
-						
-				if result:
-					if self.actions_matched.has_key(nodo.guid):
-						self.actions_matched[nodo.guid].append(acc)
-					else:
-						self.actions_matched.update({nodo.guid:[acc]})
-						
-					return True
-					
-		# Process has no acctions of this type
-		else:
-			if acction_reverse:
-				return True
-		
-		return False
-		
-	'''Method that compares if a rule filter match a process acction
-	'''
-	def checkFilterMatch(self, filter, acction, reverse):
-		match = False
-		
-		if filter in self.detection_macros:
-			filter_list =  self.detection_macros[filter]
-		else:
-			filter_list = [filter]
-
-		for f in filter_list:			
-			if f.lower() in acction.lower() or f == "*":
-				match = True
-				
-		if reverse:
-			return not match
-		else:
-			return match
-			
-	def findBucket(self, process, machine, RuleID):
+	def find_bucket(self, process, machine, RuleID):
 		while True: # node root
 		
-			pchain = process.getProcessChain()
-			bucket_name = self.getAnomalyID(machine, RuleID, pchain)
+			pchain = self.get_process_chain(process.guid, machine)
+			bucket_name = self.get_anomaly_id(machine, RuleID, pchain)
 			bucket = self.buckets.getBucket(bucket_name)
 			
 			if bucket:
 				return bucket
 
-			if  process.guid == '0':
+			if not self.process_tree[machine].has_key(process.ParentProcessGuid):
 				break 
 				
-			process = process.padre
+			process = self.process_tree[machine][process.ParentProcessGuid]
 			
 		log.error("Bucket not found")
 		return False
 		
-	def setAlertToAction(self, pchain, enable):
-		
-		for process in pchain:
-			if process.guid in self.actions_matched:
-				for action in self.actions_matched[process.guid]:
-					action['Alert'] = enable
-
-####################################################
-###################NUEVO
-
-	def processRule_(self, rule):
-
-		res = []
-	
-		#recorremos cada una de las maquinas
-		for machine in self.processes_tree:
-		
-			#first element to process
-			process_list = self.processes_tree[machine]
-			
-			ntimes_enabled = False
-			'''
-							"Content": [
-					{ "1c": { "Image": "explorer.exe" } },
-					{ "8c": { "Image": "*" } }
-					]
-			'''
-			for event in rule['Content']:
-			
-				if event.has_key("N") and event.has_key("Seconds"):
-				
-					ntimes_enabled = True
-	
-					for process in process_list:
-						pchain = self.getProcessChain(process, machine)
-						bucket_name = self.getAnomalyID(machine, rule['RuleID'],
-														pchain)
-				
-						bucket = self.buckets.getBucket(bucket_name)
-						
-						if not bucket:
-							log.debug("bucket created %s" % bucket_name)
-							bucket = self.buckets.createBucket(bucket_name, 
-												event["N"],
-												event["Seconds"])
-
-				else:
-					process_list_tmp = process_list.keys()
-
-					process_list = []
-					for process in process_list_tmp:
-						matchlist = []
-
-						# "c" significa continua buscando en todo el hilo de 
-						# procesos una accion de ese tipo. Si no tiene "c" 
-						# entonces lo busca en el proceso actual (nodo).
-
-						if 'c' in event.keys()[0]:
-
-							self.search_all_childs_actions(process, 
-															event,
-															matchlist													
-															)
-						else:
-							self.searchChildActions(process,
-															event,
-															matchlist)
-
-						process_list += matchlist
-					
-			# process_list now has all nodes (processes) that mached 
-			# filter criteria
-			if process_list:
-
-				for process in process_list:
-					pchain = self.getProcessChain(process, machine)
-					
-					# it has been notified yet?
-					anom_id = self.getAnomalyID(machine, rule['RuleID'], pchain)
-					
-					if anom_id not in self.alerts_notified:	
-					
-						result = True 
-						if ntimes_enabled:
-							# True - there are more than "n" actions in 
-							#a time period	
-							bucket = self.findBucket(process, machine, 
-													rule['RuleID'])
-													
-							if 	bucket.actionExists(
-										process.acciones["1"][0]["UtcTime"]):	
-								result = False	
-	
-							else:
-								log.debug("Inserted %s in bucket %s" % 
-													(rule['RuleID'], 
-													bucket.bucket_name))
-								result = bucket.insertAction(
-											process.acciones["1"][0]["UtcTime"])
-												
-
-						if result:
-							self.alerts_notified.append(anom_id)
-							res.append({'Computer': machine,
-										'ProcessChain': pchain,
-										'Rulename': rule['Rulename'],
-										'RuleID': rule['RuleID']})
-										
-							self.setAlertToAction(pchain, True)
-					else:
-						log.debug("Alert already notified %s" % anom_id)
-				
-		return res	
-
-	def getProcessChain(self, src_process_guid, machine):
-		pchain = []
-
-		while True:
-			pnode = self.processes_tree[machine][src_process_guid]
-			pchain.append(pnode)
-
-			if not self.processes_tree[machine].has_key(pnode.ParentProcessGuid):
-				break
-			else:
-				src_process_guid = pnode.ParentProcessGuid
-
-		return pchain

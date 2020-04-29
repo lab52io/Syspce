@@ -7,12 +7,13 @@ from syspce_engine_filter import FilterEngine
 from syspce_manage_tree import ManageTree
 from syspce_engine_hierarchy import HierarchyEngine
 from syspce_engine_baseline import BaselineEngine
+from syspce_processes_tree import ProcessesTree
 
 log = logging.getLogger('sysmoncorrelator')
 
 class EngineManager(Manager_):
 
-    def __init__(self, data_buffer_in, data_condition_in):
+	def __init__(self, data_buffer_in, data_condition_in):
 
 		Manager_.__init__(self, data_buffer_in,
 					   data_condition_in)
@@ -23,11 +24,10 @@ class EngineManager(Manager_):
 		self.hierarchy_engine_enabled = True
 		self.baseline_engine_enabled = False
 
-		self.processes_tree = {}
-		self.tree_condition_in = threading.Condition()
+		self.processes_tree = ProcessesTree()
 
 
-    def _process_messages(self, message_list):
+	def _process_messages(self, message_list):
 
 		for message in message_list:
 			
@@ -54,7 +54,7 @@ class EngineManager(Manager_):
 							 message._content[2],	#detection.macros 
 							 message._content[3])	#data
 
-    def _filter_events(self, src, search_filter, filter_attribute, events):
+	def _filter_events(self, src, search_filter, filter_attribute, events):
 
 		filter_event = FilterEngine(self.data_buffer_in,
 							   self.data_condition_in,
@@ -66,12 +66,15 @@ class EngineManager(Manager_):
 		filter_event.start()
 		self.add_working_module(src, [filter_event])
 
-    def _detect(self, src, detection_rules, baseline_rules, macros, events):
+	def _detect(self, src, detection_rules, baseline_rules, macros, events):
+
+		# adding more info to Sysmon events and deleting incorrect data
+		self.processes_tree.pre_process_events(events)
+
 		# add data to tree 
 		manage_tree = ManageTree(self.data_buffer_in,
 								 self.data_condition_in,
 							     self.processes_tree, 
-								 self.tree_condition_in,
 								 src)
 
 		manage_tree.set_method(manage_tree.add_events_to_tree, events)
@@ -79,14 +82,13 @@ class EngineManager(Manager_):
 
 		self.add_working_module(src, [manage_tree])
 
-
+		
 		# Execute engines
 		if self.hierarchy_engine_enabled:
 			# Hierarchy Engine
 			hierarchy_engine = HierarchyEngine(self.data_buffer_in,
 											   self.data_condition_in,
 											   self.processes_tree,
-											   self.tree_condition_in,
 											   src,
 											   detection_rules,
 											   macros)
@@ -100,7 +102,6 @@ class EngineManager(Manager_):
 			baseline_engine = BaselineEngine(self.data_buffer_in,
 											 self.data_condition_in,
 											 self.processes_tree,
-											 self.tree_condition_in,
 											 src,
 											 baseline_rules,
 											 macros, events)
@@ -108,7 +109,4 @@ class EngineManager(Manager_):
 			baseline_engine.start()
 
 			self.add_working_module(src, [baseline_engine])
-
-
-
 

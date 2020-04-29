@@ -16,7 +16,7 @@ log = logging.getLogger('sysmoncorrelator')
 #----------------------------------------------------------------------------#
 class BaselineEngine(Engine):
 	def __init__(self, data_buffer_in, data_condition_in,
-				 processes_tree, tree_condition_in, src,
+				 processes_tree, src,
 				 baseline_rules, baseline_macros, events):
 
 		Engine.__init__(self, data_buffer_in,
@@ -29,9 +29,9 @@ class BaselineEngine(Engine):
 		
 		self.events = events
 		
-		self.processes_tree = processes_tree
+		self.p_tree = processes_tree
 
-		self.tree_condition_in = tree_condition_in
+		self.processes_tree = self.p_tree.processes_tree
 
 		self.baseline_rules = baseline_rules
 		
@@ -51,14 +51,14 @@ class BaselineEngine(Engine):
 		for event in self.events:
 			computer = event['computer']
 
-			with self.tree_condition_in:
+			with self.p_tree.tree_condition_in:
 				log.debug("%s Running..." % (self.name))
-				node_root = self.processes_tree[computer]['nodo_root']
-				pnode = node_root.get_node_by_guid(event['ProcessGuid'])
+				pnode = self.p_tree.get_node_by_guid(computer, event['ProcessGuid'])
+
 				if pnode:
 					self.run_action_check(pnode, event)
 					self.__fire_alert(pnode)
-				self.tree_condition_in.notify_all()
+				self.p_tree.tree_condition_in.notify_all()
 
 			if not self._running:
 				break
@@ -215,8 +215,11 @@ class BaselineEngine(Engine):
 				b_action_att_aux = b_action_att
 				reverse = False
 				
-			# skip attributes Points , ...
-			if b_action_att not in ["Points", "N", "Seconds"]:
+			# skip attributes Points , 
+			# and it depends on schema version could have diferent attributes ...
+			# so lets check if process node has this attribute as well
+			if b_action_att not in ["Points", "N", "Seconds"] and \
+												paction.has_key(b_action_att):
 			
 				# if reverse , reverse the result with XOR
 				if self.__checkAttValueToProcessAtt(
