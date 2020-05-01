@@ -174,8 +174,6 @@ class InputVolatility(Input):
 
 		events_list = vprocess
 
-		print events_list
-
 		self.send_message(events_list)
 		
 		self.terminate()
