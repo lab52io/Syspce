@@ -276,9 +276,9 @@
 	},
 	{
 		"RuleID": 25,
-		"Rulename": "SeImpersonatePrivilege enables (testing purposes)",
+		"Rulename": "SeBackupPrivilege is Present (testing purposes)",
 		"Content": [
-			{ "1": { "SeImpersonatePrivilege": "enabled" } }
+			{ "1": { "SeBackupPrivilegePresent": "True" } }
 		]
 	},
 
@@ -297,9 +297,14 @@
 
 	{
 		"RuleID": 27,
-		"Rulename": "Zombie (testing purposes)",
+		"Rulename": "Hidden process detect (pslist vs psscan)",
 		"Content": [
-			{ "1": { "Zombie": "True" } }
+			{
+				"1": {
+					"plist": "False",
+					"plist_pooltag": "True"
+				}
+			}
 		]
 	}
 
