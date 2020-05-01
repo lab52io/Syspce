@@ -84,12 +84,12 @@ class BaselineEngine(Engine):
 		must_subtract = False
 			
 		# Cheking list of process actions rules 
-		if self.__checkProcessActionToBaseline(paction):
+		if self.__check_process_action_to_baseline(paction):
 			must_subtract = True
 			
 		# Case Process termination, special final process checks  
 		if paction["idEvent"] == 5 and \
-								self.__processTerminationChecks(paction,
+								self.__process_termination_checks(paction,
 																pnode):
 			must_subtract = True
 			
@@ -106,7 +106,7 @@ class BaselineEngine(Engine):
 					paction["idEvent"]))
 
 	
-	def __checkProcessActionToBaseline(self, paction):
+	def __check_process_action_to_baseline(self, paction):
 
 		# checking reverse search
 		if self.baseline_rules[self.ImageFileName].has_key(\
@@ -128,7 +128,7 @@ class BaselineEngine(Engine):
 
 		#True - must subtract points , an anomaly was indentified
 		#False - no subtract points , the process behaviour is legit	
-		result = self.__checkRuleActionToProcessAction(paction, baseline_action)
+		result = self.__check_rule_action_to_process_action(paction, baseline_action)
 
 		#Checking process actions in a time period if we have more than N 
 		# actions let's alert
@@ -174,7 +174,7 @@ class BaselineEngine(Engine):
 		
 		return result
 		
-	def __checkRuleActionToProcessAction(self, paction, baseline_action):
+	def __check_rule_action_to_process_action(self, paction, baseline_action):
 		
 		suspicious_attr_seen =  False
 		
@@ -186,7 +186,7 @@ class BaselineEngine(Engine):
 			self.total_sub_points += self.default_points
 			
 			# Adding Suspicious action because EventID could have "-"
-			defaultAtt = getDefaultParameterFromID(paction["idEvent"])
+			defaultAtt = get_default_parameter_from_id(paction["idEvent"])
 			s_action = {"EventType":paction["idEvent"],
 						defaultAtt:paction[defaultAtt],
 						"Points": self.total_sub_points * -1
@@ -222,7 +222,7 @@ class BaselineEngine(Engine):
 												paction.has_key(b_action_att):
 			
 				# if reverse , reverse the result with XOR
-				if self.__checkAttValueToProcessAtt(
+				if self.__check_att_value_to_process_att(
 										baseline_action[b_action_att]["Value"], 
 										paction[b_action_att_aux])^reverse:
 					
@@ -247,7 +247,7 @@ class BaselineEngine(Engine):
 			
 		return suspicious_attr_seen		
 		
-	def __checkAttValueToProcessAtt(self, b_action_att_value, 
+	def __check_att_value_to_process_att(self, b_action_att_value, 
 									p_action_att_value):
 		
 		match = True
@@ -266,19 +266,19 @@ class BaselineEngine(Engine):
 		# that hasn't it seen yet
 		return match
 		
-	def __processTerminationChecks(self, paction, pnode):
+	def __process_termination_checks(self, paction, pnode):
 		
 		res = False
 		
-		if self.__LiveTime(paction, pnode):
+		if self.__live_time(paction, pnode):
 			res =  True
 			
-		if self.__AcctionNotPresent(pnode):
+		if self.__acction_not_present(pnode):
 			res =  True		
 			
 		return res
 		
-	def __LiveTime(self, paction, pnode):
+	def __live_time(self, paction, pnode):
 		if self.baseline_rules[self.ImageFileName].has_key("max_ttl") and \
 			self.baseline_rules[self.ImageFileName].has_key("min_ttl"):
 			max_b_ttl = self.baseline_rules[self.ImageFileName]["max_ttl"]
@@ -311,7 +311,7 @@ class BaselineEngine(Engine):
 
 		return False
 		
-	def __AcctionNotPresent(self, pnode):
+	def __acction_not_present(self, pnode):
 		result = False
 		for action in pnode.acciones: 
 		

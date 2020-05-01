@@ -9,15 +9,6 @@
 	},
 
 	{
-		"RuleID": 1,
-		"Rulename": "CMD executed (testing purposes)",
-		"Content": [
-			{ "1": { "CommandLine": "cmd.exe" } }
-
-		]
-	},
-
-	{
 		"RuleID": 2,
 		"Rulename": "Suspicious lsass childs becouse threat created",
 		"Content": [
@@ -56,7 +47,7 @@
 		"RuleID": 6,
 		"Rulename": "Cross session process creation 1->0",
 		"Content": [
-			{ "1": { "TerminalSessionId": "1" } },
+			{ "1": { "-TerminalSessionId": "0" } },
 			{ "1": { "TerminalSessionId": "0" } }
 		]
 	},
@@ -197,10 +188,11 @@
 
 	{
 		"RuleID": 19,
-		"Rulename": "System process on user session (priv scalation)",
+		"Rulename": "System process on user session from user process (priv scalation)",
 		"Content": [
+			{ "1": { "Image": "winlogon.exe" } },
 			{
-				"1": {
+				"1c": {
 					"-TerminalSessionId": "0",
 					"User": "System",
 					"-Image": "SYSTEM_PROCESS_ON_USER_SESSION"
@@ -276,7 +268,7 @@
 	},
 	{
 		"RuleID": 24,
-		"Rulename": "Application executed from USB",
+		"Rulename": "Application executed from external device (USB/Network)",
 		"Content": [
 			{ "1": { "Image": "explorer.exe" } },
 			{ "1": { "-Image": "c:\\" } }
@@ -301,7 +293,16 @@
 			},
 			{ "1": { "Image": "powershell.exe" } }
 		]
+	},
+
+	{
+		"RuleID": 27,
+		"Rulename": "Zombie (testing purposes)",
+		"Content": [
+			{ "1": { "Zombie": "True" } }
+		]
 	}
+
 
 ]
 

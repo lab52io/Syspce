@@ -765,9 +765,25 @@ Ej. Proceso 1 genera carga dll 1
 asociada  a una IP. Permitirá hacer reglas del tipo si un proceso explorer.exe
 hace conexiones que no van a una IP de microsoft (posible codigo inyectado). 
 
--[GENERAL] Añadir tipo de proceso como caracteristica : service, scheduledTask,
+-[GENERAL] Añadir tipo de proceso como caracteristica : service, scheduledTask,g
 														regularProcess
 -[Jerarquia] poder buscar por TTL de los procesos
+
+-[Jerarquia] Salto interproceso
+```
+DCOM Lateral movement
+{1:{'CommandLine':'svchost.exe -RPC'}, 3:{'dport':135}, 10:{'TargetImage':'A', 'Callstack':'RPC'} }
+{1:{'Image':'A' 'CommandLine':'svchost.exe -DCOMLAunch'} }
+{1:{'Image':'winword.exe' 'CommandLine':'Embedding'} }
+{1:{'Image':'*'}
+
+PrivSca StealToken
+{1:{'Integrity': 'MEDIUM_HIGH'}, 17:{'PipeName':'A'}}
+{1:{'User': 'system'}, 18:{'PipeName':'A'}}
+
+
+
+```
 
 ## Autor ✒️
 * **Roberto Amado** - *Desarrollo e inteligencia de detección* - [@ramado78](https://twitter.com/ramado78)
