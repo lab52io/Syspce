@@ -143,7 +143,7 @@ class ProcessesTree(object):
 
 		matchlist = []
 
-		self.actions_matched = {}
+
 
 		for process in process_list:
 			match = True

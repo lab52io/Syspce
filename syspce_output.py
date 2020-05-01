@@ -60,7 +60,7 @@ class Output_(object):
 		for anomaly in res:
 			alert = ""
 			alert += "\n"
-			alert += "PHE ALERT [%s]: %s\n" % (anomaly['RuleID'],
+			alert += "\tPHE ALERT [%s]: %s\n" % (anomaly['RuleID'],
 												  anomaly['Rulename'])
 			tab = '--'
 			ntabs = 0
@@ -69,15 +69,15 @@ class Output_(object):
 				ntabs +=1
 				
 				if process.acciones['1'][0]['Alert']:
-					alert += "!%s> %s (%s) [%s] %s\n" % (
+					alert += "\t!%s> %s (%s) [%s] %s\n" % (
 									tab*ntabs, 
 									get_action_from_id(1),
 									process.pid, 
 									process.acciones['1'][0]['ProcessTTL'],
 									process.cmd)			
-					process.acciones['1'][0]['Alert'] = False
+					#process.acciones['1'][0]['Alert'] = False
 				else:
-					alert += "%s> %s (%s) [%s] %s\n" % (tab*ntabs, 
+					alert += "\t%s> %s (%s) [%s] %s\n" % (tab*ntabs, 
 									get_action_from_id(1),
 									process.pid, 
 									process.acciones['1'][0]['ProcessTTL'],
@@ -90,20 +90,20 @@ class Output_(object):
 						if int(action_type) != 1:
 						
 							if action['Alert']:
-								alert += "!%s> %s %s\n" %\
+								alert += "\t!%s> %s %s\n" %\
 									(tab*(ntabs+2), \
 									get_action_from_id(int(action_type)),
 											action[param])
-								action['Alert'] = False
+								#action['Alert'] = False
 							else:
 								if self.full_log:
-									alert += "%s> %s %s\n" %\
+									alert += "\t%s> %s %s\n" %\
 										(tab*(ntabs+2), \
 										get_action_from_id(int(action_type)),
 															action[param])									
 						# Special case for Real Parent
 						elif action['CreationType'] == 'InjectedThread':
-							alert += "!%s> [I] REAL PARENT %s\n" % \
+							alert += "\t!%s> [I] REAL PARENT %s\n" % \
 										(tab*(ntabs+2),
 										action['RealParent'])
 			alerts.append(alert)
@@ -135,7 +135,7 @@ class Output_(object):
 									process.acciones['1'][0]['ProcessTTL'],
 									process.cmd))
 					self.set_color(FOREGROUND_WHITE | FOREGROUND_INTENSITY)				
-					process.acciones['1'][0]['Alert'] = False
+					#process.acciones['1'][0]['Alert'] = False
 				else:
 					self.log.info("%s> %s (%s) [%s] %s" % (tab*ntabs, 
 									get_action_from_id(1),
@@ -156,7 +156,7 @@ class Output_(object):
 									get_action_from_id(int(action_type)),
 											action[param]))
 								self.set_color(FOREGROUND_WHITE | FOREGROUND_INTENSITY)
-								action['Alert'] = False
+								#action['Alert'] = False
 							else:
 								if self.full_log:
 									self.log.info("%s> %s %s" %\
@@ -241,18 +241,18 @@ class Output_(object):
 
 	def format_result_baseline(self, pnode, s_actions):
 		alert_text = '\n'
-		alert_text += "BASELINE ENGINE ALERT [%s]: %s\n" % (pnode.pid, 
+		alert_text += "\tBASELINE ENGINE ALERT [%s]: %s\n" % (pnode.pid, 
 														pnode.ImageFileName )
-		alert_text += "--> Process Points: %s\n" % pnode.points
-		alert_text += "--> Parent CL: %s\n" % pnode.acciones["1"][0]\
+		alert_text += "\t--> Process Points: %s\n" % pnode.points
+		alert_text += "\t--> Parent CL: %s\n" % pnode.acciones["1"][0]\
 														["ParentCommandLine"]
 		for action in s_actions:
 			if not action.has_key('PointsLeft'):
 				param = get_action_from_id(int(action['EventType']))
-				alert_text += "--> %s\n" % param
+				alert_text += "\t--> %s\n" % param
 				
 				for attr in action:
-					alert_text += "----> %s: %s\n" % (attr, action[attr])
+					alert_text += "\t----> %s: %s\n" % (attr, action[attr])
 
 		return alert_text
 

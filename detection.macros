@@ -27,16 +27,20 @@
 	"PROCESS_QUERY_INFORMATION": ["0x14",
 					"0x1000"
 					],
-	
-	"SYSTEM_PROCESS_ON_USER_SESSION": ["LogonUI.exe",
-										"consent.exe",
-										"winlogon.exe",
-										"smss.exe",
-										"dllhost.exe",
-										"csrss.exe",
-										"utilman.exe",
-										"vmware"
-									],
+
+		"SYSTEM_PROCESS_ON_USER_SESSION": [
+			"LogonUI.exe",
+			"consent.exe",
+			"winlogon.exe",
+			"smss.exe",
+			"dllhost.exe",
+			"csrss.exe",
+			"utilman.exe",
+			"Sethc.exe",
+			"MsiExec.exe",
+			"vmware",
+			"mpnotify.exe"
+		],
 									
 	"NO_SYSTEM_P_OPENS_SYSTEM_P":["ProcessHacker.exe",
 									"Procexp.exe"
@@ -51,10 +55,19 @@
 					
 	"REGISTRY_PERSISTENCE":["software\\microsoft\\windows\\currentversion\\explorer\\user shell folders\\startup"
 					],
-	"OFFICE_NORMAL_PARENTS":[	"svchost.exe",
+	"OFFICE_NORMAL_PARENTS": [
+								"svchost.exe",
 								"explorer.exe",
-								"cmd.exe"
-					],
+								"cmd.exe",
+								"winword.exe",
+								"powerpnt.exe",
+								"excel.exe",
+								"outlook.exe",
+								"msaccess.exe",
+								"notes.exe",
+								"outlook.exe",
+								"thunderbird.exe"
+	],
 	"UAC_NORMAL_PARENTS":[	"C:\\Windows\\System32\\RuntimeBroker.exe",
 								"C:\\Windows\\explorer.exe"
 					],
@@ -109,7 +122,10 @@
 									 "\\system32\\lsass.exe",
 									 "C:\\Windows\\explorer.exe"
 									 ],
-									 
+	"EXPLORER_IMAGES": [
+		"C:\\Windows\\SysWOW64\\explorer.exe",
+		"C:\\Windows\\explorer.exe"
+	],									 
 	"EXPLORER_THREAD_CREATED_FROM_REMOTE_PROCESS":[
 									 "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
 									 "C:\\Windows\\System32\\svchost.exe"
@@ -152,6 +168,7 @@
 						"C:\\Windows\\System32\\LogonUI.exe",
 						"C:\\Windows\\System32\\taskmgr.exe",
 						"C:\\Windows\\System32\\dwm.exe",
+						"C:\\Windows\\System32\\mpnotify.exe",
 						"C:\\Windows\\System32\\userinit.exe",
 						"C:\\Windows\\explorer.exe"
 						],
@@ -177,7 +194,7 @@
 									 "C:\\Windows\\System32\\lsass.exe"
 									 ],
 									 
-	"WINLOGON_THREAD_CREATED_FROM_REMOTE_PROCESS":[
+	"WINLOGON_EXPLORER_THREAD_CREATED_FROM_REMOTE_PROCESS":[
 									 "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
 									 "C:\\Windows\\System32\\svchost.exe"
 									 ],

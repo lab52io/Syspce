@@ -51,7 +51,7 @@ class HierarchyEngine(Engine):
 		for rule in self.detection_rules:
 		
 			# dictionary used for printing and output matched alerts
-			
+			self.p_tree.actions_matched = {}
 			
 			with self.p_tree.tree_condition_in:
 				log.debug("%s Running..." % (self.name))

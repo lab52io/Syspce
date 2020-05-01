@@ -2,10 +2,10 @@
 	"explorer.exe":{ 	"max_ttl": 1000000,"min_ttl": 20, "Points": 10,
 	
 						"1":{"Points": 30,
-							"Image":{"Points": 100, "Value": "C:\\Windows\\explorer.exe"}, 
+							"Image":{"Points": 100, "Value": "EXPLORER_IMAGES"}, 
 							"ParentImage":{"Points": 50, "Value": "EXPLORER_PARENT_IMAGE"},
 							"-User":{"Points": 100, "Value": "system"},
-							"CurrentDirectory":{"Points": 100, "Value": "C:\\Windows\\"},
+							"CurrentDirectory":{"Points": 20, "Value": "C:\\Windows\\"},
 							"-TerminalSessionId":{"Points": 100, "Value": "0"},
 							"IntegrityLevel":{"Points": 100, "Value": "Medium"},
 							"Company":{"Points": 100, "Value": "Microsoft Corporation"},
@@ -31,7 +31,7 @@
 						"-8":{"Points": 100},
 						
 						"108":{"Points": 10,
-							"SourceImage":{"Points": 30, "Value": "C:\\Windows\\System32\\wbem\\WmiPrvSE.exe"}},
+							"SourceImage":{"Points": 30, "Value": "WINLOGON_EXPLORER_THREAD_CREATED_FROM_REMOTE_PROCESS"}},
 							
 						"9":{"Points": 10, "N": 100, "Seconds": 86400,
 							"Device":{"Points": 100, "Value": "\\Device\\HarddiskVolume"}
@@ -112,7 +112,7 @@
 							
 							
 						"100":{"Points": 30,
-							"ChildImage":{"Points": 100, "Value": "WINLOGON_CHILDS"}
+							"ChildImage":{"Points": 25, "Value": "WINLOGON_CHILDS"}
 						},
 						
 						"-2":{"Points": 100},
@@ -129,7 +129,7 @@
 						},
 						
 						"108":{"Points": 10, "N": 3, "Seconds": 86400,
-							"SourceImage": {"Points": 20, "Value": "WINLOGON_THREAD_CREATED_FROM_REMOTE_PROCESS"}
+							"SourceImage": {"Points": 20, "Value": "WINLOGON_EXPLORER_THREAD_CREATED_FROM_REMOTE_PROCESS"}
 						},
 						
 						"9":{"Points": 20, "N": 15, "Seconds": 3600,
