@@ -15,6 +15,11 @@ import volatility.commands as commands
 import volatility.addrspace as addrspace
 
 
+## TODO: 
+## - Integrity plugins getsids
+## - threads 
+## - VADS
+
 log = logging.getLogger('sysmoncorrelator')
 
 class InputVolatility(Input):
@@ -40,115 +45,137 @@ class InputVolatility(Input):
 
 	def do_action(self):
 
+		###########################
 		# Plugin pslist volatility 
 		###########################
 
 		proc = taskmods.PSList(self.config)
-		self.p1 = {}
-		self.vprocess = []
+		pslist1 = {}
+		vprocess = []
 
 		for process in proc.calculate():
 			## Mapping to event id sysmon 1
-			self.p1['computer'] = 'localhost' 
-			self.p1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine)
-			self.p1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
-			self.p1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
-			self.p1['idEvent'] = 1 
-			self.p1['UtcTime'] = str(process.CreateTime)
-			self.p1['ProcessId'] = str(int(process.UniqueProcessId))
-			self.p1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
-			self.p1['TerminalSessionId'] = str(int(process.SessionId))
+			pslist1['computer'] = 'localhost' 
+			pslist1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine).replace('\"','')
+			pslist1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
+			pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
+			pslist1['idEvent'] = 1 
+			pslist1['UtcTime'] = str(process.CreateTime)
+			pslist1['ProcessId'] = str(int(process.UniqueProcessId))
+			pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
+			pslist1['TerminalSessionId'] = str(int(process.SessionId))
 			## Extra 
-			self.p1['ExistTime'] = str(process.ExitTime)
-			self.p1['BeingDebugged'] = str(process.Peb.BeingDebugged)
-			self.p1['IsWow64'] = str(process.IsWow64)
-			self.p1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
-			self.p1['NumThreads'] = str(int(process.ActiveThreads))
-			self.p1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
-			self.p1['ProcessGuid'] = str(uuid.uuid4())
-			self.p1['ParentImage'] = ""
-			self.p1['ParentCommandLine'] = ""
-			self.p1['ParentProcessGuid'] = ""
+			pslist1['ExistTime'] = str(process.ExitTime)
+			pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
+			pslist1['IsWow64'] = str(process.IsWow64)
+			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
+			pslist1['NumThreads'] = str(int(process.ActiveThreads))
+			pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
+			pslist1['ProcessGuid'] = str(uuid.uuid4())
+			pslist1['ParentImage'] = ""
+			pslist1['ParentCommandLine'] = ""
+			pslist1['ParentProcessGuid'] = ""
 
-			result = hashlib.md5(self.p1["ProcessId"]+self.p1["ParentProcessId"]+self.p1["computer"]+self.p1["UtcTime"])
-			self.p1['SyspceId'] = result.hexdigest()
+			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+pslist1["UtcTime"])
+			pslist1['SyspceId'] = result.hexdigest()
 
-			self.vprocess.append(self.p1)
-			self.p1 = {}
-			self.modules = []
+			vprocess.append(pslist1)
+			pslist1 = {}
+			modules = ""
 
 			## Modules 
 			for module in process.get_load_modules():
 				if module is not None:
-					self.modules.append(str(module.FullDllName))
+					modules = modules + "," + str(module.FullDllName)
 
-			self.p1['modules'] = self.modules
+			pslist1['modules'] = modules
 
-		for p in self.vprocess:
-			for x in self.vprocess:
+		for p in vprocess:
+			for x in vprocess:
 				if p['ParentProcessId'] == x['ProcessId']:
 					p['ParentImage'] = x['Image']
 					p['ParentCommandLine'] = x['CommandLine']
 					p['ParentProcessGuid'] = x['ProcessGuid']
 
+		###########################
 		# Plugin privs volatility
 		###########################
 
 		priv = privm.Privs(self.config)
 		
-		self.pi = {}
-		self.pi2 = {}
-		self.priv_vector = []
+		privs_1 = {}
+		privs_2 = {}
+		priv_vector = []
 
 		for privs in priv.calculate():
 			privileges = privs.get_token().privileges()
-			self.pi['ProcessId'] = str(int(privs.UniqueProcessId))
 			for value, present, enabled, default in privileges:
 				try:
 					name, desc = privm.PRIVILEGE_INFO[int(value)]
 				except KeyError:
 					continue
-				attributes = []
-				if present:
-					attributes.append("Present")
-				if enabled:
-					attributes.append("Enabled")
-					self.pi2[str(name)] = "enabled"
-					self.pi.update(self.pi2)
-					self.pi2 = {}
-				if default:
-					attributes.append("Default")
-				
-				
-			self.priv_vector.append(self.pi)
-			self.pi = {}
+				privs_1 = {}
+				privs_1['ProcessId'] = str(int(privs.UniqueProcessId))
+				privs_1['Name'] = name 
 
-		for p in self.vprocess:
-			for x in self.priv_vector:
+				privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
+					  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
+				privs_1['Present'] = "False"
+				privs_1['Enabled'] = "False"
+				if str(name) in privileges_logged:
+					if present:
+						privs_1['Present'] = "True"
+					if enabled or default:
+						privs_1["Enabled"] = "True"
+					priv_vector.append(privs_1)
+
+		for p in vprocess:
+			for x in priv_vector:
 				if p['ProcessId'] == x['ProcessId']:
-						p.update(x)
+						pvp = x['Name'] + "Present"
+						p[pvp] = x['Present']
+						pve = x['Name'] + "Enabled"
+						p[pve] = x['Enabled']
 
+		###########################
 		# Plugin psxview volatility
 		###########################
-		# Apply-rules isn't working .. 
-		# self.config.update("APPLY-RULES", "True")
+
 		command = psxv.PsXview(self.config)
-		zu = []
+
+		psxview_dict = {}
+		psxview_vector = []
+
 		for offset, process, ps_sources in command.calculate():
-			# Tenemos que mejorar la logica que indica que un proceso es zombie por ahora esta:
-			if str(offset in ps_sources["pslist"]) == "False" and str(offset in ps_sources["psscan"]) == "True":
-				zu.append(int(process.UniqueProcessId))
-			
-		for p in self.vprocess:
-			for x in zu:
-				if p['ProcessId'] == str(x):
-						p['Zombie'] = "True"
+			psxview_dict['ProcessId'] = str(int(process.UniqueProcessId))
+			psxview_dict['pslist'] = str(offset in ps_sources["pslist"])
+			psxview_dict['psscan'] = str(offset in ps_sources["psscan"])
+			psxview_dict['threadproc'] = str(offset in ps_sources["thrdproc"])
+			psxview_dict['pspcid'] = str(offset in ps_sources["pspcid"])
+			psxview_dict['csrss'] = str(offset in ps_sources["csrss"])
+			psxview_dict['session'] = str(offset in ps_sources["session"])
+			psxview_dict['deskthrd'] = str(offset in ps_sources["deskthrd"])
+			psxview_vector.append(psxview_dict)
+			psxview_dict = {}
+
+		for p in vprocess:
+			for x in psxview_vector:
+				if p['ProcessId'] == x['ProcessId']:
+						p['plist'] = x['pslist']
+						p['plist_pooltag'] = x['psscan']
+						p['plist_threadproc'] = x['threadproc']
+						p['plist_pspcid'] = x['pspcid']
+						p['plist_csrss'] = x['csrss']
+						p['plist_session'] = x['session']
+						p['plist_deskthrd'] = x['deskthrd']
 
 		# To Send to the CORE
 		############################
 
-		events_list = self.vprocess
-		
+		events_list = vprocess
+
+		print events_list
+
 		self.send_message(events_list)
 		
 		self.terminate()
