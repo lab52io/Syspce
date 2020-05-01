@@ -193,31 +193,51 @@ class Output_(object):
 					"Data: ",
 					]
 					
+			alert = ""
+			alert += "\n"
+			alert += "\tPHE ALERT [%s]: %s\n" % (anomaly['RuleID'],
+												  anomaly['Rulename'])
+			tab = '--'
 			ntabs = 0
-			if self.full_log:
-				for process in reversed(anomaly['ProcessChain']):
+			
+			for process in reversed(anomaly['ProcessChain']):
+				ntabs +=1
 				
-					ntabs +=1
-					data = "%s> %s (%s) %s" % (tab*ntabs, get_action_from_id(1),
-												process.pid, process.cmd)
-					descr.append(data)
-					
-					for action_type in process.acciones:
-					
-						for action in process.acciones[action_type]:
+				if process.acciones['1'][0]['Alert']:
+					alert += "\t!%s> %s (%s) [%s] %s\n" % (
+									tab*ntabs, 
+									get_action_from_id(1),
+									process.pid, 
+									process.acciones['1'][0]['ProcessTTL'],
+									process.cmd)			
+					#process.acciones['1'][0]['Alert'] = False
+				else:
+					alert += "\t%s> %s (%s) [%s] %s\n" % (tab*ntabs, 
+									get_action_from_id(1),
+									process.pid, 
+									process.acciones['1'][0]['ProcessTTL'],
+									process.cmd)
+									
+				for action_type in process.acciones:
+					for action in process.acciones[action_type]:
+						param = get_default_parameter_from_id(\
+													int(action_type))
+						if int(action_type) != 1:
 						
 							if action['Alert']:
-								param = get_default_parameter_from_id(\
-													int(action_type))
-													
-								data = "%s> %s %s" % (tab*(ntabs+2), \
+								alert += "\t!%s> %s %s\n" %\
+									(tab*(ntabs+2), \
 									get_action_from_id(int(action_type)),
-									action[param])
+											action[param])
+								
+						# Special case for Real Parent
+						elif action['CreationType'] == 'InjectedThread':
+							alert += "\t!%s> [I] REAL PARENT %s\n" % \
+										(tab*(ntabs+2),
+										action['RealParent'])
 										
-								descr.append(data)		
-			else:
-				descr.append(data)
-				
+			descr.append(alert)		
+	
 			self.log.debug("Writing to eventlog: %s" % anomaly)
 			win32evtlogutil.ReportEvent(applicationName, eventID,
 											eventCategory=category, 
