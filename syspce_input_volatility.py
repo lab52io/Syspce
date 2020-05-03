@@ -71,13 +71,11 @@ class InputVolatility(Input):
 			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
 			pslist1['NumThreads'] = str(int(process.ActiveThreads))
 			pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
-			pslist1['ProcessGuid'] = str(uuid.uuid4())
+			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+pslist1["UtcTime"])
+			pslist1['ProcessGuid'] = result.hexdigest()
 			pslist1['ParentImage'] = ""
 			pslist1['ParentCommandLine'] = ""
 			pslist1['ParentProcessGuid'] = ""
-
-			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+pslist1["UtcTime"])
-			pslist1['SyspceId'] = result.hexdigest()
 
 			vprocess.append(pslist1)
 			pslist1 = {}
