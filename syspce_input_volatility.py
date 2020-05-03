@@ -77,6 +77,8 @@ class InputVolatility(Input):
 			pslist1['ParentCommandLine'] = ""
 			pslist1['ParentProcessGuid'] = ""
 
+			pslist1['SyspceId'] = result.hexdigest()
+
 			vprocess.append(pslist1)
 			pslist1 = {}
 			modules = ""
