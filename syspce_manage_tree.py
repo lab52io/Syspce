@@ -46,18 +46,19 @@ class ManageTree(InfoTree):
 
 		for computer in self.processes_tree.stats:
 			stats = '\n\tStats for hostname ' + computer + '\n\n'
-			stats += '\tActions stats\n'
+			stats += '\tActions stats:\n'
 			for id in self.processes_tree.stats[computer]['Actions']:
 				if id == '1':
 					action_name = '[A] PROCESS CREATED'
 				else:
 
 					action_name = get_action_from_id(int(id))
-					stats += '\t\t(' + id + ')\t' + action_name + ': ' 
-					stats += str(self.processes_tree.stats[computer]['Actions'][id])
-					stats += '\n'
 
-			stats += '\tOther stats\n'
+				stats += '\t\t(' + id + ')\t' + action_name + ': ' 
+				stats += str(self.processes_tree.stats[computer]['Actions'][id])
+				stats += '\n'
+
+			stats += '\tOther stats:\n'
 			for stat in self.processes_tree.stats[computer]:
 				# skip actions list
 				if stat != 'Actions':

@@ -344,7 +344,7 @@ class ControlManager(Manager_):
 										  self.config_['filter_attribute'],
 										  Origin.SYSPCE_CORE)
 
-			if self.config_['evtx_file']:
+			if self.config_['evtx_file'] and not self.config_['search_filter']:
 				self.read_evtx(self.config_['evtx_file'],
 										  self.config_['detection_rules_content'],
 										  self.config_['detection_macros_content'],
@@ -420,7 +420,7 @@ class ControlManager(Manager_):
 
         # Evtx file search filter functionality
         if self.args.eventid:
-			self.config_['search_filter'] = filter
+			self.config_['search_filter'] = self.args.eventid[0]
 
         # Evtx file
         if self.args.file:
@@ -428,7 +428,7 @@ class ControlManager(Manager_):
 
         # Evtx file search filter subfilter 
         if self.args.attribute:
-            self.config_['filter_attribute'] = args.attribute[0]
+            self.config_['filter_attribute'] = self.args.attribute[0]
 
         # Memdump
         if self.args.memdump:
