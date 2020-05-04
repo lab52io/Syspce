@@ -1,5 +1,6 @@
 import logging
 import threading
+from time import sleep
 
 from syspce_manager import Manager_
 from syspce_message import *
@@ -36,7 +37,18 @@ class EngineManager(Manager_):
 
 			elif message._subtype == MessageSubType.STOP_JOB:
 				self.stop_job_modules(message._src)	
-				
+
+			elif message._subtype == MessageSubType.STATS:
+				self._stats(message._src)	
+
+			elif message._subtype == MessageSubType.SET_CONFIG:
+				# message._content[0] config to set, message._content[1] value
+				if message._content[0][0] == "hierarchy_engine_enabled":
+					self.hierarchy_engine_enabled =  message._content[0][1]
+				elif message._content[0][0] == "baseline_engine_enabled":
+					self.baseline_engine_enabled = message._content[0][1]
+
+
 			# Filter engine, filter data from user
 			elif message._subtype == MessageSubType.FILTER_DATA:
 
@@ -66,10 +78,21 @@ class EngineManager(Manager_):
 		filter_event.start()
 		self.add_working_module(src, [filter_event])
 
+	def _stats(self, src):
+		# getting statistics  
+		manage_tree = ManageTree(self.data_buffer_in,
+								 self.data_condition_in,
+							     self.processes_tree, 
+								 src)
+
+		manage_tree.set_method(manage_tree.get_ptree_stats_str)
+		manage_tree.start()
+
+		self.add_working_module(src, [manage_tree])
+
 	def _detect(self, src, detection_rules, baseline_rules, macros, events):
 
-		# adding more info to Sysmon events and deleting incorrect data
-		self.processes_tree.pre_process_events(events)
+
 
 		# add data to tree 
 		manage_tree = ManageTree(self.data_buffer_in,
@@ -81,8 +104,10 @@ class EngineManager(Manager_):
 		manage_tree.start()
 
 		self.add_working_module(src, [manage_tree])
-
 		
+		# dont like this sync, TODO
+		sleep(1)
+
 		# Execute engines
 		if self.hierarchy_engine_enabled:
 			# Hierarchy Engine
@@ -96,6 +121,9 @@ class EngineManager(Manager_):
 			hierarchy_engine.start()
 
 			self.add_working_module(src, [hierarchy_engine])
+
+		# dont like this sync, TODO
+		sleep(1)
 
 		# Baseline Engine
 		if self.baseline_engine_enabled:

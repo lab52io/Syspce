@@ -43,19 +43,19 @@ __author__ = '@ramado78'
 import threading
 import logging
 import argparse
-import json
+
 import signal
 from time import sleep
 
 from syspce_console import Console
-from syspce_parser import get_sysmon_xml_schema
+
 from syspce_message import *
 from syspce_manager_input import InputManager
 from syspce_manager_engine import EngineManager
 from syspce_manager_control import ControlManager
 
 #python syspce.py -m file:///C:\Users\ramad\Desktop\josemi\cridex.vmem -p WinXPSP2x86
-#python syspce.py -m file:///C:\Users\ramad\source\repos\Syspce\Memdump\Windows_10_x86-cobalt.vmem -p Win10x86
+#python syspce.py -m file:///C:\Users\ramad\source\repos\Syspce\Memdump\Windows_10_x86_cobalt.vmem -p Win10x86
 
 class Syspce(object):
 
@@ -71,18 +71,8 @@ class Syspce(object):
 
         self.console_buffer_in = threading.Condition()
 
-        self.config_ = {'sysmon_schema':'sysmonSchema3.4.xml',
-                        'detection_rules' : {},
-                        'detection_macros' : {},
-                        'baseline_rules' : {},
-                        'daemon': False,
-                        'evtx_file' : '',
-                        'memdump' : '',
-                        'profile' : '',
-                        'search_filter' : {},
-                        'filter_attribute' : '',
-                        'baseline_enabled' : ''
-                        }
+        self.args = []
+
 
     def parse_arguments(self):
         """Initialization Function"""
@@ -142,14 +132,14 @@ class Syspce(object):
 
 
 
-        args = parser.parse_args()
+        self.args = parser.parse_args()
     
-        if args.verbose:
+        if self.args.verbose:
             loglevel = logging.DEBUG
         else:
             loglevel = logging.INFO
 
-   
+ 
         logging.basicConfig(level=loglevel,
 						    filename= 'syspce.log',
                             format='%(asctime)s [%(levelname)s] %(message)s',
@@ -159,106 +149,19 @@ class Syspce(object):
         logging.basicConfig(level=loglevel,
                             format='%(asctime)s [%(levelname)s] %(message)s',
                             datefmt='%d/%m/%Y %H:%M:%S ')
-        '''    
+        '''      
+
         
         log = logging
 
-	    # Configuring Schema version for parser default 3.4
-        if args.schema:
-            self.config_['sysmon_schema'] = get_sysmon_xml_schema(
-                                                args.schema[0])
-            log.info("Using schema " + args.schema[0] + " for log parsing")
 
-        else:
-            m = "Using default Sysmon config schema 3.4, \
-                 this can afect log parsing"
-            log.warning(m)
-            self.config_['sysmon_schema'] = get_sysmon_xml_schema(
-                                                self.config_['sysmon_schema'])
-
-	    #Cheking correct parsing
-        if len(self.config_['sysmon_schema']) == 0:
-            log.error("Can't parse Sysmon Schema file")
-            exit(1)
-
-	    # Loading rules file
-        if args.rules:
-            rules_file = args.rules[0]
-        else:
-            rules_file = 'detection.rules'
-
-        try:
-           with open(rules_file) as json_rules:
-                self.config_['detection_rules'] = json.load(json_rules)
-
-        except Exception, e:
-            log.error("Opening or parsing rules file:  %s" % e)
-            exit(1)
-
-        json_rules.close()
-
-	    # Loading rules macros
-        try:
-            with open('detection.macros') as json_macros:
-                self.config_['detection_macros'] = json.load(json_macros)[0]
-
-        except Exception, e:
-            log.error("Opening or parsing macros rules file:  %s" % e)
-            exit(1)	
-
-        json_macros.close()
-
-	    # Loading baseline rules
-        try:
-            with open('baseline.rules') as json_baseline:
-                self.config_['baseline_rules'] = json.load(json_baseline)[0]
-
-        except Exception, e:
-            log.error("Opening or parsing baseline rules file:  %s" % e)
-            exit(1)
-        
-        json_baseline.close()
-
-        # Daemon mode for eventlog continous read
-        if args.daemon:
-            self.config_['daemon'] = True
-
-        # Evtx file search filter functionality
-        if args.eventid:
-            try:
-                filter = eval(args.eventid[0])
-                self.config_['search_filter'] = filter
-            except Exception, e:
-                log.error("Search filter incorrect:  %s" % e)
-                exit(1)
-            
-
-        # Evtx file
-        if args.file:
-            self.config_['evtx_file'] = args.file[0]
-
-        # Evtx file search filter subfilter 
-        if args.attribute:
-            self.config_['filter_attribute'] = args.attribute[0]
-
-        # Memdump
-        if args.memdump:
-            self.config_['memdump'] = args.memdump[0]
-
-        # Memedump profile
-        if args.profile:
-            self.config_['profile'] = args.profile[0]
-
-        # Memedump profile
-        if args.baseline:
-            self.config_['baseline_enabled'] = True
 
     def start(self):
         """Initialization Function"""
 
         
         console = Console(self.data_buffer_in, self.data_condition_in, 
-							   self.output_lock, self.config_)
+							   self.output_lock)
 
         input_manager = InputManager(self.data_buffer_in,
                                      self.data_condition_in)
@@ -271,50 +174,9 @@ class Syspce(object):
         control_manager = ControlManager(self.data_buffer_in,
                                          self.data_condition_in,
                                          console,
-                                         self.output_lock)
+                                         self.output_lock,
+                                         self.args)
         control_manager.start()
-
-        #init_message = Message(self.data_buffer_in, self.data_condition_in)
-
-        if self.config_['baseline_enabled']:
-            engine_manager.baseline_engine_enabled = True
-
-        if self.config_['search_filter']:
-            control_manager.search_event(self.config_['evtx_file'],
-                                      self.config_['sysmon_schema'],
-                                      self.config_['search_filter'],
-                                      self.config_['filter_attribute'],
-                                      Origin.SYSPCE_CORE)
-
-        elif self.config_['evtx_file']:
-            control_manager.read_evtx(self.config_['evtx_file'],
-                                      self.config_['detection_rules'],
-                                      self.config_['detection_macros'],
-                                      self.config_['baseline_rules'],
-                                      self.config_['sysmon_schema'],
-                                      Origin.SYSPCE_CORE)
-
-        elif self.config_['daemon']:
-            control_manager.read_eventlog(self.config_['detection_rules'],
-                                          self.config_['detection_macros'],
-                                          self.config_['baseline_rules'],
-                                          self.config_['sysmon_schema'],
-                                          Origin.SYSPCE_CORE)
-
-        elif self.config_['memdump'] and self.config_['profile']:
-            control_manager.read_memdump(self.config_['memdump'],
-                                         self.config_['profile'],
-                                         self.config_['detection_rules'],
-                                         self.config_['detection_macros'],
-                                         self.config_['baseline_rules'],
-                                         Origin.SYSPCE_CORE)
-        else:
-            control_manager.read_evtx('',
-                                      self.config_['detection_rules'],
-                                      self.config_['detection_macros'],
-                                      self.config_['baseline_rules'],
-                                      self.config_['sysmon_schema'],
-                                      Origin.SYSPCE_CORE)
 
         #blocking call
         console.run()

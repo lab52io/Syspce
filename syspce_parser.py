@@ -168,7 +168,7 @@ def get_action_from_id(id):
 	elif id == 110:
 		return "[A] PROCESS WAS OPENED BY"
 	else:
-		return "UNKNOW ACTION"
+		return ""
 
 def get_default_parameter_from_id(id):
 	

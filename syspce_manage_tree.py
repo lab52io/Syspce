@@ -2,7 +2,7 @@ import logging
 
 from syspce_info_tree import InfoTree
 from syspce_message import *
-
+from syspce_parser import get_action_from_id
 
 log = logging.getLogger('sysmoncorrelator')
 
@@ -25,6 +25,9 @@ class ManageTree(InfoTree):
 	def add_events_to_tree(self, list_of_events):
 
 		with self.processes_tree.tree_condition_in:
+			# adding more info to Sysmon events and deleting incorrect data
+			self.processes_tree.pre_process_events(list_of_events)
+
 			i=0
 			for event in list_of_events:
 				node = self.processes_tree.add_event_to_tree(event)
@@ -38,6 +41,32 @@ class ManageTree(InfoTree):
 		log.debug("%s %s terminated." % (self.name, self.ident))
 
 
+	def get_ptree_stats_str(self):
+		stats = '\nNo stats yet, reading data...\n'
+
+		for computer in self.processes_tree.stats:
+			stats = '\n\tStats for hostname ' + computer + '\n\n'
+			stats += '\tActions stats\n'
+			for id in self.processes_tree.stats[computer]['Actions']:
+				if id == '1':
+					action_name = '[A] PROCESS CREATED'
+				else:
+
+					action_name = get_action_from_id(int(id))
+					stats += '\t\t(' + id + ')\t' + action_name + ': ' 
+					stats += str(self.processes_tree.stats[computer]['Actions'][id])
+					stats += '\n'
+
+			stats += '\tOther stats\n'
+			for stat in self.processes_tree.stats[computer]:
+				# skip actions list
+				if stat != 'Actions':
+					stats += '\t\t' + stat + ':\t'
+					stats += str(self.processes_tree.stats[computer][stat])
+					stats += '\n'
+	
+
+		self.send_message(stats)
 
 
 

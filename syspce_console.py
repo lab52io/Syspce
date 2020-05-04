@@ -24,7 +24,7 @@ class Console(object):
 
 	def __init__(self, data_buffer_in,
 					   data_condition_in,
-					   output_lock, config):
+					   output_lock):
 
 		#threading.Thread.__init__(self)
 		self.data_buffer_in = data_buffer_in
@@ -34,8 +34,9 @@ class Console(object):
 		self.name = 'Console'
 		self.module_id = Module.CONSOLE
 		self.output_lock = output_lock	
-		self.config = config
-		'''
+		self.jobs()
+
+
 		self.console_history = FileHistory('history.dat')
 		self.session = PromptSession(history=self.console_history,
 									 auto_suggest=AutoSuggestFromHistory(),
@@ -48,19 +49,23 @@ class Console(object):
 					"stop_job",
 					"show_config",
 					"show_alerts",
+					"stats",
+					"set"
 					"exit",
 				],
 				meta_dict={
-					"run": "It keeps on monitoring Sysmon log from Eventlog",
+					"run": "Run actions based on syspce config",
 					"jobs": "Show current active Jobs",
-					"stop_job": "Stops a Job by job name",
+					"set": "[var] [value] Sets config parameters",
+					"stop_job": "[JobId] Stops a Job by job name",
 					"show_config": "Show current config",
 					"show_alerts": "Show alerts detected",
+					"stats": "List statistics for hostsnames",
 					"exit": "Bye bye",
 				},
 				ignore_case=True,
 				)
-		'''
+
 	def run(self):
 		''' Thread console main code'''
 
@@ -70,12 +75,12 @@ class Console(object):
 		while self._running:
 			
 		    try:
-				command = unicode(raw_input("SYSPCE#>"), 'utf-8')
-				'''
+				#command = unicode(raw_input("SYSPCE#>"), 'utf-8')
+
 				command = self.session.prompt('SYSPCE#>',
 								completer=self.syspce_completer,
 								complete_style=CompleteStyle.MULTI_COLUMN)
-				'''
+
 		    except ValueError, e:
 			    print "Input error: %s" % str(e)
 			    command = "exit"
@@ -85,16 +90,32 @@ class Console(object):
 				self.jobs()	
 		
 		    elif(re.match("^run", command)):
-				self.run_eventlog()
-				self.s_print('Runnig sysmon eventlog events monitoring')
-			
+				self.run_actions()
+				self.s_print('Runnig actions in config...')
+
+		    elif(re.match("^stats", command)):
+				self.stats()
+				self.s_print('Runnig stats')
+
 		    elif(("show commands" in command) or ("help" in command)):
 			    self.help()
+
+		    elif(re.match("^show_config", command)):
+				self.show_config()
 
 		    elif(re.match("^stop_job ", command)):
 				try:
 					job_name = command.split('stop_job ')[1].replace(' ','')
 					self.job_stop(job_name)
+				except Exception, e:
+					self.s_print('Command error %s' % e)
+
+		    elif(re.match("^set", command)):
+				try:
+					var = command.split(' ')[1]
+					value = command.split(' ')[2]
+					self.set_config(var, value)
+
 				except Exception, e:
 					self.s_print('Command error %s' % e)
 
@@ -118,10 +139,14 @@ class Console(object):
 	 
 		COMMANDS
 		--------
-		jobs 			 - Show current active Jobs
-		jobs stop [Name] - Stops a Job by job name
-		help 			 - List commads helps
-		exit|quit 		 - Bye bye. 
+		jobs              - Show current active Jobs
+		stop_job  [Name]  - Stops a Job by job name
+		set  [Var] [Name] - Stops a Job by job name
+		help              - List commads helps
+		show_config       - Show current config
+		show_alerts       - Show alerts detected
+		stats             - List statistics for hostnames
+		exit|quit         - Bye bye. 
 		'''
 		self.s_print(help)
 
@@ -168,21 +193,40 @@ class Console(object):
 						  Module.CONSOLE,
 						  [])
 
-	def run_eventlog(self):
-		''' It keeps on monitoring Sysmon log from Eventlog'''
+	def show_config(self):
+		''' List current active Config'''
 
-		jobs_message = Message(self.data_buffer_in, self.data_condition_in)
+		config_message = Message(self.data_buffer_in, self.data_condition_in)
 
-		jobs_message.send(MessageType.COMMAND,
-						  MessageSubType.READ_FROM_EVENTLOG,
+		config_message.send(MessageType.COMMAND,
+						  MessageSubType.SHOW_CONFIG,
 						  Module.CONSOLE,
 						  Module.CONTROL_MANAGER,
 						  Module.CONSOLE,
-						  [self.config['detection_rules'],
-						   self.config['detection_macros'],
-						   self.config['baseline_rules'],
-						   self.config['sysmon_schema'],
-						  ])
+						  [])
+	def stats(self):
+		''' List current active Jobs'''
+
+		stats_message = Message(self.data_buffer_in, self.data_condition_in)
+
+		stats_message.send(MessageType.COMMAND,
+						  MessageSubType.STATS,
+						  Module.CONSOLE,
+						  Module.CONTROL_MANAGER,
+						  Module.CONSOLE,
+						  [])
+
+	def run_actions(self):
+		''' Execute actions set in cofig'''
+
+		run_message = Message(self.data_buffer_in, self.data_condition_in)
+
+		run_message.send(MessageType.COMMAND,
+						  MessageSubType.RUN,
+						  Module.CONSOLE,
+						  Module.CONTROL_MANAGER,
+						  Module.CONSOLE,
+						  [])
 
 	def job_stop(self, name):
 		''' Stops a Job by name'''
@@ -195,6 +239,18 @@ class Console(object):
 							  Module.CONTROL_MANAGER,
 							  Module.CONSOLE,
 							  [name])
+
+	def set_config(self, var, value):
+		''' Sets configuration'''
+
+		set_config_message = Message(self.data_buffer_in, self.data_condition_in)
+
+		set_config_message.send(MessageType.COMMAND,
+							    MessageSubType.SET_CONFIG,
+							    Module.CONSOLE,
+							    Module.CONTROL_MANAGER,
+							    Module.CONSOLE,
+							    [var, value])
 	## ADDITIONAL METHODS
 	#####################
 

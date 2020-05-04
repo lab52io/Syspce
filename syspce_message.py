@@ -26,6 +26,10 @@ class MessageSubType(Enum):
     SHOW_JOBS = 7
     STOP_JOB = 8
     JOB_DONE = 9
+    STATS = 10
+    SHOW_CONFIG = 11
+    SET_CONFIG = 12
+    RUN = 13
 
 class JobType(Enum):
     UNKNOW = 0

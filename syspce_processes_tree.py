@@ -16,6 +16,7 @@ class ProcessesTree(object):
 		self.detection_macros = []
 		self.actions_matched = {}
 		self.alerts_notified = []
+		self.stats = {}
 
 	def set_macros(self, detection_macros):
 		self.detection_macros = detection_macros
@@ -57,8 +58,10 @@ class ProcessesTree(object):
 					events_list[i]["ParentProcessId"] + \
 				    events_list[i]["computer"] + \
 					events_list[i]["UtcTime"])
-
-				events_list[i]['SyspceId'] = result.hexdigest()
+				
+				#Adding SyspceID
+				SyspceId = {"SyspceId": result.hexdigest()}	
+				events_list[i].update(SyspceId)
 
 
 			i += 1
@@ -66,32 +69,53 @@ class ProcessesTree(object):
 		return events_list
 
 	def add_event_to_tree(self, req):
-		''' Adds one event to processes tree'''		
+		''' Adds one event to processes tree'''	
+		
 		node = None
-
-		if not req['computer'] in self.processes_tree:
-			self.processes_tree[req['computer']] = {}
-
-		computer_ptree = self.processes_tree[req['computer']]
+		host_name = req['computer']
 		ProcessGuid = req['ProcessGuid']
+		EventId = str(req['idEvent'])
+
+		if not host_name in self.processes_tree:
+			self.processes_tree[host_name] = {}
+			self.stats[host_name] = {'Actions':{'1':0, '2':0, '3':0, '5':0,'7':0,
+									 '8':0,'9':0,'10':0,'11':0,'12':0,
+									 '13':0,'14':0,'15':0,'17':0,'18':0,
+									 '22':0,'100':0,'108':0,'110':0},
+									 'MergedProcesses': 0
+									 }
+
+		computer_ptree = self.processes_tree[host_name]
+		
+		#Updating Stats
+
+		if self.stats[host_name]['Actions'].has_key(EventId):
+			self.stats[host_name]['Actions'][EventId] += 1
 
 		# Now processin message type 1 or other type 3,5...
 		# Message type 1 , used for building tree's skeleton 
 		if req['idEvent'] == 1: 
-			
-			# Tree Node with process datails
-			node = Node_(req)
 
-			#Lo asignamos a la root de ese equipo ya que no existia con 
-			#anterioridad el host
-			node.acciones['1'].append(req)
+			# Process node already in tree
+			if computer_ptree.has_key(ProcessGuid):
+				node = computer_ptree[ProcessGuid]
+
+				# node found , just update
+				node.acciones['1'][0].update(req)
+				self.stats[host_name]['MergedProcesses'] += 1
+			# new entry
+			else:
+				# Tree Node with process datails
+				node = Node_(req)
+				node.acciones['1'].append(req)
+
+			#Adding node to tree
 			computer_ptree[ProcessGuid] = node
-	
 
 		# Es otra accion diferente a la creacion de un proceso
 		else:
 
-			if (not req['computer'] in self.processes_tree):
+			if (not host_name in self.processes_tree):
 				return node
 	
 			# Adding now normal proccess action if exists
@@ -138,12 +162,18 @@ class ProcessesTree(object):
 
 		return node
 
+	def get_node_by_syspceid(self, computer_ptree, SyspceId):
+
+		for pnode in computer_ptree:
+			if pnode.acciones['1'][0]['SyspceId'] == SyspceId:
+				return pnode
+		return None
+
+
 	def get_candidates(self, ptree, process_list, filter_dicc):
 		''' Return a proccesses that match event criteria'''
 
 		matchlist = []
-
-
 
 		for process in process_list:
 			match = True
