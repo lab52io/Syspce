@@ -72,8 +72,7 @@ class InputEvtx(Input):
 				req_parsed = {}
 				if event.EventID in self.EVENTLOG_EVENTID:
 					req_parsed = parse_eventlog_IDx(self.schema,
-													event,
-													server)
+													event)
 					try:
 						actions_list = get_list_of_actions(req_parsed)
 					except Exception, e:

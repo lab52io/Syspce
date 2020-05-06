@@ -1,6 +1,6 @@
 import logging
 import xml.etree.ElementTree as ET
-
+import re
 
 log = logging.getLogger('sysmoncorrelator')
 
@@ -26,8 +26,8 @@ def get_sysmon_xml_schema(xmlfile):
 	
 	return events
 
-def parse_eventlog_IDx(schema, event, server):
-	event_details = {'computer': server, 'idEvent': event.EventID}
+def parse_eventlog_IDx(schema, event):
+	event_details = {'computer': '', 'idEvent': event.EventID}
 	message = event.StringInserts
 	
 	i = 0
@@ -50,16 +50,26 @@ def parse_eventlog_IDx(schema, event, server):
 			log.error("     #python sysmonCorrelator.py -s schemaVersion.xml")
 			exit(1)
 		i += 1
-		
+
+	event_details['computer'] = get_machine_guid(event_details['ProcessGuid'])
+
 	return event_details
 
-'''
-	There are special events that we need to manage as two diferent actions, 
-	associated to Source and target Image process nodes:
-	Event 8, 10, 1 -> 108, 110, 100
-	So if we find an ID 8 we need to return both 8 and the new one 108
-'''
+
+def get_machine_guid(ProcessGuid):
+	''' Function for getting MachineGUID from ProcessGUID
+	'''
+	trunk_guid = re.match(r"\{(\w{8})", ProcessGuid)
+	return trunk_guid.group(1)
+
+
 def get_list_of_actions(action):
+	'''
+		There are special events that we need to manage as two diferent actions, 
+		associated to Source and target Image process nodes:
+		Event 8, 10, 1 -> 108, 110, 100
+		So if we find an ID 8 we need to return both 8 and the new one 108
+	'''
 	action_list = [action]
 	
 	newreq = action.copy()
@@ -111,6 +121,8 @@ def get_list_of_actions(action):
 		newreq['ChildCommandLine'] = action['CommandLine']
 		newreq['ChildImage'] = action['Image']
 		newreq['ProcessGuid'] = action['ParentProcessGuid']
+		newreq['ProcessId'] = action['ParentProcessId']
+		newreq['Image'] = action['ParentImage']
 		newreq['UtcTime'] = action['UtcTime']
 		action_list.append(newreq)
 		
@@ -161,6 +173,8 @@ def get_action_from_id(id):
 		return "[A] PIPE CONNECTED"
 	elif id == 22:
 		return "[A] DNS QUERY"
+	elif id == 23:
+		return "[A] FILE DELETE"
 	elif id == 100:
 		return "[A] CHILD PROCESS CREATED" 
 	elif id == 108:
@@ -204,6 +218,8 @@ def get_default_parameter_from_id(id):
 		return "PipeName"
 	elif id == 22:
 		return "QueryName"
+	elif id == 23:
+		return "TargetFilename"
 	elif id == 100:
 		return "ChildImage"
 	elif id == 108:

@@ -152,7 +152,7 @@ class ControlManager(Manager_):
 								   [filepath, schema])
 
 		read_evtx_job.configure_EM(MessageType.DATAIN,
-								   MessageSubType.DETECT,
+								   MessageSubType.DETECT_SINGLE,
 								   [detection_rules, baseline_rules,
 									detection_macros])
 
@@ -178,7 +178,7 @@ class ControlManager(Manager_):
 								      [filepath, profile])
 
 		read_memdump_job.configure_EM(MessageType.DATAIN,
-								      MessageSubType.DETECT,
+								      MessageSubType.DETECT_SINGLE,
 								      [detection_rules, baseline_rules,
 									  detection_macros])
 
@@ -230,7 +230,7 @@ class ControlManager(Manager_):
 									   [schema])
 
 		read_eventlog_job.configure_EM(MessageType.DATAIN,
-									   MessageSubType.DETECT,
+									   MessageSubType.DETECT_DAEMON,
 									   [detection_rules, baseline_rules,
 										detection_macros])
 
@@ -300,7 +300,7 @@ class ControlManager(Manager_):
 		
 		error = False
 
-		#configure engines 
+		#configure engines Enable/disable
 		self.send_message(Module.ENGINE_MANAGER ,
 						  MessageSubType.SET_CONFIG,
 						  Module.CONTROL_MANAGER,

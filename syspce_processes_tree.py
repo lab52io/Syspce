@@ -2,6 +2,7 @@ import logging
 import threading
 import datetime
 import hashlib
+import re
 
 from syspce_parser import get_image_fileName
 
@@ -21,6 +22,17 @@ class ProcessesTree(object):
 	def set_macros(self, detection_macros):
 		self.detection_macros = detection_macros
 
+	def get_syspce_id(self, guid, pid, Image):
+		'''This method is used for calculate new correlation id, 
+		providing volatility compatibility. Sysmon 11 adds 
+		random generation for 8-12 bytes of ProcessGuid,
+		token ID isn't used anymore :(.
+		'''
+		trunk_guid = re.match(r"\{(\w{8}-\w{4}-\w{4}-)", guid)
+		trunk_guid = trunk_guid.group(1)
+
+		return hashlib.md5(trunk_guid + pid + Image).hexdigest()
+
 	def pre_process_events(self, events_list):
 		'''Method for adding more info to Sysmon events'''
 
@@ -34,9 +46,68 @@ class ProcessesTree(object):
 			# Adding new atribute alert to all actions, used later for presenting
 			#results
 			events_list[i]['Alert'] = False
-
-			if events_list[i]['idEvent'] == 1: 
 			
+			'''
+			#Changing ProcessGUID algorithm due to correlation with volatility
+			if events_list[i].has_key('ProcessId'):
+				events_list[i]['ProcessGuidOrig'] = \
+								events_list[i]['ProcessGuid']
+
+				events_list[i]['ProcessGuid'] = self.get_syspce_id(
+												events_list[i]['ProcessGuid'],
+												events_list[i]['ProcessId'],
+												events_list[i]['Image'])
+
+			# we do the same for event 100 with childProcessId
+			
+			if events_list[i].has_key('ChildProcessId'):
+				events_list[i]['ChildProcessGuidOrig'] = \
+								events_list[i]['ChildProcessGuid']
+
+				events_list[i]['ChildProcessGuid'] = \
+								self.get_syspce_id(
+									 events_list[i]['ChildProcessGuid'],
+									 events_list[i]['ChildProcessId'],
+									 events_list[i]['ChildImage'])
+
+			# we do the same for event 110 with childProcessId
+			
+			if events_list[i].has_key('SourceProcessId'):
+				events_list[i]['SourceProcessGuidOrig'] = \
+								events_list[i]['SourceProcessGuid']
+
+				events_list[i]['SourceProcessGuid'] = \
+								self.get_syspce_id(
+									 events_list[i]['SourceProcessGuid'],
+									 events_list[i]['SourceProcessId'],
+									 events_list[i]['SourceImage'])	
+
+			# we do the same for event 110 with childProcessId
+			
+			if events_list[i].has_key('TargetProcessId'):
+				events_list[i]['TargetProcessGuidOrig'] = \
+								events_list[i]['TargetProcessGuid']
+
+				events_list[i]['TargetProcessGuid'] = \
+								self.get_syspce_id(
+									 events_list[i]['TargetProcessGuid'],
+									 events_list[i]['TargetProcessId'],
+									 events_list[i]['TargetImage'])
+
+			# we do the same for parent process guid
+			if events_list[i].has_key('ParentProcessId'):
+				events_list[i]['ProcessGuidOriginal'] = \
+									 events_list[i]['ParentProcessGuid']
+
+				events_list[i]['ParentProcessGuid'] = self.get_syspce_id(
+									 events_list[i]['ParentProcessGuid'],
+									 events_list[i]['ParentProcessId'],
+									 events_list[i]['ParentImage'])
+
+			'''
+			#Adding new attributes to EventID 1
+			if events_list[i]['idEvent'] == 1: 
+
 				ParentImage	= events_list[i]['ParentImage']		
 				ParentProcessId	= events_list[i]['ParentProcessId']	
 
@@ -52,17 +123,6 @@ class ProcessesTree(object):
 				# Adding new attribute process TTL
 				process_ttl = {"ProcessTTL": "Running"}	
 				events_list[i].update(process_ttl)
-
-				# Adding syspce ID for correlate with volatility
-				result = hashlib.md5(events_list[i]["ProcessId"] + \
-					events_list[i]["ParentProcessId"] + \
-				    events_list[i]["computer"] + \
-					events_list[i]["UtcTime"])
-				
-				#Adding SyspceID
-				SyspceId = {"SyspceId": result.hexdigest()}	
-				events_list[i].update(SyspceId)
-
 
 			i += 1
 
@@ -81,8 +141,12 @@ class ProcessesTree(object):
 			self.stats[host_name] = {'Actions':{'1':0, '2':0, '3':0, '5':0,'7':0,
 									 '8':0,'9':0,'10':0,'11':0,'12':0,
 									 '13':0,'14':0,'15':0,'17':0,'18':0,
-									 '22':0,'100':0,'108':0,'110':0},
-									 'MergedProcesses': 0
+									 '22':0,'23':0,'100':0,'108':0,'110':0},
+									 'MergedProcesses': 0,
+									 'DroppedEvents': 0,
+									 'TotalEvents': 0,
+									 'TotalEnginesOn': 0,
+									 'RulesExecTime':{}
 									 }
 
 		computer_ptree = self.processes_tree[host_name]
@@ -92,6 +156,8 @@ class ProcessesTree(object):
 		if self.stats[host_name]['Actions'].has_key(EventId):
 			self.stats[host_name]['Actions'][EventId] += 1
 
+		self.stats[host_name]['TotalEvents'] += 1
+
 		# Now processin message type 1 or other type 3,5...
 		# Message type 1 , used for building tree's skeleton 
 		if req['idEvent'] == 1: 
@@ -99,9 +165,13 @@ class ProcessesTree(object):
 			# Process node already in tree
 			if computer_ptree.has_key(ProcessGuid):
 				node = computer_ptree[ProcessGuid]
-
+				print "Original"
+				print node.acciones['1'][0]
 				# node found , just update
 				node.acciones['1'][0].update(req)
+				print "Machacado"
+				print req
+				self.stats[host_name]['DroppedEvents'] += 1
 				self.stats[host_name]['MergedProcesses'] += 1
 			# new entry
 			else:
@@ -334,7 +404,8 @@ class Node_(object):
 		self.acciones = {'1':[],'2':[], '3':[], '5':[],'7':[],
 						'8':[],'9':[],'10':[],'11':[],
 						'12':[],'13':[],'14':[],'15':[],
-						'17':[],'18':[],'22':[],'100':[],'108':[],'110':[]}
+						'17':[],'18':[],'22':[],'23':[],'100':[],
+						'108':[],'110':[]}
 
 		#key ChildProcessGuid
 		self.childs = self.acciones['100']

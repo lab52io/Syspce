@@ -136,10 +136,22 @@ class Manager_(threading.Thread):
 		for job_name in jobs_list:
 			all_modules_done = True
 
+			'''
 			for module in self.modules_list[job_name]:
 				if module.is_alive():
 					log.debug("[%s] module  %s alive" % (self.name,module.name))
 					all_modules_done = False
+			'''
+
+			i = 0
+			while i < len(self.modules_list[job_name]):
+				module = self.modules_list[job_name][i]
+				if module.is_alive():
+					log.debug("[%s] module  %s alive" % (self.name,module.name))
+					all_modules_done = False
+					i += 1
+				else:
+					self.modules_list[job_name].pop(i)
 
 			if all_modules_done:
 				log.debug("[%s] All modules from %s did their work" % (self.name,job_name))
@@ -151,3 +163,13 @@ class Manager_(threading.Thread):
 					#Inform that all done to the Job module 
 					self.send_message(job_name, MessageSubType.JOB_DONE,
 									  self.module_id, [])
+
+	def daemon_module_executing(self, job_name):
+		if self.modules_list.has_key(job_name):
+			for module in self.modules_list[job_name]:
+				if module.is_alive() and module.daemon_:
+					return True
+		else:
+			print "No existe la clave %s en:" % job_name
+			print self.modules_list
+		return False

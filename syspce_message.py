@@ -21,7 +21,7 @@ class MessageSubType(Enum):
     READ_FROM_FILE = 2
     READ_FROM_EVENTLOG = 3
     FILTER_DATA = 4
-    DETECT = 5
+    DETECT_SINGLE = 5
     READ_FROM_MEMDUMP = 6
     SHOW_JOBS = 7
     STOP_JOB = 8
@@ -30,6 +30,8 @@ class MessageSubType(Enum):
     SHOW_CONFIG = 11
     SET_CONFIG = 12
     RUN = 13
+    DETECT_DAEMON = 14
+    DETECT = 15
 
 class JobType(Enum):
     UNKNOW = 0

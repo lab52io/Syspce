@@ -9,7 +9,7 @@ log = logging.getLogger('sysmoncorrelator')
 
 class Engine(threading.Thread):
     def __init__(self, data_buffer_in, data_condition_in,
-				 src):
+				 src, daemon):
 
 		threading.Thread.__init__(self)
 		self.data_buffer_in = data_buffer_in
@@ -19,6 +19,7 @@ class Engine(threading.Thread):
 		self.module_id = -1
 		self.origin = Module.ENGINE_MANAGER
 		self.src = src
+		self.daemon_ = daemon
 
 
     def run(self):

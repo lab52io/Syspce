@@ -17,11 +17,11 @@ log = logging.getLogger('sysmoncorrelator')
 class BaselineEngine(Engine):
 	def __init__(self, data_buffer_in, data_condition_in,
 				 processes_tree, src,
-				 baseline_rules, baseline_macros, events):
+				 baseline_rules, baseline_macros, events, daemon):
 
 		Engine.__init__(self, data_buffer_in,
 					   data_condition_in,
-					   src)	
+					   src, daemon)	
 		
 		self.name = 'Baseline Engine'
 

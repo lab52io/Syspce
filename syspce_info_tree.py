@@ -19,7 +19,8 @@ class InfoTree(threading.Thread):
 		self.module_id = -1
 		self.origin = Module.ENGINE_MANAGER
 		self.src = src
-		
+		self.daemon_ = False
+
 		# variable method threading
 		self._target = None
 		self._args = None

@@ -1,5 +1,6 @@
 import logging
 import hashlib
+import time
 from syspce_bucket import Bucket
 from syspce_bucket import BucketSystem
 from syspce_engine import Engine
@@ -16,7 +17,7 @@ log = logging.getLogger('sysmoncorrelator')
 class HierarchyEngine(Engine):
 	def __init__(self, data_buffer_in, data_condition_in,
 				 processes_tree, src, detection_rules,
-				 detection_macros):
+				 detection_macros, daemon):
 
 		# Detection rules vector
 		# Process search is based on  "contains" filter and case insensitive.
@@ -24,7 +25,7 @@ class HierarchyEngine(Engine):
 
 		Engine.__init__(self, data_buffer_in,
 					   data_condition_in,
-					   src)
+					   src, daemon)
 
 		self.name = 'Hierarchy Engine'
 
@@ -45,8 +46,18 @@ class HierarchyEngine(Engine):
 		
 		self.total_alerts = 0
 
-
 	def do_action(self):
+
+		# if this engine is configured as daemon run always
+		if self.daemon_:
+			while self._running:
+				#Wait time to start again detection
+				time.sleep(10)
+				self.start_engine()	
+		else:
+			self.start_engine()
+
+	def start_engine(self):
 		out = Output_()
 		for rule in self.detection_rules:
 		
@@ -54,12 +65,15 @@ class HierarchyEngine(Engine):
 			self.p_tree.actions_matched = {}
 			
 			with self.p_tree.tree_condition_in:
-				log.debug("%s Running..." % (self.name))
+				log.debug("%s Running in daemon %s..." % (self.name, 
+														  self.daemon_))
 
 				# processing each rule 
 				anom_res = self._process_rule(rule)
+
 				self.p_tree.tree_condition_in.notify_all()
-			
+
+		
 			if anom_res:
 				# presenting the results
 				# logfile + eventlog
@@ -76,8 +90,9 @@ class HierarchyEngine(Engine):
 			if not self._running:
 				break
 
-		self.terminate()
-		log.debug("%s Terminated." % (self.name))
+		if self.daemon_ == False:
+			self.terminate()
+			log.debug("%s Terminated." % (self.name))
 
 	def _process_rule(self, rule):
 
@@ -85,6 +100,9 @@ class HierarchyEngine(Engine):
 	
 		#recorremos cada una de las maquinas
 		for machine in self.p_tree.processes_tree:
+			# Time Stats execution
+			start = time.time()
+
 			ptree = self.p_tree.processes_tree[machine]
 
 			#first element to process
@@ -171,7 +189,11 @@ class HierarchyEngine(Engine):
 							self.p_tree.setAlertToAction(pchain, True)
 					else:
 						log.debug("Alert already notified %s" % anom_id)
-				
+
+			elapsed_time = (time.time() - start)
+			self.p_tree.stats[machine]['RulesExecTime'][rule['RuleID']] = elapsed_time
+			self.p_tree.stats[machine]['TotalEnginesOn'] += elapsed_time
+					
 		return res	
 
 	def get_process_chain(self, src_process_guid, machine):
