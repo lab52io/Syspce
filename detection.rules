@@ -306,8 +306,19 @@
 				}
 			}
 		]
+	},
+	{
+		"RuleID": 28,
+		"Rulename": "SeDebugPrivilegeEnabled in user session",
+		"Content": [
+			{
+				"1": {
+					"SeDebugPrivilegeEnabled": "True",
+					"-TerminalSessionId": "0"
+				}
+			}
+		]
 	}
-
 
 ]
 

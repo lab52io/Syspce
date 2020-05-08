@@ -11,11 +11,11 @@ class FilterEngine(Engine):
 				 data_condition_in, src,
 				 search_filter,
 				 filter_attribute,
-				 events):
+				 events, daemon):
 
 		Engine.__init__(self, data_buffer_in,
 					   data_condition_in,
-					   src)
+					   src, daemon)
 
 		self.events = events
 		self.search_filter = search_filter

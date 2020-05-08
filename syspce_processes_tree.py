@@ -31,7 +31,7 @@ class ProcessesTree(object):
 		trunk_guid = re.match(r"\{(\w{8}-\w{4}-\w{4}-)", guid)
 		trunk_guid = trunk_guid.group(1)
 
-		return hashlib.md5(trunk_guid + pid + Image).hexdigest()
+		return hashlib.md5(trunk_guid + pid + Image.lower()).hexdigest()
 
 	def pre_process_events(self, events_list):
 		'''Method for adding more info to Sysmon events'''
@@ -47,64 +47,70 @@ class ProcessesTree(object):
 			#results
 			events_list[i]['Alert'] = False
 			
-			'''
-			#Changing ProcessGUID algorithm due to correlation with volatility
-			if events_list[i].has_key('ProcessId'):
-				events_list[i]['ProcessGuidOrig'] = \
-								events_list[i]['ProcessGuid']
+			# Volatility input has 'Source': 'Memory' key
+			# and processGUI is in md5 format
+			if not events_list[i].has_key('Source'):
 
-				events_list[i]['ProcessGuid'] = self.get_syspce_id(
-												events_list[i]['ProcessGuid'],
-												events_list[i]['ProcessId'],
-												events_list[i]['Image'])
+				#Changing ProcessGUID algorithm due to correlation with volatility
+				if events_list[i].has_key('ProcessId'):
+					events_list[i]['ProcessGuidOrig'] = \
+									events_list[i]['ProcessGuid']
 
-			# we do the same for event 100 with childProcessId
+					events_list[i]['ProcessGuid'] = self.get_syspce_id(
+													events_list[i]['ProcessGuid'],
+													events_list[i]['ProcessId'],
+													events_list[i]['Image'])
+
+				# we do the same for event 100 with childProcessId
 			
-			if events_list[i].has_key('ChildProcessId'):
-				events_list[i]['ChildProcessGuidOrig'] = \
-								events_list[i]['ChildProcessGuid']
+				if events_list[i].has_key('ChildProcessId'):
+					events_list[i]['ChildProcessGuidOrig'] = \
+									events_list[i]['ChildProcessGuid']
 
-				events_list[i]['ChildProcessGuid'] = \
-								self.get_syspce_id(
-									 events_list[i]['ChildProcessGuid'],
-									 events_list[i]['ChildProcessId'],
-									 events_list[i]['ChildImage'])
+					events_list[i]['ChildProcessGuid'] = \
+									self.get_syspce_id(
+										 events_list[i]['ChildProcessGuid'],
+										 events_list[i]['ChildProcessId'],
+										 events_list[i]['ChildImage'])
 
-			# we do the same for event 110 with childProcessId
+				# we do the same for event 110 with childProcessId
 			
-			if events_list[i].has_key('SourceProcessId'):
-				events_list[i]['SourceProcessGuidOrig'] = \
-								events_list[i]['SourceProcessGuid']
+				if events_list[i].has_key('SourceProcessId'):
+					events_list[i]['SourceProcessGuidOrig'] = \
+									events_list[i]['SourceProcessGuid']
 
-				events_list[i]['SourceProcessGuid'] = \
-								self.get_syspce_id(
-									 events_list[i]['SourceProcessGuid'],
-									 events_list[i]['SourceProcessId'],
-									 events_list[i]['SourceImage'])	
+					events_list[i]['SourceProcessGuid'] = \
+									self.get_syspce_id(
+										 events_list[i]['SourceProcessGuid'],
+										 events_list[i]['SourceProcessId'],
+										 events_list[i]['SourceImage'])	
 
-			# we do the same for event 110 with childProcessId
+				# we do the same for event 110 with childProcessId
 			
-			if events_list[i].has_key('TargetProcessId'):
-				events_list[i]['TargetProcessGuidOrig'] = \
-								events_list[i]['TargetProcessGuid']
+				if events_list[i].has_key('TargetProcessId'):
+					events_list[i]['TargetProcessGuidOrig'] = \
+									events_list[i]['TargetProcessGuid']
 
-				events_list[i]['TargetProcessGuid'] = \
-								self.get_syspce_id(
-									 events_list[i]['TargetProcessGuid'],
-									 events_list[i]['TargetProcessId'],
-									 events_list[i]['TargetImage'])
+					events_list[i]['TargetProcessGuid'] = \
+									self.get_syspce_id(
+										 events_list[i]['TargetProcessGuid'],
+										 events_list[i]['TargetProcessId'],
+										 events_list[i]['TargetImage'])
 
-			# we do the same for parent process guid
-			if events_list[i].has_key('ParentProcessId'):
-				events_list[i]['ProcessGuidOriginal'] = \
-									 events_list[i]['ParentProcessGuid']
+				# we do the same for parent process guid
+				if events_list[i].has_key('ParentProcessId'):
+					events_list[i]['ProcessGuidOriginal'] = \
+										 events_list[i]['ParentProcessGuid']
 
-				events_list[i]['ParentProcessGuid'] = self.get_syspce_id(
-									 events_list[i]['ParentProcessGuid'],
-									 events_list[i]['ParentProcessId'],
-									 events_list[i]['ParentImage'])
+					events_list[i]['ParentProcessGuid'] = self.get_syspce_id(
+										 events_list[i]['ParentProcessGuid'],
+										 events_list[i]['ParentProcessId'],
+										 events_list[i]['ParentImage'])
 
-			'''
+			#else:
+			#	print "Image:" + events_list[i]['Image']
+			#	print "Pid:" + events_list[i]['ProcessId']
+
 			#Adding new attributes to EventID 1
 			if events_list[i]['idEvent'] == 1: 
 
@@ -165,16 +171,38 @@ class ProcessesTree(object):
 			# Process node already in tree
 			if computer_ptree.has_key(ProcessGuid):
 				node = computer_ptree[ProcessGuid]
-				print "Original"
-				print node.acciones['1'][0]
+				#print "Original"
+				#print node.acciones['1'][0]
 				# node found , just update
-				node.acciones['1'][0].update(req)
-				print "Machacado"
-				print req
-				self.stats[host_name]['DroppedEvents'] += 1
-				self.stats[host_name]['MergedProcesses'] += 1
+				
+				#print "Machacado"
+				#print req
+				
+				# Volatility input has 'Source': 'Memory' key, 
+				# evtx don't have it
+				# Collision dont update
+				if (not node.acciones['1'][0].has_key('Source') and \
+				   not req.has_key('Source')) or \
+				   (node.acciones['1'][0].has_key('Source') and \
+				   req.has_key('Source')):
+
+					self.stats[host_name]['DroppedEvents'] += 1
+				else:
+					self.stats[host_name]['MergedProcesses'] += 1
+					#print "CUADRAN origin"
+					#print node.acciones['1'][0]
+
+					#print "CUADRAN memoria"
+					#print req
+					#print "\n"
+					node.acciones['1'][0].update(req)
+
 			# new entry
 			else:
+				if req.has_key('Source'):
+					print "NOOOO CUADRA"
+					print req
+					print "\n"
 				# Tree Node with process datails
 				node = Node_(req)
 				node.acciones['1'].append(req)

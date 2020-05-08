@@ -138,7 +138,7 @@ class InputVolatility(Input):
 			firstpart, secondpart = hex_string[:len(hex_string)/2], hex_string[len(hex_string)/2:]
 
 			if pslist1['Image'] != "" and pslist1['ProcessId'] != "":
-				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'])
+				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
 			else:
 				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
 

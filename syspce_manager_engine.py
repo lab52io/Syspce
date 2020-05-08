@@ -88,7 +88,7 @@ class EngineManager(Manager_):
 							   src,
 							   search_filter,
 							   filter_attribute,
-							   events)
+							   events, False)
 
 		filter_event.start()
 		self.add_working_module(src, [filter_event])
