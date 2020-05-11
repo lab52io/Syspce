@@ -119,7 +119,7 @@ class InputVolatility(Input):
 			pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
 			pslist1['TerminalSessionId'] = str(int(process.SessionId))
 			## Extra 
-			pslist1['ExistTime'] = str(process.ExitTime)
+			pslist1['ExitTime'] = str(process.ExitTime)
 			pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
 			pslist1['IsWow64'] = str(process.IsWow64)
 			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
@@ -129,8 +129,13 @@ class InputVolatility(Input):
 			pslist1['ParentCommandLine'] = ""
 			pslist1['ParentProcessGuid'] = ""
 
-			
+			#Exceptions 
+			if pslist1['ProcessId'] == '4':
+				pslist1['Image'] = "System"
+			if pslist1['Image'].find("\\SystemRoot\\System32\\smss.exe"):
+				pslist['Image'] = "C:\\Windows\\System32\\smss.exe"
 
+			#Building processguid to merge events with Sysmon
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S UTC+%f')
 			epoch = datetime.datetime.utcfromtimestamp(0)
 			t = (date_time_obj-epoch).total_seconds()
@@ -142,12 +147,11 @@ class InputVolatility(Input):
 			else:
 				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
 
-			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+pslist1["UtcTime"])
+			syspceid_datetime = datetime.datetime.strftime('%Y-%m-%d %H:%M:%S')
+			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+syspceid_datetime)
 			pslist1['ProcessGuid'] = result2.hexdigest()
 			pslist1['SyspceId'] = result.hexdigest()
 
-			vprocess.append(pslist1)
-			pslist1 = {}
 			modules = ""
 
 			## Modules 
@@ -156,6 +160,8 @@ class InputVolatility(Input):
 					modules = modules + "," + str(module.FullDllName)
 
 			pslist1['modules'] = modules
+			vprocess.append(pslist1)
+			pslist1 = {}
 
 		for p in vprocess:
 			for x in vprocess:
