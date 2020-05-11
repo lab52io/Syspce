@@ -132,7 +132,7 @@ class InputVolatility(Input):
 			#Exceptions 
 			if pslist1['ProcessId'] == '4':
 				pslist1['Image'] = "System"
-			if pslist1['Image'].find("\\SystemRoot\\System32\\smss.exe"):
+			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 
 			#Building processguid to merge events with Sysmon
@@ -147,7 +147,7 @@ class InputVolatility(Input):
 			else:
 				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
 
-			syspceid_datetime = datetime.datetime.strftime('%Y-%m-%d %H:%M:%S')
+			syspceid_datetime = date_time_obj.strftime('%Y-%m-%d %H:%M:%S')
 			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+syspceid_datetime)
 			pslist1['ProcessGuid'] = result2.hexdigest()
 			pslist1['SyspceId'] = result.hexdigest()
