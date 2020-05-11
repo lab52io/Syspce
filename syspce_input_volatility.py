@@ -133,7 +133,7 @@ class InputVolatility(Input):
 			if pslist1['ProcessId'] == '4':
 				pslist1['Image'] = "System"
 			if pslist1['Image'].find("\\SystemRoot\\System32\\smss.exe"):
-				pslist['Image'] = "C:\\Windows\\System32\\smss.exe"
+				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 
 			#Building processguid to merge events with Sysmon
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S UTC+%f')
