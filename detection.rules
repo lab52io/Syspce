@@ -10,7 +10,7 @@
 
 	{
 		"RuleID": 2,
-		"Rulename": "Suspicious lsass childs becouse threat created",
+		"Rulename": "Suspicious lsass child and thread remotely created",
 		"Content": [
 			{
 				"110": { "Image": "lsass" },
@@ -278,7 +278,12 @@
 		"RuleID": 25,
 		"Rulename": "SeBackupPrivilege is Present (testing purposes)",
 		"Content": [
-			{ "1": { "SeBackupPrivilegePresent": "True" } }
+			{
+				"1": {
+					"SeBackupPrivilegePresent": "True",
+					"Image": "lsass.exe"
+				}
+			}
 		]
 	},
 
@@ -314,12 +319,27 @@
 			{
 				"1": {
 					"SeDebugPrivilegeEnabled": "True",
+					"-TerminalSessionId": "0",
+					"-Image": "NORMAL_DEBUG_PRIV_ENABLED_IN_USER_SESSION"
+				}
+			}
+		]
+	},
+	{
+		"RuleID": 29,
+		"Rulename": "User process with SeDebugPrivilegeEnabled creates a remote thread",
+		"Content": [
+			{
+				"1": {
+					"SeDebugPrivilegeEnabled": "True",
 					"-TerminalSessionId": "0"
+				},
+				"8": {
+					"TargetImage": "*"
 				}
 			}
 		]
 	}
-
 ]
 
 

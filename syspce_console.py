@@ -50,7 +50,8 @@ class Console(object):
 					"show_config",
 					"show_alerts",
 					"stats",
-					"set"
+					"set",
+					"info",
 					"exit",
 				],
 				meta_dict={
@@ -61,6 +62,7 @@ class Console(object):
 					"show_config": "Show current config",
 					"show_alerts": "Show alerts detected",
 					"stats": "List statistics for hostsnames",
+					"info": "[pid] [eventid] [computer] Show eventid details from a process",
 					"exit": "Bye bye",
 				},
 				ignore_case=True,
@@ -119,6 +121,15 @@ class Console(object):
 				except Exception, e:
 					self.s_print('Command error %s' % e)
 
+		    elif(re.match("^info", command)):
+				try:
+					pid = command.split(' ')[1]
+					eventid = command.split(' ')[2]
+					self.info_eventid(pid, eventid)
+
+				except Exception, e:
+					self.s_print('Command error %s' % e)
+
 		    elif(command == "exit" or command == "quit"):
 				self.terminate()
 				self.quit()
@@ -139,14 +150,15 @@ class Console(object):
 	 
 		COMMANDS
 		--------
-		jobs              - Show current active Jobs
-		stop_job  [Name]  - Stops a Job by job name
-		set  [Var] [Name] - Stops a Job by job name
-		help              - List commads helps
-		show_config       - Show current config
-		show_alerts       - Show alerts detected
-		stats             - List statistics for hostnames
-		exit|quit         - Bye bye. 
+		jobs                            - Show current active Jobs
+		stop_job  <Name>                - Stops a Job by job name
+		set  <Var> <Name>               - Stops a Job by job name
+		info <pid> [eventid] [computer] - Show eventid details from a process
+		help                            - List commads helps
+		show_config                     - Show current config
+		show_alerts                     - Show alerts detected
+		stats                           - List statistics for hostnames
+		exit|quit                       - Bye bye. 
 		'''
 		self.s_print(help)
 
@@ -239,6 +251,18 @@ class Console(object):
 							  Module.CONTROL_MANAGER,
 							  Module.CONSOLE,
 							  [name])
+
+	def info_eventid(self, pid, eventid=1, computer=None ):
+		''' Show eventId details'''
+
+		info_event_message = Message(self.data_buffer_in, self.data_condition_in)
+
+		info_event_message.send(MessageType.COMMAND,
+							  MessageSubType.INFO_EVENTID,
+							  Module.CONSOLE,
+							  Module.CONTROL_MANAGER,
+							  Module.CONSOLE,
+							  [pid ,eventid, computer])
 
 	def set_config(self, var, value):
 		''' Sets configuration'''

@@ -1,4 +1,5 @@
 import logging
+import pprint
 
 from syspce_info_tree import InfoTree
 from syspce_message import *
@@ -39,6 +40,33 @@ class ManageTree(InfoTree):
 
 		log.debug("Added %d all events to processes tree" % i)
 		log.debug("%s %s terminated." % (self.name, self.ident))
+
+	def info_eventid(self, pid, eventid, computer):
+		ptree = self.processes_tree.processes_tree
+
+		with self.processes_tree.tree_condition_in:
+			if not computer or not ptree.has_key(computer):
+				clist = ptree.keys()
+			else:
+				clist = [computer]
+			try:
+				info_events = ''
+				for host in clist:
+					for process in ptree[host]:
+						if ptree[host][process].pid == pid:
+							for action in ptree[host][process].acciones[eventid]:
+								info_events += '\n'+ pprint.pformat(action)
+								info_events += '\n'
+				if not info_events:
+					self.send_message('\nNot found')
+				else:
+					self.send_message(info_events)
+
+			except Exception, e:
+				print str(e)
+				self.send_message("Command Error %s" % e)
+
+			self.processes_tree.tree_condition_in.notify_all()
 
 
 	def get_ptree_stats_str(self):

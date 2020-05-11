@@ -256,9 +256,10 @@
 			"VolatileNotifications"
 		],
 		"NORMAL_DEBUG_PRIV_ENABLED_IN_USER_SESSION": [
-			"csrss.exe",
-			"\\smss.exe",
-			""
+			"c:\\Windows\\System32\\csrss.exe",
+			"c:\\Windows\\System32\\winlogon.exe",
+			"\\SystemRoot\\System32\\smss.exe",
+			"c:\\Windows\\System32\\smss.exe"
 		]
 	}									
 ]

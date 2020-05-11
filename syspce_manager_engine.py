@@ -52,6 +52,12 @@ class EngineManager(Manager_):
 				elif message._content[0][0] == "baseline_engine_enabled":
 					self.baseline_engine_enabled = message._content[0][1]
 
+			# Send info related to a concret pid
+			elif message._subtype == MessageSubType.INFO_EVENTID:
+				self._info_eventid(message._src,
+									message._content[0][0],	#pid
+									message._content[0][1],	#eventid
+									message._content[0][2])	#computer
 
 			# Filter engine, filter data from user
 			elif message._subtype == MessageSubType.FILTER_DATA:
@@ -92,6 +98,18 @@ class EngineManager(Manager_):
 
 		filter_event.start()
 		self.add_working_module(src, [filter_event])
+
+	def _info_eventid(self, src, pid, eventid, computer):
+
+		# add data to tree 
+		manage_tree = ManageTree(self.data_buffer_in,
+								 self.data_condition_in,
+							     self.processes_tree, 
+								 src)
+
+		manage_tree.set_method(manage_tree.info_eventid,
+							   pid, eventid, computer )
+		manage_tree.start()
 
 	def _stats(self, src):
 		# getting statistics  

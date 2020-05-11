@@ -49,6 +49,7 @@ class ProcessesTree(object):
 			
 			# Volatility input has 'Source': 'Memory' key
 			# and processGUI is in md5 format
+			
 			if not events_list[i].has_key('Source'):
 
 				#Changing ProcessGUID algorithm due to correlation with volatility
@@ -106,6 +107,7 @@ class ProcessesTree(object):
 										 events_list[i]['ParentProcessGuid'],
 										 events_list[i]['ParentProcessId'],
 										 events_list[i]['ParentImage'])
+
 
 			#else:
 			#	print "Image:" + events_list[i]['Image']
@@ -167,7 +169,8 @@ class ProcessesTree(object):
 		# Now processin message type 1 or other type 3,5...
 		# Message type 1 , used for building tree's skeleton 
 		if req['idEvent'] == 1: 
-
+			if "excel.exe" in req['Image']:
+				print req
 			# Process node already in tree
 			if computer_ptree.has_key(ProcessGuid):
 				node = computer_ptree[ProcessGuid]
@@ -199,10 +202,10 @@ class ProcessesTree(object):
 
 			# new entry
 			else:
-				if req.has_key('Source'):
-					print "NOOOO CUADRA"
-					print req
-					print "\n"
+				#if req.has_key('Source'):
+				#	print "NOOOO CUADRA"
+				#	print req
+				#	print "\n"
 				# Tree Node with process datails
 				node = Node_(req)
 				node.acciones['1'].append(req)

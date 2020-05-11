@@ -103,6 +103,15 @@ class ControlManager(Manager_):
 			elif message._subtype == MessageSubType.STOP_JOB:
 				self.stop_job(message._content[0], message._origin)
 
+			# Show eventid
+			elif message._subtype == MessageSubType.INFO_EVENTID:
+				self.send_message(Module.ENGINE_MANAGER,
+								  MessageSubType.INFO_EVENTID,
+								  message._origin, [message._content[0], 
+													message._content[1],
+													message._content[2]])
+
+
 			# Sets program configuration parameters
 			elif message._subtype == MessageSubType.SET_CONFIG:
 				if self.config_.has_key(message._content[0]):
