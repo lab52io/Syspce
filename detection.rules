@@ -1,14 +1,5 @@
 [
 	{
-		"RuleID": 0,
-		"Rulename": "Paint executed (testing purposes)",
-		"Content": [
-			{ "1": { "Image": "paint.exe" } }
-
-		]
-	},
-
-	{
 		"RuleID": 2,
 		"Rulename": "Suspicious lsass child and thread remotely created",
 		"Content": [
@@ -274,31 +265,7 @@
 			{ "1": { "-Image": "c:\\" } }
 		]
 	},
-	{
-		"RuleID": 25,
-		"Rulename": "SeBackupPrivilege is Present (testing purposes)",
-		"Content": [
-			{
-				"1": {
-					"SeBackupPrivilegePresent": "True",
-					"Image": "lsass.exe"
-				}
-			}
-		]
-	},
-
-	{
-		"RuleID": 26,
-		"Rulename": "Test N (testing purposes)",
-		"Content": [
-			{ "1": { "Image": "cmd.exe" } },
-			{
-				"N": 3,
-				"Seconds": 86400
-			},
-			{ "1": { "Image": "powershell.exe" } }
-		]
-	},
+	
 
 	{
 		"RuleID": 27,

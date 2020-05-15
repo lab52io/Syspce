@@ -255,6 +255,25 @@
 			"\\GraphicsDrivers\\",
 			"VolatileNotifications"
 		],
+
+		"SERVICES_REG_TARGET_OBJECT": [
+			"HKLM\\System\\CurrentControlSet\\Services\\",
+			"HKLM\\System\\CurrentControlSet\\Control\\",
+			"HKLM\\System\\CurrentControlSet\\Enum",
+			"HKU\\.DEFAULT\\Software\\Classes\\Local Settings\\MuiCache",
+			"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\"
+		],
+
+		"SERVICES_CREATE_PIPES": [
+			"\\scerpc",
+			"\\ntsvcs",
+			"\\Winsock2\\CatalogChangeListener"
+		],
+
+		"SERVICES_CONNECT_PIPES": [
+			"\\srvsvc"
+		],
+
 		"NORMAL_DEBUG_PRIV_ENABLED_IN_USER_SESSION": [
 			"c:\\Windows\\System32\\csrss.exe",
 			"c:\\Windows\\System32\\winlogon.exe",

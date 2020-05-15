@@ -150,5 +150,59 @@
 						"-17":{"Points": 100},
 						
 						"-18":{"Points": 100}
-				}					
+				},
+
+	"services.exe":{ 	"max_ttl": 1000000,"min_ttl": 20, "Points": 10,
+						"1":{"Points": 100,
+							"Image":{"Points": 100, "Value": "C:\\WINDOWS\\system32\\services.exe"}, 
+							"ParentImage":{"Points": 100, "Value": "C:\\Windows\\System32\\wininit.exe"},
+							"CurrentDirectory":{"Points": 100, "Value": "C:\\Windows\\System32"},
+							"User":{"Points": 100, "Value": "system"},
+							"TerminalSessionId":{"Points": 100, "Value": "0"},
+							"IntegrityLevel":{"Points": 100, "Value": "system"}
+							},
+							
+							
+						"100":{"Points": 10, "N": 150, "Seconds": 3600},
+						
+						"-2":{"Points": 100},
+						
+						"-3":{"Points": 100},
+						
+						"7":{"Points": 30, "N": 40, "Seconds": 86400,
+								 "ImageLoaded": {"Points": 100, "Value": "c:\\Windows\\System32\\"},
+								 "SignatureStatus": {"Points": 50, "Value": "MODULE_SIGNATURE_STATUS"},
+								 "Signature": {"Points": 10, "Value": "Microsoft Windows"}
+							},
+							
+						"-8":{"Points": 100},
+						
+						"108":{"Points": 10, "N": 3, "Seconds": 86400,
+							"SourceImage": {"Points": 20, "Value": "C:\\Windows\\System32\\csrss.exe"}
+						},
+						
+						"-9":{"Points": 10},
+							
+						"-11":{"Points": 100},
+
+						"12":{"Points": 10,
+							"TargetObject": {"Points": 5, "Value": "SERVICES_REG_TARGET_OBJECT"}
+						},	
+					
+						"13":{"Points": 10,
+							"TargetObject": {"Points": 5, "Value": "SERVICES_REG_TARGET_OBJECT"}
+						},				
+				
+						"-14":{"Points": 100},
+						
+						"-15":{"Points": 100},
+						
+						"17":{"Points": 30,	"N": 4, "Seconds": 86400,
+							"PipeName":{"Points": 50, "Value": "SERVICES_CREATE_PIPES"}
+							},
+						
+						"18":{"Points": 30,	"N": 2, "Seconds": 86400,
+							"PipeName":{"Points": 50, "Value": "SERVICES_CONNECT_PIPES"}
+							}
+				}							
 	}]
