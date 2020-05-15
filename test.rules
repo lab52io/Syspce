@@ -31,5 +31,13 @@
 			},
 			{ "1": { "Image": "powershell.exe" } }
 		]
+	},
+	{
+		"RuleID": 27,
+		"Rulename": "RWX page detected",
+		"Content": [
+			{ "1": { "PAGE_EXECUTE_READWRITE": "True" } }
+
+		]
 	}
 ]

@@ -14,6 +14,8 @@ import volatility.plugins.taskmods as taskmods
 import volatility.plugins.privileges as privm
 import volatility.plugins.malware.psxview as psxv
 import volatility.plugins.registry.printkey as printkeyregistry
+import volatility.plugins.malware.malfind as malfind
+import volatility.plugins.vadinfo as vadinfo
 import volatility.commands as commands
 import volatility.addrspace as addrspace
 import volatility.win32.hive as hivemod
@@ -76,6 +78,16 @@ class InputVolatility(Input):
 					yield name, rawreg.open_key(root, self._config.KEY.split('\\'))
 				else:
 					yield name, root
+	def is_vad_empty(self, vad, address_space):
+		 PAGE_SIZE = 0x1000
+		 all_zero_page = "\x00" * PAGE_SIZE
+		 offset = 0
+		 while offset < vad.Length:
+			next_addr = vad.Start + offset
+			if (address_space.is_valid_address(next_addr) and address_space.read(next_addr, PAGE_SIZE) != all_zero_page):
+				return False
+			offset += PAGE_SIZE
+		 return True
 
 	def do_action(self):
 
@@ -135,7 +147,7 @@ class InputVolatility(Input):
 			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 
-			#Building processguid to merge events with Sysmon
+			#Building ProcessGuid to merge events with Sysmon.
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S UTC+%f')
 			epoch = datetime.datetime.utcfromtimestamp(0)
 			t = (date_time_obj-epoch).total_seconds()
@@ -160,6 +172,16 @@ class InputVolatility(Input):
 					modules = modules + "," + str(module.FullDllName)
 
 			pslist1['modules'] = modules
+
+			## VADS
+			vads = process.get_vads(vad_filter=process._injection_filter)
+			for vad, address_space in vads:
+				if self.is_vad_empty(vad, address_space):
+					continue
+
+				protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
+				pslist1[protect_flags] = "True"
+
 			vprocess.append(pslist1)
 			pslist1 = {}
 
