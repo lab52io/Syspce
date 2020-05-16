@@ -1,5 +1,16 @@
 [
 	{
+		"RuleID": 2,
+		"Rulename": "Suspicious lsass child and thread remotely created",
+		"Content": [
+			{
+				"110": { "Image": "lsass" },
+				"108": { "Image": "lsass" }
+			},
+			{ "1": { "Image": "*" } }
+		]
+	},
+	{
 		"RuleID": 0,
 		"Rulename": "Paint executed (testing purposes)",
 		"Content": [
@@ -37,6 +48,14 @@
 		"Rulename": "Injected code detected",
 		"Content": [
 			{ "1": { "injected_code": "True" } }
+
+		]
+	},
+	{
+		"RuleID": 28,
+		"Rulename": "Remote Injected code detected",
+		"Content": [
+			{ "1": { "injected_code": "True" }, "108": { "-SourceImage": "WmiPrvSE.exe" } }
 
 		]
 	}

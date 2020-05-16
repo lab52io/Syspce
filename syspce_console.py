@@ -34,9 +34,11 @@ class Console(object):
 		self.name = 'Console'
 		self.module_id = Module.CONSOLE
 		self.output_lock = output_lock	
-		self.jobs()
 
-		
+		# First message to console , current jobs started
+		self.send_message(MessageSubType.SHOW_JOBS,
+						  Module.CONTROL_MANAGER, [])
+
 		self.console_history = FileHistory('history.dat')
 		self.session = PromptSession(history=self.console_history,
 									 auto_suggest=AutoSuggestFromHistory(),
@@ -75,7 +77,6 @@ class Console(object):
 		log.debug("%s working..." % (self.name))
 
 		while self._running:
-			
 		    try:
 				#command = unicode(raw_input("SYSPCE#>"), 'utf-8')
 				
@@ -87,28 +88,32 @@ class Console(object):
 			    print "Input error: %s" % str(e)
 			    command = "exit"
 			
-		    #Logica de control de los comandos de la consola	
-		    if (command == "jobs"): # ejecuta la busqueda con los inputs del usuario
-				self.jobs()	
-		
+		    if (command == "jobs"):
+				self.send_message(MessageSubType.SHOW_JOBS,
+								  Module.CONTROL_MANAGER, [])
+	
 		    elif(re.match("^run", command)):
-				self.run_actions()
+				self.send_message(MessageSubType.RUN,
+								  Module.CONTROL_MANAGER, [])
 				self.s_print('Runnig actions in config...')
 
 		    elif(re.match("^stats", command)):
-				self.stats()
+				self.send_message(MessageSubType.STATS,
+								  Module.CONTROL_MANAGER, [])
 				self.s_print('Runnig stats')
 
 		    elif(("show commands" in command) or ("help" in command)):
 			    self.help()
 
 		    elif(re.match("^show_config", command)):
-				self.show_config()
+				self.send_message(MessageSubType.SHOW_CONFIG,
+								  Module.CONTROL_MANAGER, [])
 
 		    elif(re.match("^stop_job ", command)):
 				try:
 					job_name = command.split('stop_job ')[1].replace(' ','')
-					self.job_stop(job_name)
+					self.send_message(MessageSubType.STOP_JOB,
+									  Module.CONTROL_MANAGER, [job_name])
 				except Exception, e:
 					self.s_print('Command error %s' % e)
 
@@ -116,7 +121,9 @@ class Console(object):
 				try:
 					var = command.split(' ')[1]
 					value = command.split(' ')[2]
-					self.set_config(var, value)
+					self.send_message(MessageSubType.SET_CONFIG,
+									  Module.CONTROL_MANAGER, 
+									  [var, value])
 
 				except Exception, e:
 					self.s_print('Command error %s' % e)
@@ -125,7 +132,10 @@ class Console(object):
 				try:
 					pid = command.split(' ')[1]
 					eventid = command.split(' ')[2]
-					self.info_eventid(pid, eventid)
+					computer = ''
+					self.send_message(MessageSubType.INFO_EVENTID,
+									  Module.CONTROL_MANAGER, 
+									  [pid ,eventid, computer])
 
 				except Exception, e:
 					self.s_print('Command error %s' % e)
@@ -163,120 +173,25 @@ class Console(object):
 		self.s_print(help)
 
 	def quit(self):
-		''' Terminate all modules and program execution '''
+		''' Terminate all modules and program execution 
+		'''
+		self.send_message(MessageSubType.TERMINATE, Module.ENGINE_MANAGER, [])
+		self.send_message(MessageSubType.TERMINATE, Module.INPUT_MANAGER, [])
+		self.send_message(MessageSubType.TERMINATE, Module.CONTROL_MANAGER, [])
 
-		end_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		end_message.send(MessageType.COMMAND,
-						 MessageSubType.TERMINATE,
-						 Module.CONSOLE,
-						 Module.ENGINE_MANAGER,
-						 Module.CONSOLE,
-						 [])
-
-		end_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		end_message.send(MessageType.COMMAND,
-						 MessageSubType.TERMINATE,
-						 Module.CONSOLE,
-						 Module.INPUT_MANAGER,
-						 Module.CONSOLE,
-						 [])
-
-		end_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		end_message.send(MessageType.COMMAND,
-						 MessageSubType.TERMINATE,
-						 Module.CONSOLE,
-						 Module.CONTROL_MANAGER,
-						 Module.CONSOLE,
-						 [])
-
-
-	def jobs(self):
-		''' List current active Jobs'''
-
-		jobs_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		jobs_message.send(MessageType.COMMAND,
-						  MessageSubType.SHOW_JOBS,
-						  Module.CONSOLE,
-						  Module.CONTROL_MANAGER,
-						  Module.CONSOLE,
-						  [])
-
-	def show_config(self):
-		''' List current active Config'''
-
-		config_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		config_message.send(MessageType.COMMAND,
-						  MessageSubType.SHOW_CONFIG,
-						  Module.CONSOLE,
-						  Module.CONTROL_MANAGER,
-						  Module.CONSOLE,
-						  [])
-	def stats(self):
-		''' List current active Jobs'''
-
-		stats_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		stats_message.send(MessageType.COMMAND,
-						  MessageSubType.STATS,
-						  Module.CONSOLE,
-						  Module.CONTROL_MANAGER,
-						  Module.CONSOLE,
-						  [])
-
-	def run_actions(self):
-		''' Execute actions set in cofig'''
-
-		run_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		run_message.send(MessageType.COMMAND,
-						  MessageSubType.RUN,
-						  Module.CONSOLE,
-						  Module.CONTROL_MANAGER,
-						  Module.CONSOLE,
-						  [])
-
-	def job_stop(self, name):
-		''' Stops a Job by name'''
-
-		job_stop_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		job_stop_message.send(MessageType.COMMAND,
-							  MessageSubType.STOP_JOB,
-							  Module.CONSOLE,
-							  Module.CONTROL_MANAGER,
-							  Module.CONSOLE,
-							  [name])
-
-	def info_eventid(self, pid, eventid=1, computer=None ):
-		''' Show eventId details'''
-
-		info_event_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		info_event_message.send(MessageType.COMMAND,
-							  MessageSubType.INFO_EVENTID,
-							  Module.CONSOLE,
-							  Module.CONTROL_MANAGER,
-							  Module.CONSOLE,
-							  [pid ,eventid, computer])
-
-	def set_config(self, var, value):
-		''' Sets configuration'''
-
-		set_config_message = Message(self.data_buffer_in, self.data_condition_in)
-
-		set_config_message.send(MessageType.COMMAND,
-							    MessageSubType.SET_CONFIG,
-							    Module.CONSOLE,
-							    Module.CONTROL_MANAGER,
-							    Module.CONSOLE,
-							    [var, value])
 	## ADDITIONAL METHODS
 	#####################
+
+	def send_message(self, subtype, destination, payload):
+		''' General method for communication with other modules 
+		'''
+		message = Message(self.data_buffer_in, self.data_condition_in)
+		message.send(MessageType.COMMAND,
+						 subtype,
+						 Module.CONSOLE,
+						 destination,
+						 Module.CONSOLE,
+						 payload)
 
 	def print_search_result(self, results):
 		self.s_print(pprint.pformat(results))

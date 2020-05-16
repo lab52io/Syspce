@@ -1,5 +1,13 @@
 [
 	{
+		"RuleID": 1,
+		"Rulename": "Remote Injected code detected",
+		"Content": [
+			{ "1": { "injected_code": "True" }, "108": { "-SourceImage": "WmiPrvSE.exe" } }
+
+		]
+	},
+	{
 		"RuleID": 2,
 		"Rulename": "Suspicious lsass child and thread remotely created",
 		"Content": [

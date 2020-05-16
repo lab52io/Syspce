@@ -169,8 +169,7 @@ class ProcessesTree(object):
 		# Now processin message type 1 or other type 3,5...
 		# Message type 1 , used for building tree's skeleton 
 		if req['idEvent'] == 1: 
-			if "excel.exe" in req['Image']:
-				print req
+
 			# Process node already in tree
 			if computer_ptree.has_key(ProcessGuid):
 				node = computer_ptree[ProcessGuid]
@@ -192,13 +191,19 @@ class ProcessesTree(object):
 					self.stats[host_name]['DroppedEvents'] += 1
 				else:
 					self.stats[host_name]['MergedProcesses'] += 1
+
 					#print "CUADRAN origin"
 					#print node.acciones['1'][0]
 
 					#print "CUADRAN memoria"
 					#print req
 					#print "\n"
-					node.acciones['1'][0].update(req)
+
+					# Update only new atributes, not all of them, let's
+					# keep untouched sysmon ones
+					for attr in req:
+						if not node.acciones['1'][0].has_key(attr):
+							node.acciones['1'][0][attr] = req[attr]
 
 			# new entry
 			else:
