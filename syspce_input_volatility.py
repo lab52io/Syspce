@@ -15,18 +15,18 @@ import volatility.plugins.privileges as privm
 import volatility.plugins.malware.psxview as psxv
 import volatility.plugins.registry.printkey as printkeyregistry
 import volatility.plugins.malware.malfind as malfind
+import volatility.plugins.malware.threads as threads
 import volatility.plugins.vadinfo as vadinfo
 import volatility.commands as commands
 import volatility.addrspace as addrspace
 import volatility.win32.hive as hivemod
 import volatility.win32.rawreg as rawreg
+import volatility.win32.tasks as tasks
+import volatility.win32.modules as moduless
+import volatility.plugins.modscan as modscan
 import volatility.plugins.registry.hivelist as hivelist
 import volatility.plugins.registry.registryapi as registryapi
 
-## TODO: 
-## - Integrity plugins getsids
-## - threads 
-## - VADS - Malfind First step
 
 log = logging.getLogger('sysmoncorrelator')
 
@@ -140,6 +140,10 @@ class InputVolatility(Input):
 			pslist1['ParentImage'] = ""
 			pslist1['ParentCommandLine'] = ""
 			pslist1['ParentProcessGuid'] = ""
+			pslist1["unknown_threads"] = "False"
+
+			if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
+				pslist1['Image'] = str(process.ImageFileName)
 
 			#Exceptions 
 			if pslist1['ProcessId'] == '4':
@@ -179,14 +183,64 @@ class InputVolatility(Input):
 			  memory-resident, non-empty (not all zeros) and with an 
               original protection that includes write and execute. 
 			"""
-			pslist1["injected_code"] = "False"
+			pslist1["rwx_page"] = "False"
 			vads = process.get_vads(vad_filter=process._injection_filter)
 			for vad, address_space in vads:
 				if self.is_vad_empty(vad, address_space):
 					continue
 
 				protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
-				pslist1["injected_code"] = "True"
+				pslist1["rwx_page"] = "True"
+
+			## THREADS
+			## Extracted from threads.py. We only want unknown threads.
+			## WARNING: Very slow
+
+			#pidlist = []
+			#addr_space = utils.load_as(self._config)
+			#system_range = tasks.get_kdbg(addr_space).MmSystemRangeStart.dereference_as("Pointer")
+			#mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in moduless.lsmod(addr_space))
+			#mod_addrs = sorted(mods.keys())
+			#seen_threads = dict()
+			## Gather threads by list traversal of active/linked processes 
+			#for thread in process.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
+			#	seen_threads[thread.obj_vm.vtop(thread.obj_offset)] = (False, thread)
+			# Now scan for threads and save any that haven't been seen
+			#for thread in modscan.ThrdScan(self._config).calculate():
+			#	if not seen_threads.has_key(thread.obj_offset):
+			#		seen_threads[thread.obj_offset] = (True, thread)
+			# Keep a record of processes whose DLLs we've already enumerated
+			#process_dll_info = {}
+			#for _offset, (found_by_scanner, thread) in seen_threads.items():
+				# Skip processes the user doesn't want to see
+			#	if ((self._config.PID or self._config.OFFSET) and not pidlist) or (pidlist and thread.Cid.UniqueProcess not in pidlist):
+			#		continue
+
+				# Do we need to gather DLLs for module resolution 
+				#if addr_space.address_compare(thread.StartAddress, system_range) != -1:
+					#owner = tasks.find_module(mods, 
+											  #mod_addrs, 
+											  #addr_space.address_mask(thread.StartAddress))
+				#else:
+					#owning_process = thread.owning_process() 
+					#if not owning_process.is_valid(): 
+						#owner = None
+					#else:
+						#try:
+							#user_mod_addrs, user_mods = process_dll_info[owning_process.obj_offset]
+						#except KeyError:
+							#user_mods = dict((addr_space.address_mask(mod.DllBase), mod) 
+												#for mod in owning_process.get_load_modules())
+							#user_mod_addrs = sorted(user_mods.keys())
+							#process_dll_info[owning_process.obj_offset] = (user_mod_addrs, user_mods)
+						#owner = tasks.find_module(user_mods, 
+												  #user_mod_addrs, 
+												  #addr_space.address_mask(thread.StartAddress))
+				#if owner:
+					#owner_name = str(owner.BaseDllName or '')
+				#else:
+					#owner_name = "UNKNOWN"
+					#pslist1["unknown_threads"] = "True"
 
 			vprocess.append(pslist1)
 			pslist1 = {}
