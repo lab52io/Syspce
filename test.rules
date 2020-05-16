@@ -34,9 +34,9 @@
 	},
 	{
 		"RuleID": 27,
-		"Rulename": "RWX page detected",
+		"Rulename": "Injected code detected",
 		"Content": [
-			{ "1": { "PAGE_EXECUTE_READWRITE": "True" } }
+			{ "1": { "injected_code": "True" } }
 
 		]
 	}

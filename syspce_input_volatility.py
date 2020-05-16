@@ -174,13 +174,19 @@ class InputVolatility(Input):
 			pslist1['modules'] = modules
 
 			## VADS
+			"""
+			  This looks for private allocations that are committed, 
+			  memory-resident, non-empty (not all zeros) and with an 
+              original protection that includes write and execute. 
+			"""
+			pslist1["injected_code"] = "False"
 			vads = process.get_vads(vad_filter=process._injection_filter)
 			for vad, address_space in vads:
 				if self.is_vad_empty(vad, address_space):
 					continue
 
 				protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
-				pslist1[protect_flags] = "True"
+				pslist1["injected_code"] = "True"
 
 			vprocess.append(pslist1)
 			pslist1 = {}
