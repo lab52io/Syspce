@@ -86,7 +86,11 @@ class InputVolatility(Input):
 			## WARNING: Very slow
 
 			#print "Extracting threads to the process: " + str(int(process.UniqueProcessId))
-			result = "False"
+			result = []
+			result.append("False")
+			result.append("False")
+			result.append("False")
+			result.append("False")
 			#pidlist = []
 			addr_space = utils.load_as(self._config)
 			system_range = tasks.get_kdbg(addr_space).MmSystemRangeStart.dereference_as("Pointer")
@@ -124,16 +128,26 @@ class InputVolatility(Input):
 							process_dll_info[owning_process.obj_offset] = (user_mod_addrs, user_mods)
 						owner = tasks.find_module(user_mods, user_mod_addrs, addr_space.address_mask(thread.StartAddress))
 				
+				#print str(int(process.UniqueProcessId)) + ": " +str(thread.CrossThreadFlags)
+				if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
+					result[1] = "True"
+					#print "Proceso con PS_CROSS_THREAD_FLAGS_IMPERSONATING a 1: " + str(int(process.UniqueProcessId))
+				if "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG" in str(thread.CrossThreadFlags):
+					result[2] = "True"
+					#print "Proceso con PS_CROSS_THREAD_FLAGS_HIDEFROMDBG a 1: " + str(int(process.UniqueProcessId))
+				if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
+					result[3] = "True"
+					#print "Proceso con PS_CROSS_THREAD_FLAGS_SYSTEM a 1: " + str(int(process.UniqueProcessId))
+
 				if owner:
 					owner_name = str(owner.BaseDllName or '')
 				else:
 					# If there is a unknown thread we break for loop
 					owner_name = "UNKNOWN"
-					result = "True"
+					result[0] = "True"
 					#print "Proceso con hilo ejecutado desde un modulo no conocido: " + str(int(process.UniqueProcessId))
 					break
-
-			return result
+ 			return result
 
 
 	def is_vad_empty(self, vad, address_space):
@@ -250,8 +264,16 @@ class InputVolatility(Input):
 				protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
 				pslist1["rwx_page"] = "True"
 
-					
-			#pslist1["unknown_threads"] = self.get_threads(process)
+			## THREADS
+			resultt = self.get_threads(process)
+			# This process has one thread with StartAddress unknow
+			pslist1["unknown_threads"]  = resultt[0]
+			# This process has one thread with ActiveImpersonationInfo = 1 (Cross-Thread Flags in the ETHREAD)
+			pslist1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = resultt[1]
+			# This process has one thread with HideFromDebugger = 1 (Cross-Thread Flags in the ETHREAD)
+			pslist1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = resultt[2]
+			# This process has one thread with SystemThread = 1 (Cross-Thread Flags in the ETHREAD)
+			pslist1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = resultt[3]
 			vprocess.append(pslist1)
 			pslist1 = {}
 
