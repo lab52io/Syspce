@@ -251,7 +251,7 @@ class InputVolatility(Input):
 				pslist1["rwx_page"] = "True"
 
 					
-			pslist1["unknown_threads"] = self.get_threads(process)
+			#pslist1["unknown_threads"] = self.get_threads(process)
 			vprocess.append(pslist1)
 			pslist1 = {}
 
