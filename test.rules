@@ -66,7 +66,7 @@
 		"RuleID": 29,
 		"Rulename": "This process has threads with StartAddress in UNKNOWN module",
 		"Content": [
-			{ "1": { "unknown_threads": "True" } }
+			{ "1": { "unknown_threads": "True", "-TerminalSessionId": "0" } }
 
 		]
 	}

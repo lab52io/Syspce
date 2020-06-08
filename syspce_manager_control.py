@@ -127,22 +127,20 @@ class ControlManager(Manager_):
 
 			### ENGINES RESULTS
 			# Results from a eventlog/evtx search user command
-			elif message._type == MessageType.ALERT and \
-				 message._subtype == MessageSubType.DETECT and \
-				 message._src == Module.FILTER_ENGINE:
-				self.console.print_search_result(message._content[0])
+			elif message._type == MessageType.ALERT:
 
+				 if message._subtype == MessageSubType.DETECT:
 
-			elif message._type == MessageType.ALERT and \
-				 message._subtype == MessageSubType.DETECT and \
-				 message._src == Module.HIERARCHY_ENGINE:
-				self.console.print_alert_hierarchy(message._content[0])
+					if message._src == Module.FILTER_ENGINE:
+						self.console.print_search_result(message._content[0])
 
-			elif message._type == MessageType.ALERT and \
-				 message._subtype == MessageSubType.DETECT and \
-				 message._src == Module.BASELINE_ENGINE:
-				self.console.print_alert_baseline(message._content[0])
+					elif message._src == Module.HIERARCHY_ENGINE:
+						self.console.print_alert_hierarchy(message._content[0])
 
+					elif message._src == Module.BASELINE_ENGINE:
+						self.console.print_alert_baseline(message._content[0])
+
+			# Result comming from an info query to process tree, like stats...
 			elif message._type == MessageType.COMMAND_RES:
 				self.console.print_command_result(message._content[0])
 
