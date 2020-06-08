@@ -69,5 +69,29 @@
 			{ "1": { "unknown_threads": "True", "-TerminalSessionId": "0" } }
 
 		]
+	},
+	{
+		"RuleID": 30,
+		"Rulename": "Process with one o more threads with PS_CROSS_THREAD_FLAGS_IMPERSONATING enable",
+		"Content": [
+			{ "1": { "PS_CROSS_THREAD_FLAGS_IMPERSONATING": "True" } }
+
+		]
+	},
+	{
+		"RuleID": 31,
+		"Rulename": "Process with one o more threads with PS_CROSS_THREAD_FLAGS_HIDEFROMDBG enable",
+		"Content": [
+			{ "1": { "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG": "True" } }
+
+		]
+	},
+	{
+		"RuleID": 32,
+		"Rulename": "Process with one o more threads with PS_CROSS_THREAD_FLAGS_SYSTEM enable",
+		"Content": [
+			{ "1": { "PS_CROSS_THREAD_FLAGS_SYSTEM": "True" } }
+
+		]
 	}
 ]
