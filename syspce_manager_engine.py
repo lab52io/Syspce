@@ -59,6 +59,12 @@ class EngineManager(Manager_):
 									message._content[0][1],	#eventid
 									message._content[0][2])	#computer
 
+			# ps command
+			elif message._subtype == MessageSubType.PS:
+				self._ps(message._src,
+									message._content[0][0], #tree_id
+									message._content[0][1])	#computer
+
 			# Filter engine, filter data from user
 			elif message._subtype == MessageSubType.FILTER_DATA:
 
@@ -109,6 +115,17 @@ class EngineManager(Manager_):
 
 		manage_tree.set_method(manage_tree.info_eventid,
 							   pid, eventid, computer )
+		manage_tree.start()
+
+	def _ps(self, src, tree_id, computer):
+
+		# add data to tree 
+		manage_tree = ManageTree(self.data_buffer_in,
+								 self.data_condition_in,
+							     self.processes_tree, 
+								 src)
+
+		manage_tree.set_method(manage_tree.ps, tree_id, computer)
 		manage_tree.start()
 
 	def _stats(self, src):

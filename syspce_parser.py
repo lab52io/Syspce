@@ -119,6 +119,7 @@ def get_list_of_actions(action):
 		newreq['ChildProcessGuid'] = action['ProcessGuid']
 		newreq['ChildProcessId'] = action['ProcessId']
 		newreq['ChildCommandLine'] = action['CommandLine']
+		newreq['ChildLogonGuid'] = action['LogonGuid']
 		newreq['ChildImage'] = action['Image']
 		newreq['ProcessGuid'] = action['ParentProcessGuid']
 		newreq['ProcessId'] = action['ParentProcessId']

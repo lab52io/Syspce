@@ -100,7 +100,7 @@ class ProcessesTree(object):
 
 				# we do the same for parent process guid
 				if events_list[i].has_key('ParentProcessId'):
-					events_list[i]['ProcessGuidOriginal'] = \
+					events_list[i]['ProcessGuidOrig'] = \
 										 events_list[i]['ParentProcessGuid']
 
 					events_list[i]['ParentProcessGuid'] = self.get_syspce_id(
@@ -132,9 +132,25 @@ class ProcessesTree(object):
 				process_ttl = {"ProcessTTL": "Running"}	
 				events_list[i].update(process_ttl)
 
+				# Adding new attribute LogonTime
+				lt = self.get_logontime(events_list[i]['LogonGuid'])
+				LogonTime = {"LogonTime": str(lt)}	
+				events_list[i].update(LogonTime)
+
 			i += 1
 
 		return events_list
+
+	def get_logontime(self, processGuid):
+		''' Returns user logontime from ProcessGUID'''
+		try:
+			aux = processGuid.split('-')
+			hex_lt = '0x' + aux[2] + aux[1]
+			logontime = datetime.datetime.fromtimestamp(int(hex_lt, 16))
+		except:
+			logontime = None
+
+		return logontime
 
 	def add_event_to_tree(self, req):
 		''' Adds one event to processes tree'''	

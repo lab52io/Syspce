@@ -110,7 +110,12 @@ class ControlManager(Manager_):
 								  message._origin, [message._content[0], 
 													message._content[1],
 													message._content[2]])
-
+			# Processes list 
+			elif message._subtype == MessageSubType.PS:
+				self.send_message(Module.ENGINE_MANAGER,
+								  MessageSubType.PS,
+								  message._origin, [message._content[0],
+													message._content[1]])
 
 			# Sets program configuration parameters
 			elif message._subtype == MessageSubType.SET_CONFIG:

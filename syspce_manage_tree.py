@@ -1,5 +1,6 @@
 import logging
 import pprint
+from datetime import datetime
 
 from syspce_info_tree import InfoTree
 from syspce_message import *
@@ -68,6 +69,113 @@ class ManageTree(InfoTree):
 
 			self.processes_tree.tree_condition_in.notify_all()
 
+	def ps(self, tree_id, computer):
+		tree_id_list = {}
+		pt = self.processes_tree.processes_tree
+		tree_id = int(tree_id)
+
+		with self.processes_tree.tree_condition_in:
+			# We need here to identify diferent process tree boot sessions
+			#getting first process detected by sysmon (smss.exe)
+			for host in pt:
+				tree_id_list[host] = []
+
+				for processGuid in pt[host]:
+					process = pt[host][processGuid].acciones['1'][0]
+
+					if '\\system32\\smss.exe' in process['CommandLine'].lower() and \
+					  'system' == process['ParentImage'].lower():
+
+						smss_time = datetime.strptime(process['UtcTime'], 
+													 '%Y-%m-%d %H:%M:%S.%f')
+						tree_id_list[host].append(smss_time)
+
+				tree_id_list[host].sort()
+			
+			# Case only 1 machine and 1 session
+			if len(pt) == 1 and len(tree_id_list[host]) == 1:
+				computer = host
+				tree_id = 0
+
+			if tree_id >=0 and computer:
+				res_str = '\n\n\t------------ PROCESS LIST ---------\n'
+			else:
+				res_str = '\n\n\t------------ BOOT SESSIONS LIST ---------\n'
+
+			# If user already provided a session ID lets find all processes
+			#created in this session. Using first creation smss.exe we know 
+			#all processes that belongs to a boot session
+			if tree_id_list.has_key(computer) and  tree_id >=0 and \
+			   tree_id < len(tree_id_list[computer]):
+				logon_sessions = []
+				process_list = []
+
+				# Let's find all processes created between 2 smss.exe instances
+				#so first we determine init and final dates
+				try:
+					datetime_ini = tree_id_list[computer][tree_id]
+
+					if (tree_id + 1) == len(tree_id_list[computer]):
+						datetime_end = datetime.strptime("2120-02-19 17:36:40",
+														  '%Y-%m-%d %H:%M:%S')
+					else:
+						datetime_end = tree_id_list[computer][tree_id + 1]
+
+				except Exception, e:
+					self.send_message('\n\t\t%s\n' % str(e))
+
+				# Now get only process between init and end timestamps
+				for processGuid in pt[computer]:
+					p_1 = pt[computer][processGuid].acciones['1'][0]
+					str_t = p_1['UtcTime']
+					logon_t = datetime.strptime(str_t, '%Y-%m-%d %H:%M:%S.%f')
+
+					# Current process belongs to User's selected session
+					if logon_t >= datetime_ini and logon_t <= datetime_end:
+						process_list.append(pt[computer][processGuid])
+
+				formated_plist = self.pslist(process_list)
+
+				if formated_plist:
+					self.send_message(formated_plist)
+				else:
+					self.send_message('\n\t\tNo processes found\n')
+		
+			# No Session id provided so let's list all avaiable sessions 
+			else:
+				for host in tree_id_list:
+					res_str += '\tComputer %s \n' % (host)
+
+					if tree_id_list[host]:
+						for i, tree_id in enumerate(tree_id_list[host]):
+							res_str += '\t\t[%d] Boot time %s\n' % \
+									(i, tree_id_list[host][i])
+					else:
+						res_str +='\t\tNo smss.exe processes found\n'
+
+				self.send_message(res_str)
+
+			self.processes_tree.tree_condition_in.notify_all()
+
+	def pslist(self, process_list):
+		str_res = '\n\tName\t\t\t\tPID\tPPID\tStart\t\t\t\t'
+		str_res += 'ProcessTTL         CreationType\n'
+		str_res += '\t------------------------------- '
+		str_res += '------  '
+		str_res += '------  '
+		str_res += '-------------------------       '
+		str_res += '----------------   '
+		str_res += '---------------\n'
+		for process in process_list:
+			p_1 = process.acciones['1'][0]
+			str_res += '\t' + process.ImageFileName
+			str_res += (' ')*(32-(len(process.ImageFileName)))
+			str_res += p_1['ProcessId'] + '\t'
+			str_res += p_1['ParentProcessId'] + '\t'
+			str_res += p_1['UtcTime'] + '\t\t'
+			str_res += p_1['ProcessTTL'] + (' ')*(19-(len(p_1['ProcessTTL'])))
+			str_res += p_1['CreationType'] + '\t\t\n'
+		return str_res
 
 	def get_ptree_stats_str(self):
 		if self.processes_tree.stats:

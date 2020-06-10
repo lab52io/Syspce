@@ -161,6 +161,16 @@ class InputVolatility(Input):
 			offset += PAGE_SIZE
 		 return True
 
+	def normalize_utc_time(self, utc_time):
+		
+		try:
+			aux = utc_time.split(' ')
+			normalized = aux[0] + ' ' + aux[1] + '.000'
+		except:
+			normalized = ''
+
+		return normalized
+
 	def do_action(self):
 
 		###########################
@@ -194,11 +204,12 @@ class InputVolatility(Input):
 			## Mapping to event id sysmon 1
 			pslist1['computer'] = computerid
 			pslist1['Source'] = "Memory"
+			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
 			pslist1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine).replace('\"','')
 			pslist1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
 			pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
 			pslist1['idEvent'] = 1 
-			pslist1['UtcTime'] = str(process.CreateTime)
+			pslist1['UtcTime'] = self.normalize_utc_time(str(process.CreateTime)) 
 			pslist1['ProcessId'] = str(int(process.UniqueProcessId))
 			pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
 			pslist1['TerminalSessionId'] = str(int(process.SessionId))
@@ -224,7 +235,7 @@ class InputVolatility(Input):
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 
 			#Building ProcessGuid to merge events with Sysmon.
-			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S UTC+%f')
+			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
 			epoch = datetime.datetime.utcfromtimestamp(0)
 			t = (date_time_obj-epoch).total_seconds()
 			hex_string = '{:02x}'.format(int(t))
@@ -275,6 +286,7 @@ class InputVolatility(Input):
 			# This process has one thread with SystemThread = 1 (Cross-Thread Flags in the ETHREAD)
 			pslist1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = resultt[3]
 			vprocess.append(pslist1)
+
 			pslist1 = {}
 
 		for p in vprocess:

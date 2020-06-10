@@ -33,6 +33,7 @@ class MessageSubType(Enum):
     DETECT_DAEMON = 14
     DETECT = 15
     INFO_EVENTID = 16
+    PS = 17
 
 class JobType(Enum):
     UNKNOW = 0

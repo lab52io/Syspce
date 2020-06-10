@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import threading
 import logging
 import json
 import os
@@ -18,7 +17,7 @@ from syspce_message import *
 log = logging.getLogger('sysmoncorrelator')
 
 
-#class Console(threading.Thread):
+
 class Console(object):
 	''' Console user module '''
 
@@ -26,7 +25,7 @@ class Console(object):
 					   data_condition_in,
 					   output_lock):
 
-		#threading.Thread.__init__(self)
+
 		self.data_buffer_in = data_buffer_in
 		self.data_condition_in = data_condition_in
 
@@ -39,6 +38,7 @@ class Console(object):
 		self.send_message(MessageSubType.SHOW_JOBS,
 						  Module.CONTROL_MANAGER, [])
 
+		'''
 		self.console_history = FileHistory('history.dat')
 		self.session = PromptSession(history=self.console_history,
 									 auto_suggest=AutoSuggestFromHistory(),
@@ -54,6 +54,7 @@ class Console(object):
 					"stats",
 					"set",
 					"info",
+					"ps",
 					"exit",
 				],
 				meta_dict={
@@ -65,11 +66,13 @@ class Console(object):
 					"show_alerts": "Show alerts detected",
 					"stats": "List statistics for hostsnames",
 					"info": "[pid] [eventid] [computer] Show eventid details from a process",
+					"ps": "[tree_id] [computer] Processes list, treeid and computer is optional",
 					"exit": "Bye bye",
 				},
 				ignore_case=True,
 				)
-		
+		'''
+
 	def run(self):
 		''' Thread console main code'''
 
@@ -78,12 +81,12 @@ class Console(object):
 
 		while self._running:
 		    try:
-				#command = unicode(raw_input("SYSPCE#>"), 'utf-8')
-				
+				command = unicode(raw_input("SYSPCE#>"), 'utf-8')
+				'''
 				command = self.session.prompt('SYSPCE#>',
 								completer=self.syspce_completer,
 								complete_style=CompleteStyle.MULTI_COLUMN)
-				
+				'''
 		    except ValueError, e:
 			    print "Input error: %s" % str(e)
 			    command = "exit"
@@ -118,9 +121,10 @@ class Console(object):
 					self.s_print('Command error %s' % e)
 
 		    elif(re.match("^set", command)):
+				c_splited = self.get_params(command)
 				try:
-					var = command.split(' ')[1]
-					value = command.split(' ')[2]
+					var = c_splited[1]
+					value = c_splited[2]
 					self.send_message(MessageSubType.SET_CONFIG,
 									  Module.CONTROL_MANAGER, 
 									  [var, value])
@@ -130,12 +134,45 @@ class Console(object):
 
 		    elif(re.match("^info", command)):
 				try:
-					pid = command.split(' ')[1]
-					eventid = command.split(' ')[2]
-					computer = ''
+					c_splited = self.get_params(command)
+					n_params = len(c_splited)
+
+					if n_params == 4:
+						pid = c_splited[1]
+						eventid = c_splited[2]
+						computer = c_splited[3]
+
+					elif n_params == 3:
+						pid = c_splited[1]
+						eventid = c_splited[2]
+						computer = ''
+
+					elif n_params == 2:
+						pid = c_splited[1]
+						eventid = '1'
+						computer = ''
+
 					self.send_message(MessageSubType.INFO_EVENTID,
 									  Module.CONTROL_MANAGER, 
 									  [pid ,eventid, computer])
+
+				except Exception, e:
+					self.s_print('Command error %s' % e)
+
+		    elif(re.match("^ps", command)):
+				self.s_print("\nGetting Process/Sessions list...\n")
+				try:
+					c_splited = self.get_params(command)
+					if len(c_splited) == 3:
+						tree_id = c_splited[1]
+						computer = c_splited[2]
+					else:
+						tree_id = '-1'
+						computer = ''
+
+					self.send_message(MessageSubType.PS,
+									  Module.CONTROL_MANAGER, 
+									  [tree_id, computer])
 
 				except Exception, e:
 					self.s_print('Command error %s' % e)
@@ -161,8 +198,9 @@ class Console(object):
 		COMMANDS
 		--------
 		jobs                            - Show current active Jobs
-		stop_job  <Name>                - Stops a Job by job name
-		set  <Var> <Name>               - Stops a Job by job name
+		stop_job <Name>                 - Stops a Job by job name
+		set <Var> <Name>                - Stops a Job by job name
+		ps [treeid] [computer]          - Processes list, treeid and computer is optional
 		info <pid> [eventid] [computer] - Show eventid details from a process
 		help                            - List commads helps
 		show_config                     - Show current config
@@ -216,6 +254,16 @@ class Console(object):
 		self.output_lock.acquire()
 		print string
 		self.output_lock.release()
+
+	def get_params(self, commadline):
+		p_list = []
+
+		cl_splited = commadline.split(' ')
+		for param in cl_splited:
+			if not ' ' in param and param != '':
+				param = param.replace('\r', '')
+				p_list.append(param)
+		return p_list
 
 	def terminate(self): 
 		self._running = False
