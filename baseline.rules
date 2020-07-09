@@ -7,20 +7,19 @@
 							"-User":{"Points": 100, "Value": "system"},
 							"CurrentDirectory":{"Points": 20, "Value": "C:\\Windows\\"},
 							"-TerminalSessionId":{"Points": 100, "Value": "0"},
-							"IntegrityLevel":{"Points": 100, "Value": "Medium"},
+							"IntegrityLevel":{"Points": 50, "Value": "Medium"},
 							"Company":{"Points": 100, "Value": "Microsoft Corporation"},
 							"Description":{"Points": 100, "Value": "Windows Explorer"},
 							"OriginalFileName":{"Points": 100, "Value": "EXPLORER.EXE"}
 							},
 							
-						"100":{"Points": 10, "N": 20, "Seconds": 3600},
+						"100":{"Points": 10, "N": 30, "Seconds": 3600},
 						
 						"2":{"Points": 5, "N": 30, "Seconds": 86400,
 							"TargetFilename":{"Points": 5, "Value": "AppData"}
 							},
 
-						"3":{"Points": 20, "N": 12, "Seconds": 86400,
-							"DestinationPort": {"Points": 20, "Value": "EXPLORER_DST_PORTS"},
+						"3":{"Points": 100, "N": 20, "Seconds": 3600,
 							"Initiated": {"Points": 30, "Value": "true"}
 							},
 						
@@ -163,11 +162,11 @@
 							},
 							
 							
-						"100":{"Points": 10, "N": 150, "Seconds": 3600},
+						"100":{"Points": 10, "N": 200, "Seconds": 3600},
 						
 						"-2":{"Points": 100},
 						
-						"-3":{"Points": 100},
+						"-3":{"Points": 25},
 						
 						"7":{"Points": 30, "N": 40, "Seconds": 86400,
 								 "ImageLoaded": {"Points": 100, "Value": "c:\\Windows\\System32\\"},
@@ -175,7 +174,7 @@
 								 "Signature": {"Points": 10, "Value": "Microsoft Windows"}
 							},
 							
-						"-8":{"Points": 100},
+						"-8":{"Points": 50},
 						
 						"108":{"Points": 10, "N": 3, "Seconds": 86400,
 							"SourceImage": {"Points": 20, "Value": "C:\\Windows\\System32\\csrss.exe"}
@@ -183,7 +182,7 @@
 						
 						"-9":{"Points": 10},
 							
-						"-11":{"Points": 100},
+						"-11":{"Points": 10},
 
 						"12":{"Points": 10,
 							"TargetObject": {"Points": 5, "Value": "SERVICES_REG_TARGET_OBJECT"}

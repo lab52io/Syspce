@@ -134,8 +134,9 @@ class BaselineEngine(Engine):
 		
 		if not result and baseline_action.has_key("N") and \
 							baseline_action.has_key("Seconds"):
-							
-			bucket_name = self.ImageFileName + str(paction["idEvent"])
+
+			bucket_name = self.ImageFileName + str(paction["idEvent"]) + \
+						  paction["ProcessGuid"]
 			bucket = self.buckets.getBucket(bucket_name)
 			
 			if not bucket:

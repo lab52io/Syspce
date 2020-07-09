@@ -92,7 +92,7 @@ class Output_(object):
 							if action['Alert']:
 								alert += "\t!%s> %s %s\n" %\
 									(tab*(ntabs+2), \
-									get_action_from_id(int(action_type)),
+									get_action_from_id(int(action_type)), 
 											action[param])
 								#action['Alert'] = False
 							else:

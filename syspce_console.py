@@ -38,7 +38,7 @@ class Console(object):
 		self.send_message(MessageSubType.SHOW_JOBS,
 						  Module.CONTROL_MANAGER, [])
 
-		'''
+
 		self.console_history = FileHistory('history.dat')
 		self.session = PromptSession(history=self.console_history,
 									 auto_suggest=AutoSuggestFromHistory(),
@@ -71,7 +71,7 @@ class Console(object):
 				},
 				ignore_case=True,
 				)
-		'''
+
 
 	def run(self):
 		''' Thread console main code'''
@@ -81,12 +81,12 @@ class Console(object):
 
 		while self._running:
 		    try:
-				command = unicode(raw_input("SYSPCE#>"), 'utf-8')
-				'''
+				#command = unicode(raw_input("SYSPCE#>"), 'utf-8')
+
 				command = self.session.prompt('SYSPCE#>',
 								completer=self.syspce_completer,
 								complete_style=CompleteStyle.MULTI_COLUMN)
-				'''
+
 		    except ValueError, e:
 			    print "Input error: %s" % str(e)
 			    command = "exit"

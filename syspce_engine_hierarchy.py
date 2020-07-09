@@ -198,12 +198,22 @@ class HierarchyEngine(Engine):
 
 	def get_process_chain(self, src_process_guid, machine):
 		pchain = []
+		# Due to a bug in Sysmon parent-Child relation we need
+		#to detect infinite loops here.
+		anti_loop = []
 
 		while True:
+			if src_process_guid in anti_loop:
+				log.warning("Infinite loop detected during process chain calculation (Sysmon bug)")
+				anti_loop = []
+				break
+
 			pnode = self.p_tree.processes_tree[machine][src_process_guid]
 			pchain.append(pnode)
+			anti_loop.append(src_process_guid)
 
 			if not self.p_tree.processes_tree[machine].has_key(pnode.ParentProcessGuid):
+				anti_loop = []
 				break
 			else:
 				src_process_guid = pnode.ParentProcessGuid

@@ -86,14 +86,10 @@
 
 	{
 		"RuleID": 10,
-		"Rulename": "Suspicious Office process parent",
+		"Rulename": "User process executed Assembly Mimikatz LogonPasswords",
 		"Content": [
-			{
-				"1": {
-					"Image": "OFFICE_PROCESS",
-					"-ParentCommandLine": "OFFICE_NORMAL_PARENTS"
-				}
-			}
+			{"1": { "Image": "explorer.exe" } },
+			{"7": { "ImageLoaded": "winscard.dll" },"10": { "TargetImage": "lsass.exe", "GrantedAccess":"0x1010" },"110": { "SourceImage": "lsass.exe", "GrantedAccess":"0x1478" }  }
 
 		]
 	},
@@ -153,7 +149,7 @@
 		"RuleID": 16,
 		"Rulename": "[2] Suspicious Connection from parent in APPDATA",
 		"Content": [
-			{ "3": { "Image": "\\AppData\\" } }
+			{ "3": { "Image": "\\AppData\\", "-CommandLine":"\\AppData\\Local\\Microsoft\\OneDrive\\OneDriveStandaloneUpdater.exe" } }
 
 		]
 	},
@@ -216,12 +212,12 @@
 
 	{
 		"RuleID": 21,
-		"Rulename": "Accessing to a System token from sesion 1(priv scalation)",
+		"Rulename": "Accessing to a System token from non privileged user(priv scalation)",
 		"Content": [
 			{
 				"1": { "User": "system" },
 				"110c": {
-					"-SourceUser": "system",
+					"-SourceUser": "SERVICE_USERS",
 					"-SourceImage": "NO_SYSTEM_P_OPENS_SYSTEM_P",
 					"GrantedAccess": "PROCESS_QUERY_INFORMATION"
 				}
@@ -241,7 +237,8 @@
 			{
 				"1": {
 					"Image": "OFFICE_PROCESS",
-					"CommandLine": "embedding"
+					"CommandLine": "embedding",
+					"IntegrityLevel": "High"
 				}
 			},
 			{ "1": { "Image": "*" } }

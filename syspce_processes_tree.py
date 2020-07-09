@@ -100,7 +100,7 @@ class ProcessesTree(object):
 
 				# we do the same for parent process guid
 				if events_list[i].has_key('ParentProcessId'):
-					events_list[i]['ProcessGuidOrig'] = \
+					events_list[i]['ParentProcessGuidOrig'] = \
 										 events_list[i]['ParentProcessGuid']
 
 					events_list[i]['ParentProcessGuid'] = self.get_syspce_id(
