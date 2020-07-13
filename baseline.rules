@@ -136,7 +136,7 @@
 							},	
 							
 						"10":{"Points": 10,
-							"TargetImage":{"Points": 100, "Value": "WINLOGON_OPEN_PROCESS"}
+							"TargetImage":{"Points": 25, "Value": "WINLOGON_CHILDS"}
 							},
 						
 						"-11":{"Points": 100},
@@ -182,15 +182,7 @@
 						
 						"-9":{"Points": 10},
 							
-						"-11":{"Points": 10},
-
-						"12":{"Points": 10,
-							"TargetObject": {"Points": 5, "Value": "SERVICES_REG_TARGET_OBJECT"}
-						},	
-					
-						"13":{"Points": 10,
-							"TargetObject": {"Points": 5, "Value": "SERVICES_REG_TARGET_OBJECT"}
-						},				
+						"-11":{"Points": 10},				
 				
 						"-14":{"Points": 100},
 						

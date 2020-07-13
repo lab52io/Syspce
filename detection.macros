@@ -202,20 +202,8 @@
 			"C:\\Windows\\System32\\userinit.exe",
 			"C:\\Windows\\explorer.exe",
 			"C:\\Windows\\System32\\wlrmdr.exe",
-			"C:\\WINDOWS\\System32\\PhotoScreensaver.scr"
-		],
-
-		"WINLOGON_OPEN_PROCESS": [
-			"C:\\Windows\\System32\\AtBroker.exe",
-			"C:\\Windows\\System32\\Utilman.exe",
-			"C:\\Windows\\System32\\fontdrvhost.exe",
-			"C:\\Windows\\System32\\LogonUI.exe",
-			"C:\\Windows\\System32\\taskmgr.exe",
-			"C:\\Windows\\System32\\dwm.exe",
-			"C:\\Windows\\System32\\userinit.exe",
-			"C:\\Windows\\System32\\consent.exe",
-			"C:\\Windows\\explorer.exe",
-			"C:\\Windows\\System32\\wlrmdr.exe"
+			"C:\\WINDOWS\\System32\\PhotoScreensaver.scr",
+			"\\HP\\HP ProtectTools Security Manager\\Bin\\DPAgent.exe"
 		],
 
 		"WINLOGON_THREAD_CREATED_TO_REMOTE_PROCESS": [

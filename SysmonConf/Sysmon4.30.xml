@@ -1,0 +1,260 @@
+
+
+<Sysmon schemaversion="4.30">
+	<!--SYSMON META CONFIG-->
+	<HashAlgorithms>md5,sha256</HashAlgorithms> 
+	<CheckRevocation/> 
+
+	<EventFiltering>
+
+	<!--SYSMON EVENT ID 1 : PROCESS CREATION [ProcessCreate]-->
+	
+		<ProcessCreate onmatch="exclude">
+			<Image condition="is">C:\Windows\Sysmon.exe</Image>
+
+		</ProcessCreate>
+
+	
+	<!--(DISABLED)SYSMON EVENT ID 2 : FILE CREATION TIME RETROACTIVELY CHANGED IN THE FILESYSTEM [FileCreateTime]-->
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<FileCreateTime onmatch="include">
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+		</FileCreateTime>
+	</RuleGroup>
+
+
+	<!--SYSMON EVENT ID 3 : NETWORK CONNECTION INITIATED [NetworkConnect]-->
+	
+	<RuleGroup name="" groupRelation="or">
+		<NetworkConnect onmatch="include">
+			<!--Baseline behaviour-->
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+			
+			<!--Hierarchy behaviour-->
+			<Image condition="image">winword.exe</Image> 
+			<Image condition="image">powerpnt.exe</Image> 
+			<Image condition="image">excel.exe</Image> 
+			<Image condition="image">outlook.exe</Image> 
+			<Image condition="image">msaccess.exe</Image> 
+
+			<Rule groupRelation="and" name="APPDATA connection">
+                <Image condition="contains">\AppData\</Image>
+                <CommandLine condition="excludes">\AppData\Local\Microsoft\OneDrive\OneDriveStandaloneUpdater.exe</CommandLine>
+            </Rule>			
+
+
+		</NetworkConnect>
+	</RuleGroup>
+
+
+	<!--SYSMON EVENT ID 4 : RESERVED FOR SYSMON SERVICE STATUS MESSAGES-->
+
+		<!--DATA: UtcTime, State, Version, SchemaVersion-->
+		<!--Cannot be filtered.-->
+
+	<!--SYSMON EVENT ID 5 : PROCESS ENDED [ProcessTerminate]-->
+
+	
+		<ProcessTerminate onmatch="exclude">
+		</ProcessTerminate>
+	
+
+
+	<!--SYSMON EVENT ID 6 : DRIVER LOADED INTO KERNEL [DriverLoad]-->
+
+	
+	<RuleGroup name="" groupRelation="or">
+		<DriverLoad onmatch="exclude">
+			<Signature condition="contains">microsoft</Signature> <!--Exclude signed Microsoft drivers-->
+			<Signature condition="contains">windows</Signature> <!--Exclude signed Microsoft drivers-->
+			<Signature condition="begin with">Intel </Signature> <!--Exclude signed Intel drivers-->
+		</DriverLoad>
+	</RuleGroup>
+	
+
+	<!--SYSMON EVENT ID 7 : DLL (IMAGE) LOADED BY PROCESS [ImageLoad]-->
+
+	
+	<RuleGroup name="" groupRelation="or">
+		<ImageLoad onmatch="include">
+			<!--Baseline behaviour-->
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+			
+			<!--Hierarchy behaviour-->
+			<ImageLoaded condition="is">C:\Windows\System32\WinSCard.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\cryptdll.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\hid.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\samlib.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\vaultcli.dll</ImageLoaded>
+
+		</ImageLoad>
+	</RuleGroup>
+	
+
+	<!--(Full Enabled)SYSMON EVENT ID 8 : REMOTE THREAD CREATED [CreateRemoteThread]-->
+
+	
+		<CreateRemoteThread onmatch="exclude">
+
+		</CreateRemoteThread>
+	
+
+	<!--(Disabled) SYSMON EVENT ID 9 : RAW DISK ACCESS [RawAccessRead]-->
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<RawAccessRead onmatch="include">
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+		</RawAccessRead>
+	</RuleGroup>
+	
+
+	<!--SYSMON EVENT ID 10 : INTER-PROCESS ACCESS [ProcessAccess]-->
+	
+	<RuleGroup name="Hierarchy behaviour" groupRelation="or">
+		<ProcessAccess onmatch="include">
+			<!--Baseline behaviour-->
+			<SourceImage condition="image">c:\windows\system32\winlogon.exe</SourceImage>
+			
+			<!--Hierarchy behaviour-->
+			<!--
+			<Rule groupRelation="and" name="">
+                    <TargetImage condition="image">lsass.exe</TargetImage> 
+                    <GrantedAccess condition="is">0x1010</GrantedAccess>
+            </Rule>
+			-->
+
+            <TargetImage condition="image">lsass.exe</TargetImage>
+               
+			<Rule groupRelation="and" name="Real parent detection(CreateProcessInternalW)">
+				<CallTrace condition="contains all">ntdll.dll;KERNELBASE.dll;KERNEL32.DLL</CallTrace>
+				<GrantedAccess condition="is">0x1FFFFF</GrantedAccess>
+			</Rule>	
+			
+			
+		</ProcessAccess>
+		
+		<ProcessAccess onmatch="exclude">
+				<SourceImage condition="image">vmware-authd.exe</SourceImage>
+                <SourceImage condition="image">procexp64.exe</SourceImage>
+                <SourceImage condition="image">procexp.exe</SourceImage>
+				
+				<Rule groupRelation="and" name="">
+					<SourceImage condition="image">C:\WINDOWS\system32\svchost.exe</SourceImage>
+					<TargetImage condition="image">lsass.exe</TargetImage>
+				</Rule>	
+		</ProcessAccess>
+	</RuleGroup>	
+
+	
+
+	<!--SYSMON EVENT ID 11 : FILE CREATED [FileCreate]-->
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<FileCreate onmatch="include">
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+		</FileCreate>
+	</RuleGroup>
+
+	
+
+
+	<!--SYSMON EVENT ID 12 & 13 & 14 : REGISTRY MODIFICATION [RegistryEvent]-->
+	
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<RegistryEvent onmatch="include">
+		
+			<Rule groupRelation="and" name="RenameKey baseline engine">
+                <Image condition="image">c:\windows\explorer.exe</Image>
+                <EventType condition="is">RenameKey</EventType>
+            </Rule>	
+			<Rule groupRelation="and" name="RenameKey baseline engine">
+                <Image condition="image">c:\windows\system32\lsass.exe</Image>
+                <EventType condition="is">RenameKey</EventType>
+            </Rule>	
+			<Rule groupRelation="and" name="RenameKey baseline engine">
+                <Image condition="image">c:\windows\system32\winlogon.exe</Image>
+                <EventType condition="is">RenameKey</EventType>
+            </Rule>	
+			<Rule groupRelation="and" name="RenameKey baseline engine">
+                <Image condition="image">c:\windows\system32\services.exe</Image>
+                <EventType condition="is">RenameKey</EventType>
+            </Rule>	
+
+		</RegistryEvent>
+	</RuleGroup>	
+
+
+
+	<!--SYSMON EVENT ID 15 : ALTERNATE DATA STREAM CREATED [FileCreateStreamHash]-->
+
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<FileCreateStreamHash onmatch="include">
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+		</FileCreateStreamHash>
+	</RuleGroup>
+
+	<!--SYSMON EVENT ID 17 & 18 : PIPE CREATED / PIPE CONNECTED [PipeEvent]-->
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<PipeEvent onmatch="include">
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+		</PipeEvent>
+	</RuleGroup>
+
+
+	<!--SYSMON EVENT ID 19 & 20 & 21 : WMI EVENT MONITORING [WmiEvent]-->
+
+	
+		<WmiEvent onmatch="include">
+			
+		</WmiEvent>
+
+	<!--SYSMON EVENT ID 22 : DNS QUERY [DnsQuery]-->
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<DnsQuery onmatch="include">
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+		</DnsQuery>
+	</RuleGroup>	
+
+		
+	<!--SYSMON EVENT ID 23 : FILE DELETE MONITORING [FileDelete] -->
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<FileDelete onmatch="include">
+			<Image condition="image">c:\windows\explorer.exe</Image> 
+			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
+			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
+			<Image condition="image">c:\windows\system32\services.exe</Image>
+		</FileDelete>
+	</RuleGroup>
+	
+
+	</EventFiltering>
+</Sysmon>
