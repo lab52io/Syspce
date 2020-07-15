@@ -203,7 +203,9 @@
 			"C:\\Windows\\explorer.exe",
 			"C:\\Windows\\System32\\wlrmdr.exe",
 			"C:\\WINDOWS\\System32\\PhotoScreensaver.scr",
-			"\\HP\\HP ProtectTools Security Manager\\Bin\\DPAgent.exe"
+			"\\HP\\HP ProtectTools Security Manager\\Bin\\DPAgent.exe",
+			"C:\\Windows\\System32\\LaunchTM.exe",
+			"C:\\Windows\\system32\\consent.exe"
 		],
 
 		"WINLOGON_THREAD_CREATED_TO_REMOTE_PROCESS": [

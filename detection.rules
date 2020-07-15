@@ -327,10 +327,11 @@
 			{
 				"1": {
 					"SeDebugPrivilegeEnabled": "True",
-					"-TerminalSessionId": "0"
+					"-TerminalSessionId": "0",
+					"-Image":"winlogon.exe"
 				},
 				"8": {
-					"TargetImage": "*"
+					"-TargetImage": "csrss.exe"
 				}
 			}
 		]

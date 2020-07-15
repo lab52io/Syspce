@@ -19,7 +19,7 @@
 							"TargetFilename":{"Points": 5, "Value": "AppData"}
 							},
 
-						"3":{"Points": 100, "N": 20, "Seconds": 3600,
+						"3":{"Points": 25, "N": 20, "Seconds": 3600,
 							"Initiated": {"Points": 30, "Value": "true"}
 							},
 						

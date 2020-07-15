@@ -123,7 +123,7 @@
 
 	<!--SYSMON EVENT ID 10 : INTER-PROCESS ACCESS [ProcessAccess]-->
 	
-	<RuleGroup name="Hierarchy behaviour" groupRelation="or">
+	<RuleGroup name="" groupRelation="or">
 		<ProcessAccess onmatch="include">
 			<!--Baseline behaviour-->
 			<SourceImage condition="image">c:\windows\system32\winlogon.exe</SourceImage>
@@ -139,7 +139,7 @@
             <TargetImage condition="image">lsass.exe</TargetImage>
                
 			<Rule groupRelation="and" name="Real parent detection(CreateProcessInternalW)">
-				<CallTrace condition="contains all">ntdll.dll;KERNELBASE.dll;KERNEL32.DLL</CallTrace>
+				<CallTrace condition="contains all">ntdll.dll;KERNELBASE.dll;KERNEL32.DLL;UNKNOWN</CallTrace>
 				<GrantedAccess condition="is">0x1FFFFF</GrantedAccess>
 			</Rule>	
 			
@@ -150,6 +150,8 @@
 				<SourceImage condition="image">vmware-authd.exe</SourceImage>
                 <SourceImage condition="image">procexp64.exe</SourceImage>
                 <SourceImage condition="image">procexp.exe</SourceImage>
+				
+				<CallTrace condition="contains">c:\windows\system32\pcasvc.dll</CallTrace> <!--Real parent detection-->
 				
 				<Rule groupRelation="and" name="">
 					<SourceImage condition="image">C:\WINDOWS\system32\svchost.exe</SourceImage>

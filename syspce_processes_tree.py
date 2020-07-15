@@ -527,7 +527,9 @@ class Node_(object):
 						node = computer_ptree[child["ChildProcessGuid"]]
 
 						if node.acciones["1"][0]["ProcessGuid"] == \
-												req["TargetProcessGuid"]:
+						   req["TargetProcessGuid"] and \
+						   "unknown" in req["CallTrace"].lower() and \
+						   req["GrantedAccess"].lower() == '0x1fffff':
 						
 							parent = "(" + action108["SourceProcessId"] + \
 										") " + action108["SourceImage"]
