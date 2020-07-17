@@ -196,14 +196,11 @@ class InputVolatility(Input):
 		# Plugin psxview volatility 
 		###########################
 
-		#proc = taskmods.PSList(self._config)
 		proc = psxv.PsXview(self._config)
 		pslist1 = {}
 		vprocess = []
 
-		#for process in proc.calculate():
 		for offset, process, ps_sources in proc.calculate():
-			## Mapping to event id sysmon 1
 			pslist1['computer'] = computerid
 			pslist1['Source'] = "Memory"
 			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
@@ -243,7 +240,7 @@ class InputVolatility(Input):
 			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 
-			# Building ProcessGuid to merge events with Sysmon.
+			# We are building "ProcessGuid" to merge this eventi ID with Sysmon
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
 			epoch = datetime.datetime.utcfromtimestamp(0)
 			t = (date_time_obj-epoch).total_seconds()
@@ -260,9 +257,8 @@ class InputVolatility(Input):
 			pslist1['ProcessGuid'] = result2.hexdigest()
 			pslist1['SyspceId'] = result.hexdigest()
 
+			## MODULES
 			modules = ""
-
-			## Modules 
 			for module in process.get_load_modules():
 				if module is not None:
 					modules = modules + "," + str(module.FullDllName)
@@ -298,6 +294,7 @@ class InputVolatility(Input):
 
 			pslist1 = {}
 
+		## We fill Parent fields with calculated information
 		for p in vprocess:
 			for x in vprocess:
 				if p['ParentProcessId'] == x['ProcessId']:
