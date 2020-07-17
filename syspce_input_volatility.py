@@ -193,14 +193,16 @@ class InputVolatility(Input):
 		computerid = mg_vector[0]
 
 		###########################
-		# Plugin pslist volatility 
+		# Plugin psxview volatility 
 		###########################
 
-		proc = taskmods.PSList(self._config)
+		#proc = taskmods.PSList(self._config)
+		proc = psxv.PsXview(self._config)
 		pslist1 = {}
 		vprocess = []
 
-		for process in proc.calculate():
+		#for process in proc.calculate():
+		for offset, process, ps_sources in proc.calculate():
 			## Mapping to event id sysmon 1
 			pslist1['computer'] = computerid
 			pslist1['Source'] = "Memory"
@@ -213,7 +215,6 @@ class InputVolatility(Input):
 			pslist1['ProcessId'] = str(int(process.UniqueProcessId))
 			pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
 			pslist1['TerminalSessionId'] = str(int(process.SessionId))
-			## Extra 
 			pslist1['ExitTime'] = str(process.ExitTime)
 			pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
 			pslist1['IsWow64'] = str(process.IsWow64)
@@ -224,17 +225,25 @@ class InputVolatility(Input):
 			pslist1['ParentCommandLine'] = ""
 			pslist1['ParentProcessGuid'] = ""
 			pslist1["unknown_threads"] = "False"
+			pslist1['pslist'] = str(offset in ps_sources["pslist"])
+			pslist1['psscan'] = str(offset in ps_sources["psscan"])
+			pslist1['threadproc'] = str(offset in ps_sources["thrdproc"])
+			pslist1['pspcid'] = str(offset in ps_sources["pspcid"])
+			pslist1['csrss'] = str(offset in ps_sources["csrss"])
+			pslist1['session'] = str(offset in ps_sources["session"])
+			pslist1['deskthrd'] = str(offset in ps_sources["deskthrd"])
 
+			# Exceptions with terminated process
 			if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
 				pslist1['Image'] = str(process.ImageFileName)
+				pslist1['CommandLine'] = str(process.ImageFileName)
 
-			#Exceptions 
 			if pslist1['ProcessId'] == '4':
 				pslist1['Image'] = "System"
 			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 
-			#Building ProcessGuid to merge events with Sysmon.
+			# Building ProcessGuid to merge events with Sysmon.
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
 			epoch = datetime.datetime.utcfromtimestamp(0)
 			t = (date_time_obj-epoch).total_seconds()
@@ -340,33 +349,34 @@ class InputVolatility(Input):
 		# Plugin psxview volatility
 		###########################
 
-		command = psxv.PsXview(self._config)
+		#command = psxv.PsXview(self._config)
 
-		psxview_dict = {}
-		psxview_vector = []
+		#psxview_dict = {}
+		#psxview_vector = []
 
-		for offset, process, ps_sources in command.calculate():
-			psxview_dict['ProcessId'] = str(int(process.UniqueProcessId))
-			psxview_dict['pslist'] = str(offset in ps_sources["pslist"])
-			psxview_dict['psscan'] = str(offset in ps_sources["psscan"])
-			psxview_dict['threadproc'] = str(offset in ps_sources["thrdproc"])
-			psxview_dict['pspcid'] = str(offset in ps_sources["pspcid"])
-			psxview_dict['csrss'] = str(offset in ps_sources["csrss"])
-			psxview_dict['session'] = str(offset in ps_sources["session"])
-			psxview_dict['deskthrd'] = str(offset in ps_sources["deskthrd"])
-			psxview_vector.append(psxview_dict)
-			psxview_dict = {}
+		#for offset, process, ps_sources in command.calculate():
+		#	psxview_dict['ProcessId'] = str(int(process.UniqueProcessId))
+		#	psxview_dict['pslist'] = str(offset in ps_sources["pslist"])
+		#	psxview_dict['psscan'] = str(offset in ps_sources["psscan"])
+		#	psxview_dict['threadproc'] = str(offset in ps_sources["thrdproc"])
+		#	psxview_dict['pspcid'] = str(offset in ps_sources["pspcid"])
+		#	psxview_dict['csrss'] = str(offset in ps_sources["csrss"])
+		#	psxview_dict['session'] = str(offset in ps_sources["session"])
+		#	psxview_dict['deskthrd'] = str(offset in ps_sources["deskthrd"])
+		#	psxview_vector.append(psxview_dict)
+		#	psxview_dict = {}
 
-		for p in vprocess:
-			for x in psxview_vector:
-				if p['ProcessId'] == x['ProcessId']:
-						p['plist'] = x['pslist']
-						p['plist_pooltag'] = x['psscan']
-						p['plist_threadproc'] = x['threadproc']
-						p['plist_pspcid'] = x['pspcid']
-						p['plist_csrss'] = x['csrss']
-						p['plist_session'] = x['session']
-						p['plist_deskthrd'] = x['deskthrd']
+		# Bucle funcional
+		#for p in vprocess:
+		#	for x in psxview_vector:
+		#		if p['ProcessId'] == x['ProcessId']:
+		#				p['plist'] = x['pslist']
+		#				p['plist_pooltag'] = x['psscan']
+		#				p['plist_threadproc'] = x['threadproc']
+		#				p['plist_pspcid'] = x['pspcid']
+		#				p['plist_csrss'] = x['csrss']
+		#				p['plist_session'] = x['session']
+		#				p['plist_deskthrd'] = x['deskthrd']
 
 		# To Send to the CORE
 		############################
