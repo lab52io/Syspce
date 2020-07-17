@@ -274,7 +274,7 @@
 
 	{
 		"RuleID": 27,
-		"Rulename": "Hidden process detect (pslist vs psscan)",
+		"Rulename": "Hidden process detected (pslist vs psscan)",
 		"Content": [
 			{
 				"1": {

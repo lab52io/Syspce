@@ -79,19 +79,21 @@ class InputVolatility(Input):
 				else:
 					yield name, root
 
+
+	''' 
+	Name: get_threads()
+	Params: Process handle to extract the threads
+	Return: True o False if PS_CROSS_THREAD_FLAGS_SYSTEM, PS_CROSS_THREAD_FLAGS_HIDEFROMDBG, PS_CROSS_THREAD_FLAGS_IMPERSONATING or UNKNOWN THREADS is enable o disable
+	Description: This function detect unknown thread, hidden from debugger threads and impersonation threads. This funtion is very slow, be patient.
+	'''
 	def get_threads(self,process):
 
-			## THREADS
-			## Extracted from threads.py. We only want unknown threads.
-			## WARNING: Very slow
-
-			#print "Extracting threads to the process: " + str(int(process.UniqueProcessId))
 			result = []
 			result.append("False")
 			result.append("False")
 			result.append("False")
 			result.append("False")
-			#pidlist = []
+
 			addr_space = utils.load_as(self._config)
 			system_range = tasks.get_kdbg(addr_space).MmSystemRangeStart.dereference_as("Pointer")
 			mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in moduless.lsmod(addr_space))
@@ -101,17 +103,9 @@ class InputVolatility(Input):
 			for thread in process.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
 				seen_threads[thread.obj_vm.vtop(thread.obj_offset)] = (False, thread)
 
-			#Now scan for threads and save any that haven't been seen
-			#for thread in modscan.ThrdScan(self._config).calculate():
-			#	if not seen_threads.has_key(thread.obj_offset):
-			#		seen_threads[thread.obj_offset] = (True, thread)
-			#Keep a record of processes whose DLLs we've already enumerated
 			process_dll_info = {}
-			for _offset, (found_by_scanner, thread) in seen_threads.items():
-			# Skip processes the user doesn't want to see
-			#	if ((self._config.PID or self._config.OFFSET) and not pidlist) or (pidlist and thread.Cid.UniqueProcess not in pidlist):
-			#		continue
 
+			for _offset, (found_by_scanner, thread) in seen_threads.items():
 				# Do we need to gather DLLs for module resolution 
 				if addr_space.address_compare(thread.StartAddress, system_range) != -1:
 					owner = tasks.find_module(mods, mod_addrs,addr_space.address_mask(thread.StartAddress))
@@ -126,18 +120,18 @@ class InputVolatility(Input):
 							user_mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in owning_process.get_load_modules())
 							user_mod_addrs = sorted(user_mods.keys())
 							process_dll_info[owning_process.obj_offset] = (user_mod_addrs, user_mods)
+
 						owner = tasks.find_module(user_mods, user_mod_addrs, addr_space.address_mask(thread.StartAddress))
 				
-				#print str(int(process.UniqueProcessId)) + ": " +str(thread.CrossThreadFlags)
 				if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
 					result[1] = "True"
-					#print "Proceso con PS_CROSS_THREAD_FLAGS_IMPERSONATING a 1: " + str(int(process.UniqueProcessId))
+					
 				if "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG" in str(thread.CrossThreadFlags):
 					result[2] = "True"
-					#print "Proceso con PS_CROSS_THREAD_FLAGS_HIDEFROMDBG a 1: " + str(int(process.UniqueProcessId))
+					
 				if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
 					result[3] = "True"
-					#print "Proceso con PS_CROSS_THREAD_FLAGS_SYSTEM a 1: " + str(int(process.UniqueProcessId))
+					
 
 				if owner:
 					owner_name = str(owner.BaseDllName or '')
@@ -147,7 +141,7 @@ class InputVolatility(Input):
 					result[0] = "True"
 					#print "Proceso con hilo ejecutado desde un modulo no conocido: " + str(int(process.UniqueProcessId))
 					break
- 			return result
+			return result
 
 
 	def is_vad_empty(self, vad, address_space):
