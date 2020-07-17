@@ -226,6 +226,6 @@ def get_default_parameter_from_id(id):
 	elif id == 108:
 		return "SourceImage"
 	elif id == 110:
-		return "SourceUser"
+		return "SourceImage"
 	else:
 		return "UNKNOW ACTION"

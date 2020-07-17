@@ -86,10 +86,10 @@
 
 	{
 		"RuleID": 10,
-		"Rulename": "User process executed Assembly Mimikatz LogonPasswords",
+		"Rulename": "User process executed Mimikatz LogonPasswords",
 		"Content": [
 			{"1": { "Image": "explorer.exe" } },
-			{"7": { "ImageLoaded": "winscard.dll" },"10": { "TargetImage": "lsass.exe", "GrantedAccess":"0x1010" },"110": { "SourceImage": "lsass.exe", "GrantedAccess":"0x1478" }  }
+			{"7": { "ImageLoaded": "winscard.dll" },"10": { "TargetImage": "lsass.exe", "GrantedAccess":"0x1010" }  }
 
 		]
 	},
@@ -212,7 +212,7 @@
 
 	{
 		"RuleID": 21,
-		"Rulename": "Accessing to a System token from non privileged user(priv scalation)",
+		"Rulename": "Accessing to a System token from from user account (priv scalation to System)",
 		"Content": [
 			{
 				"1": { "User": "system" },
@@ -299,15 +299,39 @@
 	},
 	{
 		"RuleID": 29,
+		"Rulename": "Multiple attempts to access a System token from user account (priv scalation to System)",
+		"Content": [
+			{
+				"1": {
+					"Image": "C:\\WINDOWS\\system32\\services.exe"
+				}
+			},			
+			{
+				"N": 3,
+				"Seconds": 10
+			},
+			{
+				"1": { "User": "system" },
+				"110c": {
+					"-SourceUser": "SERVICE_USERS",
+					"-SourceImage": "NO_SYSTEM_P_OPENS_SYSTEM_P",
+					"GrantedAccess": "PROCESS_QUERY_INFORMATION"
+				}
+			}
+		]
+	},
+	{
+		"RuleID": 30,
 		"Rulename": "User process with SeDebugPrivilegeEnabled creates a remote thread",
 		"Content": [
 			{
 				"1": {
 					"SeDebugPrivilegeEnabled": "True",
-					"-TerminalSessionId": "0"
+					"-TerminalSessionId": "0",
+					"-Image":"winlogon.exe"
 				},
 				"8": {
-					"TargetImage": "*"
+					"-TargetImage": "csrss.exe"
 				}
 			}
 		]
