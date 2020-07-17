@@ -224,17 +224,20 @@ class InputVolatility(Input):
 			pslist1['session'] = str(offset in ps_sources["session"])
 			pslist1['deskthrd'] = str(offset in ps_sources["deskthrd"])
 
-			# Exceptions with terminated process
+			# Exception with terminated process
 			if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
 				pslist1['Image'] = str(process.ImageFileName)
 				pslist1['CommandLine'] = str(process.ImageFileName)
-
+			# Exception with kernel
 			if pslist1['ProcessId'] == '4':
-				pslist1['Image'] = "System"
+				pslist1['Image'] = "Kernel"
+				pslist1['CommandLine'] = "Kernel"
+			# Exception with smss.exe
 			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
+				pslist1['CommandLine'] = "smss.exe"
 
-			# We are building "ProcessGuid" to merge this eventi ID with Sysmon
+			# We build the "PROCESSCUID" to merge this eventi ID with Sysmon
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
 			epoch = datetime.datetime.utcfromtimestamp(0)
 			t = (date_time_obj-epoch).total_seconds()
@@ -284,8 +287,8 @@ class InputVolatility(Input):
 			pslist1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = resultt[2]
 			# This process has one thread with SystemThread = 1 (Cross-Thread Flags in the ETHREAD)
 			pslist1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = resultt[3]
-			vprocess.append(pslist1)
 
+			vprocess.append(pslist1)
 			pslist1 = {}
 
 		## We fill Parent fields with calculated information
