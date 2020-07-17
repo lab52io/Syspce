@@ -345,38 +345,6 @@ class InputVolatility(Input):
 						pve = x['Name'] + "Enabled"
 						p[pve] = x['Enabled']
 
-		###########################
-		# Plugin psxview volatility
-		###########################
-
-		#command = psxv.PsXview(self._config)
-
-		#psxview_dict = {}
-		#psxview_vector = []
-
-		#for offset, process, ps_sources in command.calculate():
-		#	psxview_dict['ProcessId'] = str(int(process.UniqueProcessId))
-		#	psxview_dict['pslist'] = str(offset in ps_sources["pslist"])
-		#	psxview_dict['psscan'] = str(offset in ps_sources["psscan"])
-		#	psxview_dict['threadproc'] = str(offset in ps_sources["thrdproc"])
-		#	psxview_dict['pspcid'] = str(offset in ps_sources["pspcid"])
-		#	psxview_dict['csrss'] = str(offset in ps_sources["csrss"])
-		#	psxview_dict['session'] = str(offset in ps_sources["session"])
-		#	psxview_dict['deskthrd'] = str(offset in ps_sources["deskthrd"])
-		#	psxview_vector.append(psxview_dict)
-		#	psxview_dict = {}
-
-		# Bucle funcional
-		#for p in vprocess:
-		#	for x in psxview_vector:
-		#		if p['ProcessId'] == x['ProcessId']:
-		#				p['plist'] = x['pslist']
-		#				p['plist_pooltag'] = x['psscan']
-		#				p['plist_threadproc'] = x['threadproc']
-		#				p['plist_pspcid'] = x['pspcid']
-		#				p['plist_csrss'] = x['csrss']
-		#				p['plist_session'] = x['session']
-		#				p['plist_deskthrd'] = x['deskthrd']
 
 		# To Send to the CORE
 		############################
