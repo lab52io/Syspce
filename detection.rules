@@ -278,8 +278,8 @@
 		"Content": [
 			{
 				"1": {
-					"plist": "False",
-					"plist_pooltag": "True"
+					"pslist": "False",
+					"psscan": "True"
 				}
 			}
 		]
