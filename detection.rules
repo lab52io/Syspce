@@ -3,7 +3,10 @@
 		"RuleID": 1,
 		"Rulename": "Remote Injected code detected",
 		"Content": [
-			{ "1": { "rwx_page": "True" }, "108": { "-SourceImage": "WmiPrvSE.exe" } }
+			{
+				"1": { "rwx_page": "True" },
+				"108": { "-SourceImage": "WmiPrvSE.exe" }
+			}
 
 		]
 	},
@@ -27,7 +30,17 @@
 			{ "8c": { "Image": "*" } }
 		]
 	},
-
+	{
+		"RuleID": 4,
+		"Rulename": "Process with threads hidden from debugger",
+		"Content": [
+			{
+				"1": {
+					"PS_CROSS_THREAD_FLAGS_HIDEFROMDBG": "True"
+				}
+			}
+		]
+	},
 	{
 		"RuleID": 5,
 		"Rulename": "[Bypass UAC] Elevated process from lower integrity process",
@@ -88,8 +101,14 @@
 		"RuleID": 10,
 		"Rulename": "User process executed Mimikatz LogonPasswords",
 		"Content": [
-			{"1": { "Image": "explorer.exe" } },
-			{"7": { "ImageLoaded": "winscard.dll" },"10": { "TargetImage": "lsass.exe", "GrantedAccess":"0x1010" }  }
+			{ "1": { "Image": "explorer.exe" } },
+			{
+				"7": { "ImageLoaded": "winscard.dll" },
+				"10": {
+					"TargetImage": "lsass.exe",
+					"GrantedAccess": "0x1010"
+				}
+			}
 
 		]
 	},
@@ -149,7 +168,12 @@
 		"RuleID": 16,
 		"Rulename": "[2] Suspicious Connection from parent in APPDATA",
 		"Content": [
-			{ "3": { "Image": "\\AppData\\", "-CommandLine":"\\AppData\\Local\\Microsoft\\OneDrive\\OneDriveStandaloneUpdater.exe" } }
+			{
+				"3": {
+					"Image": "\\AppData\\",
+					"-CommandLine": "\\AppData\\Local\\Microsoft\\OneDrive\\OneDriveStandaloneUpdater.exe"
+				}
+			}
 
 		]
 	},
@@ -270,8 +294,17 @@
 			{ "1": { "-Image": "c:\\" } }
 		]
 	},
-	
-
+	{
+		"RuleID": 25,
+		"Rulename": "Process with unknown threads and memory segments created with RWX permissions",
+		"Content": [
+			{
+				"1": { "rwx_page": "True",
+							 "unknown_threads": "True"
+				}
+			}
+		]
+	},
 	{
 		"RuleID": 27,
 		"Rulename": "Hidden process detected (pslist vs psscan)",
@@ -293,7 +326,8 @@
 				"1": {
 					"SeDebugPrivilegeEnabled": "True",
 					"-TerminalSessionId": "0",
-					"-Image": "NORMAL_DEBUG_PRIV_ENABLED_IN_USER_SESSION"
+					"-Image": "consent.exe"
+
 				}
 			}
 		]
@@ -306,7 +340,7 @@
 				"1": {
 					"Image": "C:\\WINDOWS\\system32\\services.exe"
 				}
-			},			
+			},
 			{
 				"N": 3,
 				"Seconds": 10
@@ -329,7 +363,7 @@
 				"1": {
 					"SeDebugPrivilegeEnabled": "True",
 					"-TerminalSessionId": "0",
-					"-Image":"winlogon.exe"
+					"-Image": "winlogon.exe"
 				},
 				"8": {
 					"-TargetImage": "csrss.exe"
