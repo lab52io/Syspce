@@ -139,7 +139,6 @@ class InputVolatility(Input):
 					# If there is a unknown thread we break for loop
 					owner_name = "UNKNOWN"
 					result[0] = "True"
-					#print "Proceso con hilo ejecutado desde un modulo no conocido: " + str(int(process.UniqueProcessId))
 					break
 			return result
 
@@ -195,6 +194,7 @@ class InputVolatility(Input):
 		vprocess = []
 
 		for offset, process, ps_sources in proc.calculate():
+
 			pslist1['computer'] = computerid
 			pslist1['Source'] = "Memory"
 			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
@@ -230,12 +230,12 @@ class InputVolatility(Input):
 				pslist1['CommandLine'] = str(process.ImageFileName)
 			# Exception with kernel
 			if pslist1['ProcessId'] == '4':
-				pslist1['Image'] = "Kernel"
-				pslist1['CommandLine'] = "Kernel"
+				pslist1['Image'] = "system"
+				pslist1['CommandLine'] = "system"
 			# Exception with smss.exe
 			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
+				pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
-				pslist1['CommandLine'] = "smss.exe"
 
 			# We build the "PROCESSCUID" to merge this eventi ID with Sysmon
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
@@ -266,7 +266,7 @@ class InputVolatility(Input):
 			"""
 			  This looks for private allocations that are committed, 
 			  memory-resident, non-empty (not all zeros) and with an 
-              original protection that includes write and execute. 
+			  original protection that includes write and execute. 
 			"""
 			pslist1["rwx_page"] = "False"
 			vads = process.get_vads(vad_filter=process._injection_filter)
