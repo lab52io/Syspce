@@ -5,6 +5,7 @@ import threading
 import uuid
 import hashlib
 import datetime
+import os
 
 import volatility.conf as conf
 import volatility.obj as obj
@@ -30,6 +31,11 @@ import volatility.plugins.registry.registryapi as registryapi
 
 log = logging.getLogger('sysmoncorrelator')
 
+# Example input memory execution:
+# Param -p: Volatility profile 
+# Param -m: Memory file
+# python.exe syspce.py -m C:\Users\john\RAM.raw -p Win7SP1x64
+
 class InputVolatility(Input):
 
 	def __init__(self, data_buffer_in,
@@ -40,7 +46,15 @@ class InputVolatility(Input):
 					   data_condition_in,
 					   src)
 
-		
+		# Relative Path
+		filepath2 = ""
+		if filepath.find(":\\") == -1:
+			filepath2 = os.getcwd()+"\\"+filepath
+			filepath = "file:///" + filepath2
+		else:
+		# Absolute path
+			filepath = "file:///" + filepath
+
 		self._config = conf.ConfObject()
 		self._config.PROFILE = profile
 		self._config.LOCATION = filepath
@@ -78,7 +92,6 @@ class InputVolatility(Input):
 					yield name, rawreg.open_key(root, self._config.KEY.split('\\'))
 				else:
 					yield name, root
-
 
 	''' 
 	Name: get_threads()
@@ -132,14 +145,13 @@ class InputVolatility(Input):
 				if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
 					result[3] = "True"
 					
-
 				if owner:
 					owner_name = str(owner.BaseDllName or '')
 				else:
 					# If there is a unknown thread we break for loop
 					owner_name = "UNKNOWN"
 					result[0] = "True"
-					break
+
 			return result
 
 
@@ -237,7 +249,8 @@ class InputVolatility(Input):
 				pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 
-			# We build the "PROCESSCUID" to merge this eventi ID with Sysmon
+			# We build the "PROCESSGUID" to merge this event ID with Sysmon
+			################################################################
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
 			epoch = datetime.datetime.utcfromtimestamp(0)
 			t = (date_time_obj-epoch).total_seconds()
@@ -255,6 +268,7 @@ class InputVolatility(Input):
 			pslist1['SyspceId'] = result.hexdigest()
 
 			## MODULES
+			###########
 			modules = ""
 			for module in process.get_load_modules():
 				if module is not None:
@@ -263,6 +277,7 @@ class InputVolatility(Input):
 			pslist1['modules'] = modules
 
 			## VADS
+			########
 			"""
 			  This looks for private allocations that are committed, 
 			  memory-resident, non-empty (not all zeros) and with an 
@@ -273,11 +288,14 @@ class InputVolatility(Input):
 			for vad, address_space in vads:
 				if self.is_vad_empty(vad, address_space):
 					continue
-
-				protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
-				pslist1["rwx_page"] = "True"
+				else:
+					protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
+					pslist1["rwx_page"] = "True"
+					# With one non-empty VAD is enough
+					break
 
 			## THREADS
+			###########
 			resultt = self.get_threads(process)
 			# This process has one thread with StartAddress unknow
 			pslist1["unknown_threads"]  = resultt[0]
