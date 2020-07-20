@@ -304,6 +304,18 @@
 	},
 
 	{
+		"RuleID": 26,
+		"Rulename": "Process with unknown threads and memory segments created with RWX permissions",
+		"Content": [
+			{
+				"1": { "rwx_page": "True",
+							 "unknown_threads": "True"
+				}
+			}
+		]
+	},
+
+	{
 		"RuleID": 27,
 		"Rulename": "Hidden process detected (pslist vs psscan)",
 		"Content": [
@@ -316,6 +328,7 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 28,
 		"Rulename": "SeDebugPrivilegeEnabled in user session",
@@ -330,6 +343,7 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 29,
 		"Rulename": "Multiple attempts to access a System token from user account (priv scalation to System)",
@@ -353,8 +367,21 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 30,
+		"Rulename": "Process with threads hidden from debugger",
+		"Content": [
+			{
+				"1": {
+					"PS_CROSS_THREAD_FLAGS_HIDEFROMDBG": "True"
+				}
+			}
+		]
+	},
+
+	{
+		"RuleID": 31,
 		"Rulename": "User process with SeDebugPrivilegeEnabled creates a remote thread",
 		"Content": [
 			{
