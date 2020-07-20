@@ -90,7 +90,10 @@
 		"RuleID": 9,
 		"Rulename": "T1204: User Execution - Malicious Office Document with macro",
 		"Content": [
-			{ "1": { "Image": "OFFICE_PROCESS" } ,"7": { "ImageLoaded": "vbe7.dll" }},
+			{
+				"1": { "Image": "OFFICE_PROCESS" },
+				"7": { "ImageLoaded": "vbe7.dll" }
+			},
 			{ "1c": { "Image": "SCRIPTING_ENGINES_AND_SHELLS" } }
 		]
 	},
@@ -298,23 +301,14 @@
 		"RuleID": 25,
 		"Rulename": "T1003: Credential Dumping - Process dump detected using dbg libraries",
 		"Content": [
-			{ "7": { "ImageLoaded": "PROCESS_DUMP_DLLS" }, "10": { "CallTrace":"PROCESS_DUMP_DLLS" }}
-
-		]
-	},
-
-	{
-		"RuleID": 26,
-		"Rulename": "Process with unknown threads and memory segments created with RWX permissions",
-		"Content": [
 			{
-				"1": {
-					"rwx_page": "True",
-					"unknown_threads": "True"
-				}
+				"7": { "ImageLoaded": "PROCESS_DUMP_DLLS" },
+				"10": { "CallTrace": "PROCESS_DUMP_DLLS" }
 			}
+
 		]
 	},
+
 	{
 		"RuleID": 26,
 		"Rulename": "System thread in session 1",
@@ -405,6 +399,18 @@
 				},
 				"8": {
 					"-TargetImage": "csrss.exe"
+				}
+			}
+		]
+	},
+	{
+		"RuleID": 32,
+		"Rulename": "Process with unknown threads and memory segments created with RWX permissions",
+		"Content": [
+			{
+				"1": {
+					"rwx_page": "True",
+					"unknown_threads": "True"
 				}
 			}
 		]
