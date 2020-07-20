@@ -273,6 +273,12 @@
 			"\\srvsvc"
 		],
 
+		"PROCESS_DUMP_DLLS": [
+			"comsvcs.dll",
+			"dbgcore.dll",
+			"dbghelp.dll"
+		],
+
 		"NORMAL_DEBUG_PRIV_ENABLED_IN_USER_SESSION": [
 			"c:\\Windows\\System32\\csrss.exe",
 			"c:\\Windows\\System32\\winlogon.exe",

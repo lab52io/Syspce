@@ -29,6 +29,15 @@
 	},
 
 	{
+		"RuleID": 4,
+		"Rulename": "T1204: User Execution - Office Document with using iexplorer COM object",
+		"Content": [
+			{ "1": { "Image": "OFFICE_PROCESS" } },
+			{ "7": { "ImageLoaded": "ieproxy.dll" } }
+		]
+	},
+
+	{
 		"RuleID": 5,
 		"Rulename": "[Bypass UAC] Elevated process from lower integrity process",
 		"Content": [
@@ -64,7 +73,7 @@
 
 	{
 		"RuleID": 8,
-		"Rulename": "Successful phising attack",
+		"Rulename": "T1204: User Execution - Successful phising attack",
 		"Content": [
 			{ "1": { "Image": "EMAIL_AGENTS" } },
 			{
@@ -77,9 +86,9 @@
 
 	{
 		"RuleID": 9,
-		"Rulename": "Malicious Office Document",
+		"Rulename": "T1204: User Execution - Malicious Office Document with macro",
 		"Content": [
-			{ "1": { "Image": "OFFICE_PROCESS" } },
+			{ "1": { "Image": "OFFICE_PROCESS" } ,"7": { "ImageLoaded": "vbe7.dll" }},
 			{ "1c": { "Image": "SCRIPTING_ENGINES_AND_SHELLS" } }
 		]
 	},
@@ -95,7 +104,7 @@
 	},
 	{
 		"RuleID": 11,
-		"Rulename": "Suspicious Office process create a startup",
+		"Rulename": "T1060: Registry Run Keys / Startup Folder - Suspicious Office process create a startup",
 		"Content": [
 			{ "1": { "Image": "OFFICE_PROCESS" } },
 			{ "12c": { "TargetObject": "REGISTRY_PERSISTENCE" } }
@@ -104,7 +113,7 @@
 
 	{
 		"RuleID": 12,
-		"Rulename": "[1] Suspicious DNS resolution from parent in APPDATA",
+		"Rulename": "Suspicious DNS resolution from parent in APPDATA",
 		"Content": [
 			{ "1": { "Image": "\\AppData\\" } },
 			{ "22c": { "Image": "*" } }
@@ -113,7 +122,7 @@
 
 	{
 		"RuleID": 13,
-		"Rulename": "Precess created by injected Thread",
+		"Rulename": "T1502: Parent PID Spoofing - Precess created by injected Thread",
 		"Content": [
 			{ "1": { "CreationType": "InjectedThread" } }
 		]
@@ -147,7 +156,7 @@
 
 	{
 		"RuleID": 16,
-		"Rulename": "[2] Suspicious Connection from parent in APPDATA",
+		"Rulename": "Suspicious Connection from parent in APPDATA",
 		"Content": [
 			{ "3": { "Image": "\\AppData\\", "-CommandLine":"\\AppData\\Local\\Microsoft\\OneDrive\\OneDriveStandaloneUpdater.exe" } }
 
@@ -262,6 +271,7 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 24,
 		"Rulename": "Application executed from external device (USB/Network)",
@@ -270,7 +280,15 @@
 			{ "1": { "-Image": "c:\\" } }
 		]
 	},
-	
+
+	{
+		"RuleID": 25,
+		"Rulename": "T1003: Credential Dumping - Process dump detected using dbg libraries",
+		"Content": [
+			{ "7": { "ImageLoaded": "PROCESS_DUMP_DLLS" }, "10": { "CallTrace":"PROCESS_DUMP_DLLS" }}
+
+		]
+	},
 
 	{
 		"RuleID": 27,
