@@ -139,16 +139,19 @@
 							"TargetImage":{"Points": 25, "Value": "WINLOGON_CHILDS"}
 							},
 						
-						"-11":{"Points": 100},
+						"11":{"Points": 10, "N": 50, "Seconds": 3600,
+							"TargetFilename": {"Points": 50, "Value": "C:\\Windows\\Resources\\Themes\\aero\\"}
+						},
 						
-							
 						"-14":{"Points": 100},
 						
 						"-15":{"Points": 100},
 						
 						"-17":{"Points": 100},
-						
-						"-18":{"Points": 100}
+
+						"18":{"Points": 30,	"N": 5, "Seconds": 3600,
+							"PipeName":{"Points": 50, "Value": "\\wkssvc"}
+							}
 				},
 
 	"services.exe":{ 	"max_ttl": 1000000,"min_ttl": 20, "Points": 10,

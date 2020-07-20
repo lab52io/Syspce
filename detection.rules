@@ -32,15 +32,13 @@
 	},
 	{
 		"RuleID": 4,
-		"Rulename": "Process with threads hidden from debugger",
+		"Rulename": "T1204: User Execution - Office Document with using iexplorer COM object",
 		"Content": [
-			{
-				"1": {
-					"PS_CROSS_THREAD_FLAGS_HIDEFROMDBG": "True"
-				}
-			}
+			{ "1": { "Image": "OFFICE_PROCESS" } },
+			{ "7": { "ImageLoaded": "ieproxy.dll" } }
 		]
 	},
+
 	{
 		"RuleID": 5,
 		"Rulename": "[Bypass UAC] Elevated process from lower integrity process",
@@ -77,7 +75,7 @@
 
 	{
 		"RuleID": 8,
-		"Rulename": "Successful phising attack",
+		"Rulename": "T1204: User Execution - Successful phising attack",
 		"Content": [
 			{ "1": { "Image": "EMAIL_AGENTS" } },
 			{
@@ -90,9 +88,9 @@
 
 	{
 		"RuleID": 9,
-		"Rulename": "Malicious Office Document",
+		"Rulename": "T1204: User Execution - Malicious Office Document with macro",
 		"Content": [
-			{ "1": { "Image": "OFFICE_PROCESS" } },
+			{ "1": { "Image": "OFFICE_PROCESS" } ,"7": { "ImageLoaded": "vbe7.dll" }},
 			{ "1c": { "Image": "SCRIPTING_ENGINES_AND_SHELLS" } }
 		]
 	},
@@ -114,7 +112,7 @@
 	},
 	{
 		"RuleID": 11,
-		"Rulename": "Suspicious Office process create a startup",
+		"Rulename": "T1060: Registry Run Keys / Startup Folder - Suspicious Office process create a startup",
 		"Content": [
 			{ "1": { "Image": "OFFICE_PROCESS" } },
 			{ "12c": { "TargetObject": "REGISTRY_PERSISTENCE" } }
@@ -123,7 +121,7 @@
 
 	{
 		"RuleID": 12,
-		"Rulename": "[1] Suspicious DNS resolution from parent in APPDATA",
+		"Rulename": "Suspicious DNS resolution from parent in APPDATA",
 		"Content": [
 			{ "1": { "Image": "\\AppData\\" } },
 			{ "22c": { "Image": "*" } }
@@ -132,7 +130,7 @@
 
 	{
 		"RuleID": 13,
-		"Rulename": "Precess created by injected Thread",
+		"Rulename": "T1502: Parent PID Spoofing - Precess created by injected Thread",
 		"Content": [
 			{ "1": { "CreationType": "InjectedThread" } }
 		]
@@ -166,7 +164,7 @@
 
 	{
 		"RuleID": 16,
-		"Rulename": "[2] Suspicious Connection from parent in APPDATA",
+		"Rulename": "Suspicious Connection from parent in APPDATA",
 		"Content": [
 			{
 				"3": {
@@ -286,6 +284,7 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 24,
 		"Rulename": "Application executed from external device (USB/Network)",
@@ -294,8 +293,18 @@
 			{ "1": { "-Image": "c:\\" } }
 		]
 	},
+
 	{
 		"RuleID": 25,
+		"Rulename": "T1003: Credential Dumping - Process dump detected using dbg libraries",
+		"Content": [
+			{ "7": { "ImageLoaded": "PROCESS_DUMP_DLLS" }, "10": { "CallTrace":"PROCESS_DUMP_DLLS" }}
+
+		]
+	},
+
+	{
+		"RuleID": 26,
 		"Rulename": "Process with unknown threads and memory segments created with RWX permissions",
 		"Content": [
 			{
@@ -318,6 +327,7 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 27,
 		"Rulename": "Hidden process detected (pslist vs psscan)",
@@ -331,6 +341,7 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 28,
 		"Rulename": "SeDebugPrivilegeEnabled in user session",
@@ -345,6 +356,7 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 29,
 		"Rulename": "Multiple attempts to access a System token from user account (priv scalation to System)",
@@ -368,8 +380,21 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 30,
+		"Rulename": "Process with threads hidden from debugger",
+		"Content": [
+			{
+				"1": {
+					"PS_CROSS_THREAD_FLAGS_HIDEFROMDBG": "True"
+				}
+			}
+		]
+	},
+
+	{
+		"RuleID": 31,
 		"Rulename": "User process with SeDebugPrivilegeEnabled creates a remote thread",
 		"Content": [
 			{

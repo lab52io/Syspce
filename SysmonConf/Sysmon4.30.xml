@@ -96,6 +96,12 @@
 			<ImageLoaded condition="is">C:\Windows\System32\hid.dll</ImageLoaded>
 			<ImageLoaded condition="is">C:\Windows\System32\samlib.dll</ImageLoaded>
 			<ImageLoaded condition="is">C:\Windows\System32\vaultcli.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\comsvcs.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\dbgcore.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\dbghelp.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\ieproxy.dll</ImageLoaded>
+			<ImageLoaded condition="contains">\vbe7.dll</ImageLoaded>
+
 
 		</ImageLoad>
 	</RuleGroup>
@@ -141,6 +147,10 @@
 			<Rule groupRelation="and" name="Real parent detection(CreateProcessInternalW)">
 				<CallTrace condition="contains all">ntdll.dll;KERNELBASE.dll;KERNEL32.DLL;UNKNOWN</CallTrace>
 				<GrantedAccess condition="is">0x1FFFFF</GrantedAccess>
+			</Rule>	
+
+			<Rule groupRelation="and" name="Dump process using minidump libraries">
+				<CallTrace condition="contains all">comsvcs.dll</CallTrace>
 			</Rule>	
 			
 			
