@@ -347,7 +347,6 @@ class InputVolatility(Input):
 		for p in vprocess:
 			## WINLOGON problems with hierarchy
 			if p['Image'].find('winlogon') != -1:
-				print "Encontrado winlogon"
 				for x in vprocess:
 					# Check 1: winlogon father exist ?
 					if p['ParentProcessId'] == x['ParentProcessId']:
@@ -357,7 +356,6 @@ class InputVolatility(Input):
 							break
 				for z in vprocess:
 					if z['Image'].find('csrss') != -1:
-						print "CSRSS encontrado"
 						if z['ParentProcessId'] == winlogon_father_pid:
 							winlogon_csrss_father = True
 							z['ParentImage'] = "smss.exe"
@@ -374,7 +372,6 @@ class InputVolatility(Input):
 									
 			## WININIT problems with hierarchy
 			if p['Image'].find('wininit') != -1:
-				print "Encontrado wininit"
 				for x in vprocess:
 					# Check 1: winlogon father exist ?
 					if p['ParentProcessId'] == x['ParentProcessId']:
