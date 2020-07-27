@@ -201,12 +201,15 @@ class InputVolatility(Input):
 		# Plugin psxview volatility 
 		###########################
 
-		proc = psxv.PsXview(self._config)
+		if self._running:
+			proc = psxv.PsXview(self._config)
+		else:
+			exit
 		pslist1 = {}
 		vprocess = []
 
 		for offset, process, ps_sources in proc.calculate():
-
+			
 			pslist1['computer'] = computerid
 			pslist1['Source'] = "Memory"
 			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
@@ -244,10 +247,14 @@ class InputVolatility(Input):
 			if pslist1['ProcessId'] == '4':
 				pslist1['Image'] = "system"
 				pslist1['CommandLine'] = "system"
+				pslist1['TerminalSessionId'] = "0"
 			# Exception with smss.exe
 			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
 				pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
+				pslist1['TerminalSessionId'] = "0"
+
+			#print "Analyzing process :" + pslist1['ProcessId'] 
 
 			# We build the "PROCESSGUID" to merge this event ID with Sysmon
 			################################################################
@@ -269,12 +276,16 @@ class InputVolatility(Input):
 
 			## MODULES
 			###########
+			#print "Analyzing modules of :" + pslist1['ProcessId'] 
 			modules = ""
-			for module in process.get_load_modules():
-				if module is not None:
-					modules = modules + "," + str(module.FullDllName)
+			if self._running:
+				for module in process.get_load_modules():
+					if module is not None:
+						modules = modules + "," + str(module.FullDllName)
 
-			pslist1['modules'] = modules
+				pslist1['modules'] = modules
+			else:
+				exit
 
 			## VADS
 			########
@@ -283,29 +294,37 @@ class InputVolatility(Input):
 			  memory-resident, non-empty (not all zeros) and with an 
 			  original protection that includes write and execute. 
 			"""
-			pslist1["rwx_page"] = "False"
-			vads = process.get_vads(vad_filter=process._injection_filter)
-			for vad, address_space in vads:
-				if self.is_vad_empty(vad, address_space):
-					continue
-				else:
-					protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
-					pslist1["rwx_page"] = "True"
-					# With one non-empty VAD is enough
-					break
+			#print "Analyzing VADs of :" + pslist1['ProcessId'] 
+			if self._running:
+				pslist1["rwx_page"] = "False"
+				vads = process.get_vads(vad_filter=process._injection_filter)
+				for vad, address_space in vads:
+					if self.is_vad_empty(vad, address_space):
+						continue
+					else:
+						protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
+						pslist1["rwx_page"] = "True"
+						# With one non-empty VAD is enough
+						break
+			else:
+				exit
 
 			## THREADS
 			###########
-			resultt = self.get_threads(process)
-			# This process has one thread with StartAddress unknow
-			pslist1["unknown_threads"]  = resultt[0]
-			# This process has one thread with ActiveImpersonationInfo = 1 (Cross-Thread Flags in the ETHREAD)
-			pslist1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = resultt[1]
-			# This process has one thread with HideFromDebugger = 1 (Cross-Thread Flags in the ETHREAD)
-			pslist1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = resultt[2]
-			# This process has one thread with SystemThread = 1 (Cross-Thread Flags in the ETHREAD)
-			pslist1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = resultt[3]
-
+			#print "Analyzing threads of :" + pslist1['ProcessId'] 
+			if self._running:
+				resultt = self.get_threads(process)
+				# This process has one thread with StartAddress unknow
+				pslist1["unknown_threads"]  = resultt[0]
+				# This process has one thread with ActiveImpersonationInfo = 1 (Cross-Thread Flags in the ETHREAD)
+				pslist1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = resultt[1]
+				# This process has one thread with HideFromDebugger = 1 (Cross-Thread Flags in the ETHREAD)
+				pslist1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = resultt[2]
+				# This process has one thread with SystemThread = 1 (Cross-Thread Flags in the ETHREAD)
+				pslist1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = resultt[3]
+			else:
+				exit
+			
 			vprocess.append(pslist1)
 			pslist1 = {}
 
@@ -317,52 +336,118 @@ class InputVolatility(Input):
 					p['ParentCommandLine'] = x['CommandLine']
 					p['ParentProcessGuid'] = x['ProcessGuid']
 
+		winlogon_fake_father = False
+		winlogon_csrss_father = False
+		wininit_fake_father = False
+		wininit_csrss_father = False
+		winlogon_father_pid = -1
+		wininit_father_pid = -1
+
+		
+		for p in vprocess:
+			## WINLOGON problems with hierarchy
+			if p['Image'].find('winlogon') != -1:
+				print "Encontrado winlogon"
+				for x in vprocess:
+					# Check 1: winlogon father exist ?
+					if p['ParentProcessId'] == x['ParentProcessId']:
+						if p['Image'].find('smss.exe') == -1:
+							winlogon_fake_father = True
+							winlogon_father_pid = p['ParentProcessId']
+							break
+				for z in vprocess:
+					if z['Image'].find('csrss') != -1:
+						print "CSRSS encontrado"
+						if z['ParentProcessId'] == winlogon_father_pid:
+							winlogon_csrss_father = True
+							z['ParentImage'] = "smss.exe"
+							z['ParentCommandLine'] = 'smss.exe'
+							z['ParentProcessId'] = ''
+							z['ParentProcessGuid'] = ''
+							for z in vprocess:
+								if z['Image'].find('winlogon') != -1:
+									if z['ParentProcessId'] == winlogon_father_pid:
+										z['ParentImage'] = 'smss.exe'
+										z['ParentCommandLine'] = 'smss.exe'
+										z['ParentProcessId'] = ''
+										z['ParentProcessGuid'] = ''
+									
+			## WININIT problems with hierarchy
+			if p['Image'].find('wininit') != -1:
+				print "Encontrado wininit"
+				for x in vprocess:
+					# Check 1: winlogon father exist ?
+					if p['ParentProcessId'] == x['ParentProcessId']:
+						if p['Image'].find('smss.exe') == -1:
+							wininit_fake_father = True
+							wininit_father_pid = p['ParentProcessId']
+							break
+				for z in vprocess:
+					if z['Image'].find('csrss.exe') != -1:
+						if z['ParentProcessId'] == wininit_father_pid:
+							wininit_csrss_father = True
+							z['ParentImage'] = "smss.exe"
+							z['ParentCommandLine'] = 'smss.exe'
+							z['ParentProcessId'] = ''
+							z['ParentProcessGuid'] = ''
+							for z in vprocess:
+								if z['Image'].find('wininit') != -1:
+									if z['ParentProcessId'] == wininit_father_pid:
+										z['ParentImage'] = 'smss.exe'
+										z['ParentCommandLine'] = 'smss.exe'
+										z['ParentProcessId'] = ''
+										z['ParentProcessGuid'] = ''
+				
+		# To Send to the CORE
+		############################
+		events_list = vprocess
+		self.send_message(events_list)
+
 		###########################
 		# Plugin privs volatility
 		###########################
 
-		priv = privm.Privs(self._config)
+		if self._running:
+			priv = privm.Privs(self._config)
 		
-		privs_1 = {}
-		privs_2 = {}
-		priv_vector = []
+			privs_1 = {}
+			privs_2 = {}
+			priv_vector = []
 
-		for privs in priv.calculate():
-			privileges = privs.get_token().privileges()
-			for value, present, enabled, default in privileges:
-				try:
-					name, desc = privm.PRIVILEGE_INFO[int(value)]
-				except KeyError:
-					continue
-				privs_1 = {}
-				privs_1['ProcessId'] = str(int(privs.UniqueProcessId))
-				privs_1['Name'] = name 
+			for privs in priv.calculate():
+				privileges = privs.get_token().privileges()
+				for value, present, enabled, default in privileges:
+					try:
+						name, desc = privm.PRIVILEGE_INFO[int(value)]
+					except KeyError:
+						continue
+					privs_1 = {}
+					privs_1['ProcessId'] = str(int(privs.UniqueProcessId))
+					privs_1['Name'] = name 
 
-				privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
-					  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
-				privs_1['Present'] = "False"
-				privs_1['Enabled'] = "False"
-				if str(name) in privileges_logged:
-					if present:
-						privs_1['Present'] = "True"
-					if enabled or default:
-						privs_1["Enabled"] = "True"
-					priv_vector.append(privs_1)
+					privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
+						  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
+					privs_1['Present'] = "False"
+					privs_1['Enabled'] = "False"
+					if str(name) in privileges_logged:
+						if present:
+							privs_1['Present'] = "True"
+						if enabled or default:
+							privs_1["Enabled"] = "True"
+						priv_vector.append(privs_1)
 
-		for p in vprocess:
-			for x in priv_vector:
-				if p['ProcessId'] == x['ProcessId']:
-						pvp = x['Name'] + "Present"
-						p[pvp] = x['Present']
-						pve = x['Name'] + "Enabled"
-						p[pve] = x['Enabled']
+			for p in vprocess:
+				for x in priv_vector:
+					if p['ProcessId'] == x['ProcessId']:
+							pvp = x['Name'] + "Present"
+							p[pvp] = x['Present']
+							pve = x['Name'] + "Enabled"
+							p[pve] = x['Enabled']
 
 
 		# To Send to the CORE
 		############################
 
 		events_list = vprocess
-
 		self.send_message(events_list)
-		
 		self.terminate()
