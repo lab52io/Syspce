@@ -178,6 +178,8 @@ def get_action_from_id(id):
 		return "[A] FILE DELETE"
 	elif id == 100:
 		return "[A] CHILD PROCESS CREATED" 
+	elif id == 101:
+		return "[A] THREAD CREATED"
 	elif id == 108:
 		return "[A] STARTED THREAD CREATED BY REMOTE PROCESS" 
 	elif id == 110:
@@ -223,6 +225,8 @@ def get_default_parameter_from_id(id):
 		return "TargetFilename"
 	elif id == 100:
 		return "ChildImage"
+	elif id == 101:
+		return "ThreadId"
 	elif id == 108:
 		return "SourceImage"
 	elif id == 110:

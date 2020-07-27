@@ -11,6 +11,17 @@
 	
 		<ProcessCreate onmatch="exclude">
 			<Image condition="is">C:\Windows\Sysmon.exe</Image>
+			
+			<Image condition="is">C:\Windows\System32\RuntimeBroker.exe</Image>
+			<Image condition="is">C:\Windows\System32\MusNotifyIcon.exe</Image>
+			<Image condition="is">C:\Windows\System32\backgroundTaskHost.exe</Image>
+			<Image condition="is">C:\Windows\System32\conhost.exe</Image>
+			<Image condition="is">C:\Windows\System32\MusNotification.exe</Image>
+			<Image condition="is">C:\Windows\Microsoft.NET\Framework64\v4.0.30319\ngen.exe</Image>
+			<Image condition="is">C:\Windows\System32\SpatialAudioLicenseSrv.exe</Image>
+			<Image condition="is">C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</Image>
+			<Image condition="is">C:\Windows\System32\MusNotificationUx.exe</Image>
+			<Image condition="is">C:\Windows\Microsoft.NET\Framework\v4.0.30319\ngen.exe</Image>
 
 		</ProcessCreate>
 
@@ -63,6 +74,17 @@
 
 	
 		<ProcessTerminate onmatch="exclude">
+			<Image condition="is">C:\Windows\Sysmon.exe</Image>
+			<Image condition="is">C:\Windows\System32\RuntimeBroker.exe</Image>
+			<Image condition="is">C:\Windows\System32\MusNotifyIcon.exe</Image>
+			<Image condition="is">C:\Windows\System32\backgroundTaskHost.exe</Image>
+			<Image condition="is">C:\Windows\System32\conhost.exe</Image>
+			<Image condition="is">C:\Windows\System32\MusNotification.exe</Image>
+			<Image condition="is">C:\Windows\Microsoft.NET\Framework64\v4.0.30319\ngen.exe</Image>
+			<Image condition="is">C:\Windows\System32\SpatialAudioLicenseSrv.exe</Image>
+			<Image condition="is">C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</Image>
+			<Image condition="is">C:\Windows\System32\MusNotificationUx.exe</Image>
+			<Image condition="is">C:\Windows\Microsoft.NET\Framework\v4.0.30319\ngen.exe</Image>
 		</ProcessTerminate>
 	
 

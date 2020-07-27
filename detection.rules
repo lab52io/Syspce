@@ -88,13 +88,13 @@
 
 	{
 		"RuleID": 9,
-		"Rulename": "T1204: User Execution - Malicious Office Document with macro",
+		"Rulename": "T1204: User Execution - Office Document with macro creates a process",
 		"Content": [
 			{
 				"1": { "Image": "OFFICE_PROCESS" },
 				"7": { "ImageLoaded": "vbe7.dll" }
 			},
-			{ "1c": { "Image": "SCRIPTING_ENGINES_AND_SHELLS" } }
+			{ "1c": { "-Image": "winword" } }
 		]
 	},
 

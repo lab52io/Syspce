@@ -12,6 +12,7 @@ from syspce_parser import get_action_from_id
 from syspce_parser import parse_eventlog_IDx
 from syspce_parser import get_list_of_actions
 from syspce_message import *
+from time import sleep
 
 log = logging.getLogger('sysmoncorrelator')
 
@@ -50,10 +51,14 @@ class InputEventlog(Input):
 
 			while self._running:
 				aux = win32evtlog.ReadEventLog(h_log, flags, 0)
+				
 				#print 'Progress: %d/%d \r' % (num_events, total_events),
 				if not aux:
 					break
 				events_read += aux
+
+			# do a sleep for not stressing the cpu
+			sleep(5)
 
 			if events_read and self._running:
 
