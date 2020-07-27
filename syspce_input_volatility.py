@@ -99,13 +99,29 @@ class InputVolatility(Input):
 	Return: True o False if PS_CROSS_THREAD_FLAGS_SYSTEM, PS_CROSS_THREAD_FLAGS_HIDEFROMDBG, PS_CROSS_THREAD_FLAGS_IMPERSONATING or UNKNOWN THREADS is enable o disable
 	Description: This function detect unknown thread, hidden from debugger threads and impersonation threads. This funtion is very slow, be patient.
 	'''
-	def get_threads(self,process):
+	def get_threads(self,process,vthreads,pslist1):
 
 			result = []
 			result.append("False")
 			result.append("False")
 			result.append("False")
 			result.append("False")
+
+			thread1 = {}
+			thread1["EventID"] = "101"
+			thread1["ProcessId"] = pslist1["ProcessId"]
+			thread1["ThreadId"] = ""
+			thread1["ProcessGuid"] = pslist1["ProcessGuid"]
+			thread1["SyspceId"] = pslist1["SyspceId"]
+			thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "False"
+			thread1["StartAddress"] = ""
+			thread1["State"] = ""
+			thread1["WaitReason"] = "" 
+			thread1["CreateTime"] = ""
+			thread1["ExitTime"] = ""
+
 
 			addr_space = utils.load_as(self._config)
 			system_range = tasks.get_kdbg(addr_space).MmSystemRangeStart.dereference_as("Pointer")
@@ -115,6 +131,12 @@ class InputVolatility(Input):
 			## Gather threads by list traversal of active/linked processes 
 			for thread in process.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
 				seen_threads[thread.obj_vm.vtop(thread.obj_offset)] = (False, thread)
+				thread1["StartAddress"] = thread.StartAddress
+				thread1["State"] = thread.Tcb.State
+				thread1["WaitReason"] = thread.Tcb.WaitReason
+				thread1["ThreadId"] = thread.Cid.UniqueThread
+				thread1["CreateTime"] = thread.CreateTime
+				thread1["ExitTime"] = thread.ExitTime
 
 			process_dll_info = {}
 
@@ -138,19 +160,25 @@ class InputVolatility(Input):
 				
 				if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
 					result[1] = "True"
+					thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "True"
 					
 				if "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG" in str(thread.CrossThreadFlags):
 					result[2] = "True"
+					thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "True"
 					
 				if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
 					result[3] = "True"
+					thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "True"
 					
 				if owner:
 					owner_name = str(owner.BaseDllName or '')
 				else:
 					# If there is a unknown thread we break for loop
 					owner_name = "UNKNOWN"
+					thread1["Owner_name"] = "UNKNOWN"
 					result[0] = "True"
+
+				vthreads.append(thread1)
 
 			return result
 
@@ -207,6 +235,7 @@ class InputVolatility(Input):
 			exit
 		pslist1 = {}
 		vprocess = []
+		vthreads = []
 
 		for offset, process, ps_sources in proc.calculate():
 			
@@ -254,8 +283,6 @@ class InputVolatility(Input):
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['TerminalSessionId'] = "0"
 
-			#print "Analyzing process :" + pslist1['ProcessId'] 
-
 			# We build the "PROCESSGUID" to merge this event ID with Sysmon
 			################################################################
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
@@ -276,7 +303,7 @@ class InputVolatility(Input):
 
 			## MODULES
 			###########
-			#print "Analyzing modules of :" + pslist1['ProcessId'] 
+
 			modules = ""
 			if self._running:
 				for module in process.get_load_modules():
@@ -294,7 +321,7 @@ class InputVolatility(Input):
 			  memory-resident, non-empty (not all zeros) and with an 
 			  original protection that includes write and execute. 
 			"""
-			#print "Analyzing VADs of :" + pslist1['ProcessId'] 
+
 			if self._running:
 				pslist1["rwx_page"] = "False"
 				vads = process.get_vads(vad_filter=process._injection_filter)
@@ -311,9 +338,9 @@ class InputVolatility(Input):
 
 			## THREADS
 			###########
-			#print "Analyzing threads of :" + pslist1['ProcessId'] 
+ 
 			if self._running:
-				resultt = self.get_threads(process)
+				resultt = self.get_threads(process,vthreads,pslist1)
 				# This process has one thread with StartAddress unknow
 				pslist1["unknown_threads"]  = resultt[0]
 				# This process has one thread with ActiveImpersonationInfo = 1 (Cross-Thread Flags in the ETHREAD)
@@ -343,7 +370,6 @@ class InputVolatility(Input):
 		winlogon_father_pid = -1
 		wininit_father_pid = -1
 
-		
 		for p in vprocess:
 			## WINLOGON problems with hierarchy
 			if p['Image'].find('winlogon') != -1:
@@ -399,6 +425,8 @@ class InputVolatility(Input):
 		############################
 		events_list = vprocess
 		self.send_message(events_list)
+		thread_list = vthreads
+		self.send_message(thread_list)
 
 		###########################
 		# Plugin privs volatility
