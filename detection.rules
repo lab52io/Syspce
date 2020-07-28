@@ -380,7 +380,7 @@
 		"Rulename": "Process with threads hidden from debugger",
 		"Content": [
 			{
-				"1": {
+				"101": {
 					"PS_CROSS_THREAD_FLAGS_HIDEFROMDBG": "True"
 				}
 			}
@@ -409,8 +409,59 @@
 		"Content": [
 			{
 				"1": {
-					"rwx_page": "True",
-					"unknown_threads": "True"
+					"rwx_page": "True"
+				},
+				"101": {
+					"Owner_name": "Unknown"
+				}
+			}
+		]
+	},
+	{
+		"RuleID": 33,
+		"Rulename": "PS_CROSS_THREAD_FLAGS_SYSTEM enable in a process distinct of System",
+		"Content": [
+			{
+				"101": {
+					"-Image": "system",
+					"PS_CROSS_THREAD_FLAGS_SYSTEM": "True"
+				}
+			}
+		]
+	},
+	{
+		"RuleID": 34,
+		"Rulename": "DKomExit detected",
+		"Content": [
+			{
+				"101": {
+					"-State": "Terminated",
+					"-ExitTime": "1970-01-01 00:00:00 UTC+0000",
+					"PS_CROSS_THREAD_FLAGS_TERMINATED": "False"
+				}
+			}
+		]
+	},
+	{
+		"RuleID": 35,
+		"Rulename": "DKomExit detected",
+		"Content": [
+			{
+				"101": {
+					"-State": "Terminated",
+					"-ExitTime": "1970-01-01 00:00:00 UTC+0000",
+					"PS_CROSS_THREAD_FLAGS_TERMINATED": "False"
+				}
+			}
+		]
+	},
+	{
+		"RuleID": 36,
+		"Rulename": "Thread with StartAdress has a module unknown",
+		"Content": [
+			{
+				"101": {
+					"Owner_name": "None"
 				}
 			}
 		]

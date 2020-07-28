@@ -124,7 +124,8 @@ class InputVolatility(Input):
 			thread1["CreateTime"] = ""
 			thread1["ExitTime"] = ""
 			thread1["Owner_name"] = ""
-			thread1["owning_process"] = ""
+			thread1["Owning_process"] = ""
+			thread1["Attached_process"] = ""
 			# Process fields necessaries to a new idEvent
 			thread1["idEvent"] = 101
 			thread1["ProcessId"] = pslist1["ProcessId"]
@@ -172,8 +173,8 @@ class InputVolatility(Input):
 						owner = tasks.find_module(user_mods, user_mod_addrs, addr_space.address_mask(thread.StartAddress))
 				
 
-				thread1["owning_process"] = str(thread.owning_process().ImageFileName)
-				thread1["attached_process"] = str(thread.attached_process().ImageFileName)
+				thread1["Owning_process"] = str(thread.owning_process().ImageFileName)
+				thread1["Attached_process"] = str(thread.attached_process().ImageFileName)
 
 				if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
 					result[1] = "True"
