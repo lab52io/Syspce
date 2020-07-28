@@ -108,20 +108,31 @@ class InputVolatility(Input):
 			result.append("False")
 
 			thread1 = {}
-			thread1["EventID"] = "101"
-			thread1["ProcessId"] = pslist1["ProcessId"]
+			# Specific fields
 			thread1["ThreadId"] = ""
-			thread1["ProcessGuid"] = pslist1["ProcessGuid"]
-			thread1["SyspceId"] = pslist1["SyspceId"]
-			thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = False
+			thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = False
+			thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = False
+			thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = False
+			thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = False
+			thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = False
+			thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = False
+			thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = True
 			thread1["StartAddress"] = ""
 			thread1["State"] = ""
 			thread1["WaitReason"] = "" 
 			thread1["CreateTime"] = ""
 			thread1["ExitTime"] = ""
 			thread1["Owner_name"] = ""
+			thread1["owning_process"] = ""
+			# Process fields necessaries to a new idEvent
+			thread1["idEvent"] = 101
+			thread1["ProcessId"] = pslist1["ProcessId"]
+			thread1["ProcessGuid"] = pslist1["ProcessGuid"]
+			thread1["SyspceId"] = pslist1["SyspceId"]
+			thread1["Image"] = pslist1["Image"]
+			thread1["Source"] = "Memory"
+			thread1['computer'] = pslist1['computer']
 
 
 			addr_space = utils.load_as(self._config)
@@ -129,6 +140,7 @@ class InputVolatility(Input):
 			mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in moduless.lsmod(addr_space))
 			mod_addrs = sorted(mods.keys())
 			seen_threads = dict()
+
 			## Gather threads by list traversal of active/linked processes 
 			for thread in process.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
 				seen_threads[thread.obj_vm.vtop(thread.obj_offset)] = (False, thread)
@@ -159,28 +171,49 @@ class InputVolatility(Input):
 
 						owner = tasks.find_module(user_mods, user_mod_addrs, addr_space.address_mask(thread.StartAddress))
 				
+
+				thread1["owning_process"] = str(thread.owning_process().ImageFileName)
+				thread1["attached_process"] = str(thread.attached_process().ImageFileName)
+
 				if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
 					result[1] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "True"
+					thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = True
 					
 				if "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG" in str(thread.CrossThreadFlags):
 					result[2] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "True"
+					thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = True
 					
 				if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
 					result[3] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "True"
-					
+					thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = True
+				
+				if "PS_CROSS_THREAD_FLAGS_TERMINATED" in str(thread.CrossThreadFlags):
+					thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = True
+
+				if "PS_CROSS_THREAD_FLAGS_DEADTHREAD" in str(thread.CrossThreadFlags):
+					thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = True
+
+				if "PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION" in str(thread.CrossThreadFlags):
+					thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = True
+
+				if "PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG" in str(thread.CrossThreadFlags):
+					thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = True
+
+				if "PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG" in str(thread.CrossThreadFlags):
+					thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = True
+
 				if owner:
-					owner_name = str(owner.BaseDllName or '')
-					thread1["Owner_name"] =  str(owner.BaseDllName or '')
+					owner_name = str(owner.BaseDllName or 'None')
+					thread1["Owner_name"] =  str(owner.BaseDllName or 'None')
 				else:
 					# If there is a unknown thread we break for loop
-					owner_name = "UNKNOWN"
-					thread1["Owner_name"] = "UNKNOWN"
+					owner_name = "Unknown"
+					thread1["Owner_name"] = "Unknown"
 					result[0] = "True"
 
+				
 				vthreads.append(thread1)
+				#print vthreads
 
 			return result
 
@@ -373,10 +406,9 @@ class InputVolatility(Input):
 		wininit_father_pid = -1
 
 		for p in vprocess:
-			## WINLOGON problems with hierarchy
+			## WINLOGON problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
 			if p['Image'].find('winlogon') != -1:
 				for x in vprocess:
-					# Check 1: winlogon father exist ?
 					if p['ParentProcessId'] == x['ParentProcessId']:
 						if p['Image'].find('smss.exe') == -1:
 							winlogon_fake_father = True
@@ -398,10 +430,9 @@ class InputVolatility(Input):
 										z['ParentProcessId'] = ''
 										z['ParentProcessGuid'] = ''
 									
-			## WININIT problems with hierarchy
+			## WININIT problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
 			if p['Image'].find('wininit') != -1:
 				for x in vprocess:
-					# Check 1: winlogon father exist ?
 					if p['ParentProcessId'] == x['ParentProcessId']:
 						if p['Image'].find('smss.exe') == -1:
 							wininit_fake_father = True
@@ -423,12 +454,7 @@ class InputVolatility(Input):
 										z['ParentProcessId'] = ''
 										z['ParentProcessGuid'] = ''
 				
-		# To Send to the CORE
-		############################
-		events_list = vprocess
-		self.send_message(events_list)
-		thread_list = vthreads
-		self.send_message(thread_list)
+
 
 		###########################
 		# Plugin privs volatility
@@ -477,4 +503,7 @@ class InputVolatility(Input):
 
 		events_list = vprocess
 		self.send_message(events_list)
+		thread_list = vthreads
+		self.send_message(thread_list)
+
 		self.terminate()
