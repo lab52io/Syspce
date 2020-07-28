@@ -110,14 +110,14 @@ class InputVolatility(Input):
 			thread1 = {}
 			# Specific fields
 			thread1["ThreadId"] = ""
-			thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = False
-			thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = False
-			thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = False
-			thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = False
-			thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = False
-			thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = False
-			thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = False
-			thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = True
+			thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = "False"
+			thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = "True"
 			thread1["StartAddress"] = ""
 			thread1["State"] = ""
 			thread1["WaitReason"] = "" 
@@ -178,30 +178,30 @@ class InputVolatility(Input):
 
 				if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
 					result[1] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = True
+					thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "True"
 					
 				if "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG" in str(thread.CrossThreadFlags):
 					result[2] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = True
+					thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "True"
 					
 				if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
 					result[3] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = True
+					thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "True"
 				
 				if "PS_CROSS_THREAD_FLAGS_TERMINATED" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = True
+					thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = "True"
 
 				if "PS_CROSS_THREAD_FLAGS_DEADTHREAD" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = True
+					thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = "True"
 
 				if "PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = True
+					thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = "True"
 
 				if "PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = True
+					thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = "True"
 
 				if "PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = True
+					thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = "True"
 
 				if owner:
 					owner_name = str(owner.BaseDllName or 'None')
