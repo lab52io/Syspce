@@ -121,6 +121,7 @@ class InputVolatility(Input):
 			thread1["WaitReason"] = "" 
 			thread1["CreateTime"] = ""
 			thread1["ExitTime"] = ""
+			thread1["Owner_name"] = ""
 
 
 			addr_space = utils.load_as(self._config)
@@ -131,12 +132,12 @@ class InputVolatility(Input):
 			## Gather threads by list traversal of active/linked processes 
 			for thread in process.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
 				seen_threads[thread.obj_vm.vtop(thread.obj_offset)] = (False, thread)
-				thread1["StartAddress"] = thread.StartAddress
-				thread1["State"] = thread.Tcb.State
-				thread1["WaitReason"] = thread.Tcb.WaitReason
-				thread1["ThreadId"] = thread.Cid.UniqueThread
-				thread1["CreateTime"] = thread.CreateTime
-				thread1["ExitTime"] = thread.ExitTime
+				thread1["StartAddress"] = int(thread.StartAddress)
+				thread1["State"] = str(thread.Tcb.State)
+				thread1["WaitReason"] = str(thread.Tcb.WaitReason)
+				thread1["ThreadId"] = int(thread.Cid.UniqueThread)
+				thread1["CreateTime"] = str(thread.CreateTime)
+				thread1["ExitTime"] = str(thread.ExitTime)
 
 			process_dll_info = {}
 
@@ -172,6 +173,7 @@ class InputVolatility(Input):
 					
 				if owner:
 					owner_name = str(owner.BaseDllName or '')
+					thread1["Owner_name"] =  str(owner.BaseDllName or '')
 				else:
 					# If there is a unknown thread we break for loop
 					owner_name = "UNKNOWN"
