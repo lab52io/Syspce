@@ -444,20 +444,7 @@
 	},
 	{
 		"RuleID": 35,
-		"Rulename": "DKomExit detected",
-		"Content": [
-			{
-				"101": {
-					"-State": "Terminated",
-					"-ExitTime": "1970-01-01 00:00:00 UTC+0000",
-					"PS_CROSS_THREAD_FLAGS_TERMINATED": "False"
-				}
-			}
-		]
-	},
-	{
-		"RuleID": 36,
-		"Rulename": "Thread with StartAdress has a module unknown",
+		"Rulename": "This Thread has StartAdress with a module unknown",
 		"Content": [
 			{
 				"101": {
