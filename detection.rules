@@ -465,6 +465,32 @@
 				}
 			}
 		]
+	},
+	{
+		"RuleID": 37,
+		"Rulename": "Dumping SAM credentials",
+		"Content": [
+			{
+				"1": {"CommandLine": "C:\\WINDOWS\\system32\\svchost.exe -k LocalService"},
+				"7": {"ImageLoaded": "C:\\Windows\\System32\\regsvc.dll"},
+				"17": {"PipeName": "\\winreg", "EventType": "CreatePipe"},
+				"12": {"TargetObject": "HKLM\\SAM", "EventType": "CreateKey"},
+				"11": {"TargetFilename": "C:\\Windows\\System32\\"}
+			}
+		]
+	},
+	{
+		"RuleID": 38,
+		"Rulename": "Dumping LSA secrets credentials",
+		"Content": [
+			{
+				"1": {"CommandLine": "C:\\WINDOWS\\system32\\svchost.exe -k LocalService"},
+				"7": {"ImageLoaded": "C:\\Windows\\System32\\regsvc.dll"},
+				"17": {"PipeName": "\\winreg", "EventType": "CreatePipe"},
+				"12": {"TargetObject": "HKLM\\SECURITY", "EventType": "CreateKey"},
+				"11": {"TargetFilename": "C:\\Windows\\System32\\"}
+			}
+		]
 	}
 ]
 

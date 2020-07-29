@@ -122,6 +122,7 @@
 			<ImageLoaded condition="is">C:\Windows\System32\dbgcore.dll</ImageLoaded>
 			<ImageLoaded condition="is">C:\Windows\System32\dbghelp.dll</ImageLoaded>
 			<ImageLoaded condition="is">C:\Windows\System32\ieproxy.dll</ImageLoaded>
+			<ImageLoaded condition="is">C:\Windows\System32\regsvc.dll</ImageLoaded>
 			<ImageLoaded condition="contains">\vbe7.dll</ImageLoaded>
 
 
@@ -202,6 +203,12 @@
 			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
 			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
 			<Image condition="image">c:\windows\system32\services.exe</Image>
+			
+			<Rule groupRelation="and" name="SAM dump hierarchy engine">
+                <Image condition="image">c:\windows\system32\svchost.exe</Image>
+				<TargetFilename condition="contains"> C:\Windows\System32\</TargetFilename>
+            </Rule>			
+			
 		</FileCreate>
 	</RuleGroup>
 
@@ -229,7 +236,19 @@
                 <Image condition="image">c:\windows\system32\services.exe</Image>
                 <EventType condition="is">RenameKey</EventType>
             </Rule>	
+			
+			<Rule groupRelation="and" name="SAM dump hierarchy engine">
+				<TargetObject condition="is">HKLM\SECURITY</TargetObject>
+               	<Image condition="image">c:\windows\system32\svchost.exe</Image>
+                <EventType condition="is">CreateKey</EventType>
+            </Rule>	
 
+			<Rule groupRelation="and" name="SAM dump hierarchy engine">
+				<TargetObject condition="is">HKLM\SAM</TargetObject>
+               	<Image condition="image">c:\windows\system32\svchost.exe</Image>
+                <EventType condition="is">CreateKey</EventType>
+            </Rule>	
+			
 		</RegistryEvent>
 	</RuleGroup>	
 
@@ -255,6 +274,8 @@
 			<Image condition="image">c:\windows\system32\lsass.exe</Image> 
 			<Image condition="image">c:\windows\system32\winlogon.exe</Image> 
 			<Image condition="image">c:\windows\system32\services.exe</Image>
+			<PipeName condition="is">\winreg</PipeName>
+			
 		</PipeEvent>
 	</RuleGroup>
 
