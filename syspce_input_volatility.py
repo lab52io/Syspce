@@ -313,7 +313,7 @@ class InputVolatility(Input):
 				pslist1['CommandLine'] = "system"
 				pslist1['TerminalSessionId'] = "0"
 			# Exception with smss.exe
-			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
+			if pslist1['Image'].find("System32\\smss.exe") != -1:
 				pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['TerminalSessionId'] = "0"
