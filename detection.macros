@@ -283,7 +283,8 @@
 			"c:\\Windows\\System32\\csrss.exe",
 			"c:\\Windows\\System32\\winlogon.exe",
 			"\\SystemRoot\\System32\\smss.exe",
-			"c:\\Windows\\System32\\smss.exe"
+			"c:\\Windows\\System32\\smss.exe",
+			"consent.exe"
 		]
 	}									
 ]

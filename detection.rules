@@ -344,7 +344,7 @@
 				"1": {
 					"SeDebugPrivilegeEnabled": "True",
 					"-TerminalSessionId": "0",
-					"-Image": "consent.exe"
+					"-Image": "NORMAL_DEBUG_PRIV_ENABLED_IN_USER_SESSION"
 
 				}
 			}

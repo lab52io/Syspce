@@ -108,33 +108,6 @@ class InputVolatility(Input):
 			result.append("False")
 
 			thread1 = {}
-			# Specific fields
-			thread1["ThreadId"] = ""
-			thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = "False"
-			thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = "True"
-			thread1["StartAddress"] = ""
-			thread1["State"] = ""
-			thread1["WaitReason"] = "" 
-			thread1["CreateTime"] = ""
-			thread1["ExitTime"] = ""
-			thread1["Owner_name"] = ""
-			thread1["Owning_process"] = ""
-			thread1["Attached_process"] = ""
-			# Process fields necessaries to a new idEvent
-			thread1["idEvent"] = 101
-			thread1["ProcessId"] = pslist1["ProcessId"]
-			thread1["ProcessGuid"] = pslist1["ProcessGuid"]
-			thread1["SyspceId"] = pslist1["SyspceId"]
-			thread1["Image"] = pslist1["Image"]
-			thread1["Source"] = "Memory"
-			thread1['computer'] = pslist1['computer']
-
 
 			addr_space = utils.load_as(self._config)
 			system_range = tasks.get_kdbg(addr_space).MmSystemRangeStart.dereference_as("Pointer")
@@ -145,12 +118,6 @@ class InputVolatility(Input):
 			## Gather threads by list traversal of active/linked processes 
 			for thread in process.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
 				seen_threads[thread.obj_vm.vtop(thread.obj_offset)] = (False, thread)
-				thread1["StartAddress"] = int(thread.StartAddress)
-				thread1["State"] = str(thread.Tcb.State)
-				thread1["WaitReason"] = str(thread.Tcb.WaitReason)
-				thread1["ThreadId"] = int(thread.Cid.UniqueThread)
-				thread1["CreateTime"] = str(thread.CreateTime)
-				thread1["ExitTime"] = str(thread.ExitTime)
 
 			process_dll_info = {}
 
@@ -172,7 +139,32 @@ class InputVolatility(Input):
 
 						owner = tasks.find_module(user_mods, user_mod_addrs, addr_space.address_mask(thread.StartAddress))
 				
-
+				# Specific fields
+				thread1["ThreadId"] = ""
+				thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "False"
+				thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "False"
+				thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "False"
+				thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = "False"
+				thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = "False"
+				thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = "False"
+				thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = "False"
+				thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = "False"
+				thread1["StartAddress"] = ""
+				thread1["State"] = ""
+				thread1["WaitReason"] = "" 
+				thread1["CreateTime"] = ""
+				thread1["ExitTime"] = ""
+				thread1["Owner_name"] = ""
+				thread1["Owning_process"] = ""
+				thread1["Attached_process"] = ""
+				# Process fields necessaries to a new idEvent
+				thread1["idEvent"] = 101
+				thread1["ProcessId"] = pslist1["ProcessId"]
+				thread1["ProcessGuid"] = pslist1["ProcessGuid"]
+				thread1["SyspceId"] = pslist1["SyspceId"]
+				thread1["Image"] = pslist1["Image"]
+				thread1["Source"] = "Memory"
+				thread1['computer'] = pslist1['computer']
 				thread1["Owning_process"] = str(thread.owning_process().ImageFileName)
 				thread1["Attached_process"] = str(thread.attached_process().ImageFileName)
 
@@ -212,10 +204,17 @@ class InputVolatility(Input):
 					thread1["Owner_name"] = "Unknown"
 					result[0] = "True"
 
-				
+				thread1["StartAddress"] = int(thread.StartAddress)
+				thread1["State"] = str(thread.Tcb.State)
+				thread1["WaitReason"] = str(thread.Tcb.WaitReason)
+				thread1["ThreadId"] = int(thread.Cid.UniqueThread)
+				thread1["CreateTime"] = str(thread.CreateTime)
+				thread1["ExitTime"] = str(thread.ExitTime)
+				#print "Add PID: " + str(thread1["ProcessId"]) + " TID: " + str(thread1["ThreadId"])
 				vthreads.append(thread1)
+				thread1 = {}
 				#print vthreads
-
+			
 			return result
 
 
@@ -454,8 +453,6 @@ class InputVolatility(Input):
 										z['ParentCommandLine'] = 'smss.exe'
 										z['ParentProcessId'] = ''
 										z['ParentProcessGuid'] = ''
-				
-
 
 		###########################
 		# Plugin privs volatility
@@ -501,10 +498,13 @@ class InputVolatility(Input):
 
 		# To Send to the CORE
 		############################
-
 		events_list = vprocess
 		self.send_message(events_list)
 		thread_list = vthreads
-		self.send_message(thread_list)
 
+		#f = open("debug_threads.txt","w+")
+		#f.write(str(thread_list))
+		#f.close()
+
+		self.send_message(thread_list)
 		self.terminate()
