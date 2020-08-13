@@ -6,6 +6,8 @@ import uuid
 import hashlib
 import datetime
 import os
+import json
+import sys
 
 import volatility.conf as conf
 import volatility.obj as obj
@@ -50,9 +52,11 @@ class InputVolatility(Input):
 		filepath2 = ""
 		if filepath.find(":\\") == -1:
 			filepath2 = os.getcwd()+"\\"+filepath
+			self.filepath = filepath2
 			filepath = "file:///" + filepath2
 		else:
 		# Absolute path
+			self.filepath = filepath
 			filepath = "file:///" + filepath
 
 		self._config = conf.ConfObject()
@@ -60,6 +64,7 @@ class InputVolatility(Input):
 		self._config.LOCATION = filepath
 		self._config.hive_offset = None
 		self._config.HIVE_OFFSET = None
+		
 
 		registry.PluginImporter()
 		registry.register_global_options(self._config, commands.Command)
@@ -239,7 +244,48 @@ class InputVolatility(Input):
 
 		return normalized
 
+	def sha256hash(self,filename):
+		
+		sha256_hash = hashlib.sha256()
+		result_hash = ""
+		with open(filename,"rb") as f:
+			# Read and update hash string value in blocks of 4K
+			for byte_block in iter(lambda: f.read(4096),b""):
+				sha256_hash.update(byte_block)
+			#print(sha256_hash.hexdigest())
+			result_hash = sha256_hash.hexdigest()
+		return result_hash
+
 	def do_action(self):
+
+		###########################
+		# Memory analysis CACHE
+		###########################
+
+		print "\n[SYSPCE] Calculating memory hash: "+self.filepath
+		hresult = self.sha256hash(self.filepath)
+		print "[SYSPCE] SHA256: " + hresult
+		cache = False
+		# WE CHECK IF THIS MEMORY HAS CACHE
+		cache_process = hresult+"_"+"process"
+		if os.path.exists(cache_process):
+			with open (cache_process, 'r') as outfile:
+				vprocess = json.load(outfile)
+				cache = True
+		cache_threads = hresult+"_"+"threads"
+		if os.path.exists(cache_threads):
+			with open (cache_threads, 'r') as outfile:
+				vthreads = json.load(outfile)
+				cache = True
+
+		if cache:
+			print "[SYSPCE] Using process cache file: "+cache_process
+			print "[SYSPCE] Using threads cache file: "+cache_threads
+			print "\n"
+			self.send_message(vprocess)
+			self.send_message(vthreads)
+			sys.exit()
+		
 
 		###########################
 		# Get MachineGUID
@@ -273,24 +319,35 @@ class InputVolatility(Input):
 		vthreads = []
 
 		for offset, process, ps_sources in proc.calculate():
+
+			# Check if PEB structure is ready (psxview is a pool tag plugin)
+
+			PEB = str(process.Peb)
+			if PEB == "":
+				print "[SYSPCE] Warning PEB is empty in: " + str(int(process.UniqueProcessId))
 			
-			pslist1['computer'] = computerid
-			pslist1['Source'] = "Memory"
-			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
+			# PEB 
 			pslist1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine).replace('\"','')
 			pslist1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
-			pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
-			pslist1['idEvent'] = 1 
+			#pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
+			pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
+			pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
+			
+			# EPROCESS
 			pslist1['UtcTime'] = self.normalize_utc_time(str(process.CreateTime)) 
 			pslist1['ProcessId'] = str(int(process.UniqueProcessId))
 			pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
 			pslist1['TerminalSessionId'] = str(int(process.SessionId))
 			pslist1['ExitTime'] = str(process.ExitTime)
-			pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
 			pslist1['IsWow64'] = str(process.IsWow64)
 			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
 			pslist1['NumThreads'] = str(int(process.ActiveThreads))
-			pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
+			pslist1['Image'] = str(process.ImageFileName)
+
+			pslist1['computer'] = computerid
+			pslist1['Source'] = "Memory"
+			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
+			pslist1['idEvent'] = 1 
 			pslist1['ParentImage'] = ""
 			pslist1['ParentCommandLine'] = ""
 			pslist1['ParentProcessGuid'] = ""
@@ -303,16 +360,41 @@ class InputVolatility(Input):
 			pslist1['session'] = str(offset in ps_sources["session"])
 			pslist1['deskthrd'] = str(offset in ps_sources["deskthrd"])
 
-			# Exception with terminated process
+
+			# Check empty fileds
+			if pslist1['CommandLine'] == "":
+				print "[SYSPCE] Warning commandile empty in: " + str(pslist1['ProcessId']) + " Image: " + str(process.ImageFileName)
+
+			if pslist1['TerminalSessionId'] == "-1" or pslist1['TerminalSessionId'] == "": 
+				print "[SYSPCE] Warning Terminal session with -1 or empty value in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
+
+			if pslist1['CurrentDirectory'] == "":
+				print "[SYSPCE] Warning CurrentDirectory empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
+
+			if pslist1['ProcessId'] == "":
+				print "[SYSPCE] Warning ProcessId empty in: " + " Image: "+ str(process.ImageFileName)
+
+			if pslist1['ParentProcessId'] == "":
+				print "[SYSPCE] Warning ParentProcessId empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
+
+			# Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
+			if pslist1['Image'] == "":
+				print "[SYSPCE] Warning Image empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
+				pslist1['Image'] = str(process.ImageFileName)
+				if pslist1['Image'] == "smss.exe":
+					pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
+					pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
+					pslist1['TerminalSessionId'] = "0"
+			# Exception (II) Exception with terminated process
 			if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
 				pslist1['Image'] = str(process.ImageFileName)
 				pslist1['CommandLine'] = str(process.ImageFileName)
-			# Exception with kernel
+			# Exception (III) with kernel
 			if pslist1['ProcessId'] == '4':
 				pslist1['Image'] = "system"
 				pslist1['CommandLine'] = "system"
 				pslist1['TerminalSessionId'] = "0"
-			# Exception with smss.exe
+			# Exception (IV) with smss.exe
 			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
 				pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
@@ -501,10 +583,17 @@ class InputVolatility(Input):
 		events_list = vprocess
 		self.send_message(events_list)
 		thread_list = vthreads
-
-		#f = open("debug_threads.txt","w+")
-		#f.write(str(thread_list))
-		#f.close()
-
 		self.send_message(thread_list)
 		self.terminate()
+
+		# WE BUILD MEMORY CACHE
+		cache_process = hresult+"_"+"process"
+		if not os.path.exists(cache_process):
+			with open (cache_process, 'w') as outfile:
+				json.dump(vprocess,outfile)
+
+		cache_threads = hresult+"_"+"threads"
+		if not os.path.exists(cache_threads):
+			with open (cache_threads, 'w') as outfile:
+				json.dump(vthreads,outfile)
+		
