@@ -314,9 +314,9 @@
 		"Rulename": "Kernel Orphan threads",
 		"Content": [
 			{
-				"1": {
-					"unknown_threads": "True",
-					"PS_CROSS_THREAD_FLAGS_SYSTEM": "True"
+				"101": {
+					"PS_CROSS_THREAD_FLAGS_SYSTEM": "True",
+					"Owner_name": "Unknown"
 				}
 			}
 		]

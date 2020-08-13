@@ -256,6 +256,26 @@ class InputVolatility(Input):
 			result_hash = sha256_hash.hexdigest()
 		return result_hash
 
+	def check_fields(self,pslist1):
+
+			# Check PEB empty fileds
+
+			#if pslist1['CommandLine'] == "":
+			#	print "[SYSPCE] Warning commandline empty in: " + str(pslist1['ProcessId']) + " Image: " + str(pslist1['Image'])
+			#if pslist1['CurrentDirectory'] == "":
+			#	print "[SYSPCE] Warning CurrentDirectory empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(pslist1['Image'])
+
+			# Check EPROCESS empty or odd fileds
+
+			if pslist1['ProcessId'] == "":
+				print "[SYSPCE] Warning ProcessId empty in: " + " Image: "+ str(pslist1['Image'])
+
+			if pslist1['ParentProcessId'] == "":
+				print "[SYSPCE] Warning ParentProcessId empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(pslist1['Image'])
+
+			if pslist1['TerminalSessionId'] == "-1":
+				print "[SYSPCE] Warning TerminalSessionId is -1: " + " Image: "+ str(pslist1['Image']) + " " + str(pslist1['ProcessId'])
+
 	def do_action(self):
 
 		###########################
@@ -323,13 +343,14 @@ class InputVolatility(Input):
 			# Check if PEB structure is ready (psxview is a pool tag plugin)
 
 			PEB = str(process.Peb)
+			peb_empty = False
 			if PEB == "":
-				print "[SYSPCE] Warning PEB is empty in: " + str(int(process.UniqueProcessId))
+				peb_empty = True
 			
 			# PEB 
 			pslist1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine).replace('\"','')
 			pslist1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
-			#pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
+			pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
 			pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
 			pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
 			
@@ -342,7 +363,6 @@ class InputVolatility(Input):
 			pslist1['IsWow64'] = str(process.IsWow64)
 			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
 			pslist1['NumThreads'] = str(int(process.ActiveThreads))
-			pslist1['Image'] = str(process.ImageFileName)
 
 			pslist1['computer'] = computerid
 			pslist1['Source'] = "Memory"
@@ -360,45 +380,35 @@ class InputVolatility(Input):
 			pslist1['session'] = str(offset in ps_sources["session"])
 			pslist1['deskthrd'] = str(offset in ps_sources["deskthrd"])
 
-
-			# Check empty fileds
-			if pslist1['CommandLine'] == "":
-				print "[SYSPCE] Warning commandile empty in: " + str(pslist1['ProcessId']) + " Image: " + str(process.ImageFileName)
-
-			if pslist1['TerminalSessionId'] == "-1" or pslist1['TerminalSessionId'] == "": 
-				print "[SYSPCE] Warning Terminal session with -1 or empty value in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
-
-			if pslist1['CurrentDirectory'] == "":
-				print "[SYSPCE] Warning CurrentDirectory empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
-
-			if pslist1['ProcessId'] == "":
-				print "[SYSPCE] Warning ProcessId empty in: " + " Image: "+ str(process.ImageFileName)
-
-			if pslist1['ParentProcessId'] == "":
-				print "[SYSPCE] Warning ParentProcessId empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
-
 			# Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
 			if pslist1['Image'] == "":
-				print "[SYSPCE] Warning Image empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
+				#print "[SYSPCE] Warning Image empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
 				pslist1['Image'] = str(process.ImageFileName)
 				if pslist1['Image'] == "smss.exe":
 					pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
 					pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 					pslist1['TerminalSessionId'] = "0"
+
 			# Exception (II) Exception with terminated process
 			if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
 				pslist1['Image'] = str(process.ImageFileName)
 				pslist1['CommandLine'] = str(process.ImageFileName)
+
 			# Exception (III) with kernel
-			if pslist1['ProcessId'] == '4':
+			if pslist1['ProcessId'] == '4' and pslist1['TerminalSessionId'] == "-1":
 				pslist1['Image'] = "system"
 				pslist1['CommandLine'] = "system"
 				pslist1['TerminalSessionId'] = "0"
+
 			# Exception (IV) with smss.exe
-			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe":
+			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe" and pslist1['TerminalSessionId'] == "-1":
 				pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
+				pslist1['CurrentDirectory'] = "C:\\Windows\\System32\\"
 				pslist1['TerminalSessionId'] = "0"
+
+
+
 
 			# We build the "PROCESSGUID" to merge this event ID with Sysmon
 			################################################################
@@ -429,7 +439,7 @@ class InputVolatility(Input):
 
 				pslist1['modules'] = modules
 			else:
-				exit
+				sys.exit()
 
 			## VADS
 			########
@@ -451,23 +461,15 @@ class InputVolatility(Input):
 						# With one non-empty VAD is enough
 						break
 			else:
-				exit
+				sys.exit()
 
 			## THREADS
 			###########
  
 			if self._running:
-				resultt = self.get_threads(process,vthreads,pslist1)
-				# This process has one thread with StartAddress unknow
-				pslist1["unknown_threads"]  = resultt[0]
-				# This process has one thread with ActiveImpersonationInfo = 1 (Cross-Thread Flags in the ETHREAD)
-				pslist1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = resultt[1]
-				# This process has one thread with HideFromDebugger = 1 (Cross-Thread Flags in the ETHREAD)
-				pslist1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = resultt[2]
-				# This process has one thread with SystemThread = 1 (Cross-Thread Flags in the ETHREAD)
-				pslist1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = resultt[3]
+				self.get_threads(process,vthreads,pslist1)
 			else:
-				exit
+				sys.exit()
 			
 			vprocess.append(pslist1)
 			pslist1 = {}
@@ -479,6 +481,26 @@ class InputVolatility(Input):
 					p['ParentImage'] = x['Image']
 					p['ParentCommandLine'] = x['CommandLine']
 					p['ParentProcessGuid'] = x['ProcessGuid']
+					p['RealParent'] = x['Image']
+
+					# Exception (VII) with lsass.exe
+					if p["Image"].find("lsass.exe") != -1 and p["ParentImage"].find("wininit.exe")!= -1 and p['TerminalSessionId'] == "0":
+						p['CommandLine'] = "C:\\Windows\\System32\\lsass.exe"
+						p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+					# Exception (V) with svchost.exe
+					if p["Image"].find("svchost.exe") != -1 and (p['TerminalSessionId'] == "0" or p['TerminalSessionId'] == "-1") and p["ParentImage"].find("services.exe") != -1:
+						p['CommandLine'] = "C:\\Windows\\System32\\svchost.exe"
+						p['Image'] = "C:\\Windows\\System32\\svchost.exe"
+						p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+						p['TerminalSessionId'] = "0"
+				    # Exception (VI) with sppsvc.exe
+					if p["Image"].find("sppsvc.exe") != -1 and p['TerminalSessionId'] == "-1" and p["ParentImage"].find("services.exe") != -1:
+						p['CommandLine'] = "C:\\Windows\\System32\\sppsvc.exe"
+						p['Image'] = "C:\\Windows\\System32\\sppsvc.exe"
+						p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+						p['TerminalSessionId'] = "0"
+		
+					self.check_fields(p)
 
 		winlogon_fake_father = False
 		winlogon_csrss_father = False
@@ -502,6 +524,7 @@ class InputVolatility(Input):
 							winlogon_csrss_father = True
 							z['ParentImage'] = "smss.exe"
 							z['ParentCommandLine'] = 'smss.exe'
+							z['RealParent'] = "smss.exe"
 							z['ParentProcessId'] = ''
 							z['ParentProcessGuid'] = ''
 							for z in vprocess:
@@ -509,6 +532,7 @@ class InputVolatility(Input):
 									if z['ParentProcessId'] == winlogon_father_pid:
 										z['ParentImage'] = 'smss.exe'
 										z['ParentCommandLine'] = 'smss.exe'
+										z['RealParent'] = 'smss.exe'
 										z['ParentProcessId'] = ''
 										z['ParentProcessGuid'] = ''
 									
