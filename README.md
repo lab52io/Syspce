@@ -1,11 +1,14 @@
 ![](Images/Syspce2.PNG)
-# *Sysmon Processes Correlation Engine*
+# *System Processes Correlation Engine*
 
-"Sysmon Processes Correlation Engine" (Syspce) es un complemento de la herramienta 
-de monitorización de entornos Windows Sysmon, capaz de añadir una capa de 
-correlación a los eventos que esta genera. Tiene como objetivo poder detetar 
-actividades maliciosas, relacionando entre si las acciones atómicas identificadas 
-por Sysmon.
+"System Processes Correlation Engine" (Syspce) es una herramienta de correlación
+capaz detetar actividades maliciosas causadas por malware avanzado, relacionando
+entre si las acciones atómicas identificadas por Sysmon y Volatility. Esto le 
+permite establecer reglas de detección correlando: las acciones que temporalmente
+realizan los procesos de una máquina (Sysmon), con el estado y caracteriticas de 
+sus espacios en memória (Volatility). Syspce es capaz de leer de la salida de las
+dos herramientas y agrupar con una orientación al proceso, acciones y 
+características. Syspce Presenta una doble capacidad o estategía de detección.
 
 Por una parte, permite relacionar acciones que sucenden en la jerarquía de 
 ejecución de los procesos, es decir, un proceso siempre cumple un relación de 
@@ -15,7 +18,16 @@ para detectar las acciones del malware mediante una estrategía de comportamient
 y no de firmas. Sysmon en su ID 1 establece una relación de parentesco mínima 
 padre/hijo, pero el correlador es capaz de trabajar en la detección de todo 
 el arbol, relacionando acciones que han realizado los procesos sin importar la 
-profundidad en la jerarquia.
+profundidad en la jerarquía. Esta jerarquía temporal se complementa con el
+estado de la memoría de cada proceso aportado por Volatility, permitiendo no
+solo correlar la información entre si devuelta por los diferentes plugins de
+Volatility sino complementrarla con las acciones temporales de los procesos
+aportada por Sysmon. 
+
+Por ejemplo, es posible identificar que un proceso tiene páginas RWX en su 
+espacio de memoria y que un segundo proceso realizó una acción de creación de hilo
+remoto sobre él, pudiendo detectar una posibles situaciones de inyección de 
+código remoto.
 
 En segundo lugar, presenta capacidades de modelar la actividad normal de los 
 procesos mediante la definición de lineas base y alertar cuando un proceso no
@@ -38,7 +50,8 @@ plano.
 Syspce puede utilizarse con diversas finalidades:
 
 1. Para acciones forenses cuando se ha recuperado un archivo .evtx de un 
-	equipo afectado o sospechoso.
+	equipo afectado o sospechoso y se dispone además de una captura de
+	memoría.
 	
 2. Como motor de correlación local en tiempo real que remita sus alertas 
 	a un sistema SIEM.
@@ -47,7 +60,8 @@ Syspce puede utilizarse con diversas finalidades:
 	implementación en un sistema de correlación como SPLUNK, QRADAR...
 
 4. Soporte en un proceso de Threat Hunting buscando actividad maliciosa
-    en ficheros .evtx descargados de equipos sospechosos.
+    en ficheros .evtx descargados de equipos sospechosos y memórias
+	adquiridas para Volatility.
 
 5. Integrado en entornos sandbox como complemento de detección.
 
@@ -84,13 +98,17 @@ dos ficheros de configuracion anteriores
 
 Previa a la ejecución del correlador y para que sea capaz de encontrar el 
 fichero local de log dentro de la estructura del eventlog es necesario 
-añadir una clave de registro haciendo doble click en el fichero:
+añadir una clave de registro haciendo doble click en el fichero (solo
+si se desa trabajar con el eventlog local o activar la detección en tiempo
+real):
 
 	#registry_key.reg
 	
 Esto es debido a que la libreria de lectura del eventlog de python no es capaz
 de trabajar en rutas diferentes a la localizada en los registro System y 
 Security.
+
+### Ejecución ⚙️
 
 Acto seguido podemos ejecutar el correlador de la siguiente manera para leer
 del registro de sysmon del propio equipo:
@@ -167,6 +185,17 @@ le añadiremos el parámetro -b.
 
 	#python sysmonCorrelator.py -s schemaVersion4.21.xml -d -b
 
+Si queremos detectar acciones maliciosas sobre un fichero de captura de memória para
+Volatility teclearemos lo siguiente, donde -p es el profile de Volatility y -m es
+la ruta al archivo del volcado de memória.
+
+	#python syspce.py -m C:\Memdump\Windows_10_x86.raw -p Win10x86
+
+Para correlar la información de un fichero .evtx de Sysmon con una captura de
+memoria para la herramienta Volatility, añadiremos a lo anterior -f para establecer
+el fichero evtx de Sysmon.
+
+	#python syspce.py -m C:\Memdump\Windows_10_x86.raw -p Win10x86 -f sysmon.evtx
 
 ## Acciones registradas por el correlador 🔩
 
@@ -271,7 +300,7 @@ registran son todas aquellas de sysmon que presentan un identificado GUI de
 proceso:
 
 ```
-'1','2', '3', '5','7','8','9','10','11','12','13','14','15', '17','18','22'
+'1','2', '3', '5','7','8','9','10','11','12','13','14','15', '17','18','22', '23'
 ```
 
 El fichero es de tipo JSON, donde cada elemento es un diccionario de una clave.
@@ -495,6 +524,9 @@ al principio de la regla:
 ```
 En este ejemplo saltara una alerta si se crean en un periodo de 15min 3 o más
 procesos de navegadores web en sesion de servicios (Sesión 0).
+
+#### Creando reglas de correlación para Volatility
+Blah Blah
 
 ### Baseline Engine 
 
