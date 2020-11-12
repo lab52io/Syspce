@@ -1,0 +1,164 @@
+
+
+<Sysmon schemaversion="4.30">
+	<!--SYSMON META CONFIG-->
+	<HashAlgorithms>sha1</HashAlgorithms> <!-- Both MD5 and SHA256 are the industry-standard algorithms for identifying files -->
+	<CheckRevocation/> <!-- Check loaded drivers, log if their code-signing certificate has been revoked, in case malware stole one to sign a kernel driver -->
+
+	<ArchiveDirectory>Deleted2</ArchiveDirectory>
+
+	<!-- <ImageLoad/> --> <!-- Would manually force-on ImageLoad monitoring, even without configuration below. Included only documentation. -->
+	<!-- <ProcessAccessConfig/> --> <!-- Would manually force-on ProcessAccess monitoring, even without configuration below. Included only documentation. -->
+	<!-- <PipeMonitoringConfig/> --> <!-- Would manually force-on PipeCreated / PipeConnected events, even without configuration below. Included only documentation. -->
+
+	<EventFiltering>
+
+	<!--SYSMON EVENT ID 1 : PROCESS CREATION [ProcessCreate]-->
+		<!--COMMENT:	All processes launched will be logged, except for what matches a rule below. It's best to be as specific as possible,
+			to avoid user-mode executables imitating other process names to avoid logging, or if malware drops files in an existing directory.
+			Ultimately, you must weigh CPU time checking many detailed rules, against the risk of malware exploiting the blindness created.
+			Beware of Masquerading, where attackers imitate the names and paths of legitimate tools. Ideally, you'd use both file path and
+			code signatures to validate, but Sysmon does not support that. Look into AppLocker/WindowsDeviceGuard for whitelisting support. -->
+
+		<!--DATA: UtcTime, ProcessGuid, ProcessID, Image, FileVersion, Description, Product, Company, CommandLine, CurrentDirectory, User, LogonGuid, LogonId, TerminalSessionId, IntegrityLevel, Hashes, ParentProcessGuid, ParentProcessId, ParentImage, ParentCommandLine, RuleName-->
+	
+		<ProcessCreate onmatch="exclude">
+
+
+		</ProcessCreate>
+
+	
+	<!--SYSMON EVENT ID 2 : FILE CREATION TIME RETROACTIVELY CHANGED IN THE FILESYSTEM [FileCreateTime]-->
+
+	
+		<FileCreateTime onmatch="exclude">
+		</FileCreateTime>
+	
+
+
+	<!--SYSMON EVENT ID 3 : NETWORK CONNECTION INITIATED [NetworkConnect]-->
+
+	
+		<NetworkConnect onmatch="exclude">
+		</NetworkConnect>
+	
+
+
+	<!--SYSMON EVENT ID 4 : RESERVED FOR SYSMON SERVICE STATUS MESSAGES-->
+
+		<!--DATA: UtcTime, State, Version, SchemaVersion-->
+		<!--Cannot be filtered.-->
+
+	<!--SYSMON EVENT ID 5 : PROCESS ENDED [ProcessTerminate]-->
+
+	
+		<ProcessTerminate onmatch="exclude">
+		</ProcessTerminate>
+	
+
+
+	<!--SYSMON EVENT ID 6 : DRIVER LOADED INTO KERNEL [DriverLoad]-->
+
+	
+		<DriverLoad onmatch="exclude">
+
+		</DriverLoad>
+	
+
+	<!--SYSMON EVENT ID 7 : DLL (IMAGE) LOADED BY PROCESS [ImageLoad]-->
+
+	
+		<ImageLoad onmatch="exclude">
+			<Image condition="image">C:\Windows\System32\conhost.exe</Image>
+
+		</ImageLoad>
+	
+
+	<!--SYSMON EVENT ID 8 : REMOTE THREAD CREATED [CreateRemoteThread]-->
+
+	
+		<CreateRemoteThread onmatch="exclude">
+
+
+		</CreateRemoteThread>
+	
+
+	<!--SYSMON EVENT ID 9 : RAW DISK ACCESS [RawAccessRead]-->
+
+	
+		<RawAccessRead onmatch="exclude">
+
+		</RawAccessRead>
+	
+
+	<!--SYSMON EVENT ID 10 : INTER-PROCESS ACCESS [ProcessAccess]-->
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<ProcessAccess onmatch="exclude">
+			<CallTrace condition="contains all">psmserviceexthost</CallTrace>
+			<TargetImage condition="contains">mmc.exe</TargetImage>
+			<SourceImage condition="image">C:\Windows\explorer.exe</SourceImage>
+			<SourceImage condition="contains">MsMpEng.exe</SourceImage>
+			<SourceImage condition="image">C:\Windows\System32\conhost.exe</SourceImage>
+		</ProcessAccess>
+	</RuleGroup>
+
+	<!--SYSMON EVENT ID 11 : FILE CREATED [FileCreate]-->
+
+	
+		<FileCreate onmatch="exclude">
+		</FileCreate>
+	
+
+
+	<!--SYSMON EVENT ID 12 & 13 & 14 : REGISTRY MODIFICATION [RegistryEvent]-->
+
+	<RuleGroup name="Baseline behaviour" groupRelation="or">
+		<RegistryEvent onmatch="exclude">
+			<Image condition="is">C:\Windows\explorer.exe</Image>
+			<Image condition="is">C:\Windows\sysmon.exe</Image>
+			<Image condition="image">C:\Windows\System32\conhost.exe</Image>
+		</RegistryEvent>
+	
+	</RuleGroup>
+
+
+	<!--SYSMON EVENT ID 15 : ALTERNATE DATA STREAM CREATED [FileCreateStreamHash]-->
+
+		<FileCreateStreamHash onmatch="exclude">
+		</FileCreateStreamHash>
+
+
+
+	<!--SYSMON EVENT ID 17 & 18 : PIPE CREATED / PIPE CONNECTED [PipeEvent]-->
+
+	
+		<PipeEvent onmatch="exclude">
+
+		</PipeEvent>
+	
+
+	<!--SYSMON EVENT ID 19 & 20 & 21 : WMI EVENT MONITORING [WmiEvent]-->
+
+	
+		<WmiEvent onmatch="exclude">
+			
+		</WmiEvent>
+
+	<!--SYSMON EVENT ID 22 -->
+
+	
+		<DnsQuery onmatch="exclude">
+			
+		</DnsQuery>
+		
+	<!--SYSMON EVENT ID 23 -->
+
+	
+		<FileDelete onmatch="exclude">
+			<TargetFilename  condition="contains all">.pf</TargetFilename>
+		</FileDelete>		
+
+
+	</EventFiltering>
+</Sysmon>

@@ -303,7 +303,7 @@
 		"Content": [
 			{
 				"7": { "ImageLoaded": "PROCESS_DUMP_DLLS" },
-				"10": { "CallTrace": "PROCESS_DUMP_DLLS" }
+				"10": { "CallTrace": "PROCESS_DUMP_DLLS", "TargetImage": "C:\\Windows\\system32\\lsass.exe" }
 			}
 
 		]
