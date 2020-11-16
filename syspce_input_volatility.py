@@ -74,6 +74,12 @@ class InputVolatility(Input):
 		self.module_id = Module.INPUT_VOLATILITY
 		self.machineguid = ""
 
+	''' 
+	Name: get_registry_key()
+	Params: volatility class
+	Return: Return value from "self._config.KEY"
+	Description: This function returns registry value fixed in in self._config.KEY
+	'''
 	def get_registry_keys(self):
 
 		addr_space = utils.load_as(self._config)
@@ -204,7 +210,6 @@ class InputVolatility(Input):
 					owner_name = str(owner.BaseDllName or 'None')
 					thread1["Owner_name"] =  str(owner.BaseDllName or 'None')
 				else:
-					# If there is a unknown thread we break for loop
 					owner_name = "Unknown"
 					thread1["Owner_name"] = "Unknown"
 					result[0] = "True"
@@ -222,7 +227,12 @@ class InputVolatility(Input):
 			
 			return result
 
-
+	''' 
+	Name: is_vad_empty()
+	Params: 
+	Return: True o False if VAD is empty
+	Description: This function detect if VAD is empty
+	'''
 	def is_vad_empty(self, vad, address_space):
 		 PAGE_SIZE = 0x1000
 		 all_zero_page = "\x00" * PAGE_SIZE
@@ -265,7 +275,7 @@ class InputVolatility(Input):
 			#if pslist1['CurrentDirectory'] == "":
 			#	print "[SYSPCE] Warning CurrentDirectory empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(pslist1['Image'])
 
-			# Check EPROCESS empty or odd fileds
+			# Check EPROCESS empty or odd fields
 
 			if pslist1['ProcessId'] == "":
 				print "[SYSPCE] Warning ProcessId empty in: " + " Image: "+ str(pslist1['Image'])
@@ -275,6 +285,7 @@ class InputVolatility(Input):
 
 			if pslist1['TerminalSessionId'] == "-1":
 				print "[SYSPCE] Warning TerminalSessionId is -1: " + " Image: "+ str(pslist1['Image']) + " " + str(pslist1['ProcessId'])
+
 
 	def do_action(self):
 
@@ -326,6 +337,8 @@ class InputVolatility(Input):
 		mg_vector = self.machineguid.split("-")
 		computerid = mg_vector[0]
 
+		print "[SYSPCE] MACHINEGUID detected: " + str(computerid)
+
 		###########################
 		# Plugin psxview volatility 
 		###########################
@@ -341,7 +354,6 @@ class InputVolatility(Input):
 		for offset, process, ps_sources in proc.calculate():
 
 			# Check if PEB structure is ready (psxview is a pool tag plugin)
-
 			PEB = str(process.Peb)
 			peb_empty = False
 			if PEB == "":
@@ -353,7 +365,6 @@ class InputVolatility(Input):
 			pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
 			pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
 			pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
-			
 			# EPROCESS
 			pslist1['UtcTime'] = self.normalize_utc_time(str(process.CreateTime)) 
 			pslist1['ProcessId'] = str(int(process.UniqueProcessId))
@@ -363,7 +374,6 @@ class InputVolatility(Input):
 			pslist1['IsWow64'] = str(process.IsWow64)
 			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
 			pslist1['NumThreads'] = str(int(process.ActiveThreads))
-
 			pslist1['computer'] = computerid
 			pslist1['Source'] = "Memory"
 			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
@@ -382,7 +392,6 @@ class InputVolatility(Input):
 
 			# Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
 			if pslist1['Image'] == "":
-				#print "[SYSPCE] Warning Image empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(process.ImageFileName)
 				pslist1['Image'] = str(process.ImageFileName)
 				if pslist1['Image'] == "smss.exe":
 					pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
@@ -406,8 +415,6 @@ class InputVolatility(Input):
 				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
 				pslist1['CurrentDirectory'] = "C:\\Windows\\System32\\"
 				pslist1['TerminalSessionId'] = "0"
-
-
 
 
 			# We build the "PROCESSGUID" to merge this event ID with Sysmon
@@ -475,6 +482,7 @@ class InputVolatility(Input):
 			pslist1 = {}
 
 		## We fill Parent fields with calculated information
+		computer_alerts = 0
 		for p in vprocess:
 			for x in vprocess:
 				if p['ParentProcessId'] == x['ProcessId']:
@@ -482,7 +490,6 @@ class InputVolatility(Input):
 					p['ParentCommandLine'] = x['CommandLine']
 					p['ParentProcessGuid'] = x['ProcessGuid']
 					p['RealParent'] = x['Image']
-
 					# Exception (VII) with lsass.exe
 					if p["Image"].find("lsass.exe") != -1 and p["ParentImage"].find("wininit.exe")!= -1 and p['TerminalSessionId'] == "0":
 						p['CommandLine'] = "C:\\Windows\\System32\\lsass.exe"
@@ -499,8 +506,13 @@ class InputVolatility(Input):
 						p['Image'] = "C:\\Windows\\System32\\sppsvc.exe"
 						p['CurrentDirectory'] = "C:\\Windows\\System32\\"
 						p['TerminalSessionId'] = "0"
-		
+					# Check computer 
 					self.check_fields(p)
+					print str(p['computer'])
+
+					if p['computer'] == 'ffffffff' and computer_alerts == 0:
+						print "[SYSPCE] Warning computer is ffffffff, problems while we try to read registry key"
+						computer_alerts = 1
 
 		winlogon_fake_father = False
 		winlogon_csrss_father = False

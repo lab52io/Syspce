@@ -444,7 +444,7 @@
 	},
 	{
 		"RuleID": 35,
-		"Rulename": "This Thread has StartAdress with a module unknown",
+		"Rulename": "Thread with startaddress with one module unknown",
 		"Content": [
 			{
 				"101": {
@@ -471,11 +471,28 @@
 		"Rulename": "Dumping LSA secrets credentials",
 		"Content": [
 			{
-				"1": {"CommandLine": "C:\\WINDOWS\\system32\\svchost.exe -k LocalService"},
-				"7": {"ImageLoaded": "C:\\Windows\\System32\\regsvc.dll"},
-				"17": {"PipeName": "\\winreg", "EventType": "CreatePipe"},
-				"12": {"TargetObject": "HKLM\\SECURITY", "EventType": "CreateKey"},
-				"11": {"TargetFilename": "C:\\Windows\\System32\\"}
+				"1": { "CommandLine": "C:\\WINDOWS\\system32\\svchost.exe -k LocalService" },
+				"7": { "ImageLoaded": "C:\\Windows\\System32\\regsvc.dll" },
+				"17": {
+					"PipeName": "\\winreg",
+					"EventType": "CreatePipe"
+				},
+				"12": {
+					"TargetObject": "HKLM\\SECURITY",
+					"EventType": "CreateKey"
+				},
+				"11": { "TargetFilename": "C:\\Windows\\System32\\" }
+			}
+		]
+	},
+		{
+		"RuleID": 39,
+		"Rulename": "Process is BeingDebugged",
+		"Content": [
+			{
+				"1": {
+					"BeingDebugged": "1"
+				}
 			}
 		]
 	}
