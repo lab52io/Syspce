@@ -8,7 +8,7 @@
 	<EventFiltering>
 
 	<!--SYSMON EVENT ID 1 : PROCESS CREATION [ProcessCreate]-->
-	
+	<RuleGroup name="" groupRelation="or">
 		<ProcessCreate onmatch="exclude">
 			<Image condition="is">C:\Windows\Sysmon.exe</Image>
 			
@@ -24,7 +24,7 @@
 			<Image condition="is">C:\Windows\Microsoft.NET\Framework\v4.0.30319\ngen.exe</Image>
 
 		</ProcessCreate>
-
+	</RuleGroup>
 	
 	<!--(DISABLED)SYSMON EVENT ID 2 : FILE CREATION TIME RETROACTIVELY CHANGED IN THE FILESYSTEM [FileCreateTime]-->
 
