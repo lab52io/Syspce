@@ -311,7 +311,7 @@ class InputVolatility(Input):
 				vthreads = json.load(outfile)
 				cache = True
 
-		cache_threads = hresult+"_"+"vads"
+		cache_vads = hresult+"_"+"vads"
 		if os.path.exists(cache_vads):
 			with open (cache_vads, 'r') as outfile:
 				vvads = json.load(outfile)
