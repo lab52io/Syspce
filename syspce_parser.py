@@ -180,6 +180,8 @@ def get_action_from_id(id):
 		return "[A] CHILD PROCESS CREATED" 
 	elif id == 101:
 		return "[A] THREAD CREATED"
+	elif id == 102:
+		return "[A] VAD CREATED" 
 	elif id == 108:
 		return "[A] STARTED THREAD CREATED BY REMOTE PROCESS" 
 	elif id == 110:
@@ -227,6 +229,8 @@ def get_default_parameter_from_id(id):
 		return "ChildImage"
 	elif id == 101:
 		return "ThreadId"
+	elif id == 102:
+		return "VadNode"
 	elif id == 108:
 		return "SourceImage"
 	elif id == 110:

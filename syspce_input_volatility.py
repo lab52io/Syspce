@@ -168,6 +168,7 @@ class InputVolatility(Input):
 				thread1["Owner_name"] = ""
 				thread1["Owning_process"] = ""
 				thread1["Attached_process"] = ""
+				thread1["Win32StartAddress"] = ""
 				# Process fields necessaries to a new idEvent
 				thread1["idEvent"] = 101
 				thread1["ProcessId"] = pslist1["ProcessId"]
@@ -220,6 +221,7 @@ class InputVolatility(Input):
 				thread1["ThreadId"] = int(thread.Cid.UniqueThread)
 				thread1["CreateTime"] = str(thread.CreateTime)
 				thread1["ExitTime"] = str(thread.ExitTime)
+				thread1["Win32StartAddress"] = str(thread.Win32StartAddress)
 				#print "Add PID: " + str(thread1["ProcessId"]) + " TID: " + str(thread1["ThreadId"])
 				vthreads.append(thread1)
 				thread1 = {}
@@ -309,12 +311,19 @@ class InputVolatility(Input):
 				vthreads = json.load(outfile)
 				cache = True
 
+		cache_threads = hresult+"_"+"vads"
+		if os.path.exists(cache_vads):
+			with open (cache_vads, 'r') as outfile:
+				vvads = json.load(outfile)
+				cache = True
 		if cache:
 			print "[SYSPCE] Using process cache file: "+cache_process
 			print "[SYSPCE] Using threads cache file: "+cache_threads
+			print "[SYSPCE] Using threads cache file: "+cache_vads
 			print "\n"
 			self.send_message(vprocess)
 			self.send_message(vthreads)
+			self.send_message(vvads)
 			sys.exit()
 		
 
@@ -350,6 +359,7 @@ class InputVolatility(Input):
 		pslist1 = {}
 		vprocess = []
 		vthreads = []
+		vvads = []
 
 		for offset, process, ps_sources in proc.calculate():
 
@@ -417,7 +427,7 @@ class InputVolatility(Input):
 				pslist1['TerminalSessionId'] = "0"
 
 
-			# We build the "PROCESSGUID" to merge this event ID with Sysmon
+			# We build the "PROCESSGUID" to MERGE this event ID with Sysmon
 			################################################################
 			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
 			epoch = datetime.datetime.utcfromtimestamp(0)
@@ -456,6 +466,7 @@ class InputVolatility(Input):
 			  original protection that includes write and execute. 
 			"""
 
+			vad1 = {}
 			if self._running:
 				pslist1["rwx_page"] = "False"
 				vads = process.get_vads(vad_filter=process._injection_filter)
@@ -464,6 +475,22 @@ class InputVolatility(Input):
 						continue
 					else:
 						protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
+						# Process fields necessaries to a new idEvent
+						vad1["idEvent"] = 102
+						vad1["ProcessId"] = pslist1["ProcessId"]
+						vad1["ProcessGuid"] = pslist1["ProcessGuid"]
+						vad1["SyspceId"] = pslist1["SyspceId"]
+						vad1["Image"] = pslist1["Image"]
+						vad1["Source"] = "Memory"
+						vad1['computer'] = pslist1['computer']
+						# Fields VADs
+						vad1["VadNode"] = str(vad.obj_offset)
+						vad1["Vad_Protection"] = str(protect_flags)
+						vad1["Vad_Start"] = str(vad.Start)
+						vad1["Vad_End"] = str(vad.End)
+
+						vvads.append(vad1)
+						vad1 = {}
 						pslist1["rwx_page"] = "True"
 						# With one non-empty VAD is enough
 						break
@@ -508,7 +535,7 @@ class InputVolatility(Input):
 						p['TerminalSessionId'] = "0"
 					# Check computer 
 					self.check_fields(p)
-					print str(p['computer'])
+					#print str(p['computer'])
 
 					if p['computer'] == 'ffffffff' and computer_alerts == 0:
 						print "[SYSPCE] Warning computer is ffffffff, problems while we try to read registry key"
@@ -620,9 +647,11 @@ class InputVolatility(Input):
 		self.send_message(events_list)
 		thread_list = vthreads
 		self.send_message(thread_list)
+		vads_list = vvads
+		self.send_message(vads_list)
 		self.terminate()
 
-		# WE BUILD MEMORY CACHE
+		# WE BUILD MEMORY CACHE (PROCESS, THREADS AND VADS)
 		cache_process = hresult+"_"+"process"
 		if not os.path.exists(cache_process):
 			with open (cache_process, 'w') as outfile:
@@ -632,4 +661,9 @@ class InputVolatility(Input):
 		if not os.path.exists(cache_threads):
 			with open (cache_threads, 'w') as outfile:
 				json.dump(vthreads,outfile)
+		
+		cache_vads = hresult+"_"+"vads"
+		if not os.path.exists(cache_vads):
+			with open (cache_threads, 'w') as outfile:
+				json.dump(vvads,outfile)
 		
