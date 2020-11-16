@@ -664,6 +664,6 @@ class InputVolatility(Input):
 		
 		cache_vads = hresult+"_"+"vads"
 		if not os.path.exists(cache_vads):
-			with open (cache_threads, 'w') as outfile:
+			with open (cache_vads, 'w') as outfile:
 				json.dump(vvads,outfile)
 		
