@@ -152,22 +152,22 @@ class InputVolatility(Input):
 				
 				# Specific fields
 				thread1["ThreadId"] = ""
-				thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "False"
-				thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "False"
-				thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "False"
-				thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = "False"
-				thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = "False"
-				thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = "False"
-				thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = "False"
-				thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = "False"
+				thread1["PsCrossThreadFlagsImpersonating"] = "False"
+				thread1["PsCrossThreadFlagsHideFromDbg"] = "False"
+				thread1["PsCrossThreadFlagsSystem"] = "False"
+				thread1["PsCrossThreadFlagsTerminated"] = "False"
+				thread1["PsCrossThreadFlagsDeadThread"] = "False"
+				thread1["PsCrossThreadFlagsBreakOnTermination"] = "False"
+				thread1["PsCrossThreadFlagsSkipCreationMsg"] = "False"
+				thread1["PsCrossThreadFlagsSkipTerminationMsg"] = "False"
 				thread1["StartAddress"] = ""
 				thread1["State"] = ""
 				thread1["WaitReason"] = "" 
 				thread1["CreateTime"] = ""
 				thread1["ExitTime"] = ""
-				thread1["Owner_name"] = ""
-				thread1["Owning_process"] = ""
-				thread1["Attached_process"] = ""
+				thread1["OwnerName"] = ""
+				thread1["OwningProcess"] = ""
+				thread1["AttachedProcess"] = ""
 				thread1["Win32StartAddress"] = ""
 				# Process fields necessaries to a new idEvent
 				thread1["idEvent"] = 101
@@ -176,56 +176,54 @@ class InputVolatility(Input):
 				thread1["SyspceId"] = pslist1["SyspceId"]
 				thread1["Image"] = pslist1["Image"]
 				thread1["Source"] = "Memory"
-				thread1['computer'] = pslist1['computer']
-				thread1["Owning_process"] = str(thread.owning_process().ImageFileName)
-				thread1["Attached_process"] = str(thread.attached_process().ImageFileName)
+				thread1['Computer'] = pslist1['computer']
+				thread1["OwningProcess"] = str(thread.owning_process().ImageFileName)
+				thread1["AttachedProcess"] = str(thread.attached_process().ImageFileName)
 
 				if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
 					result[1] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_IMPERSONATING"] = "True"
+					thread1["PsCrossThreadFlagsImpersonating"] = "True"
 					
 				if "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG" in str(thread.CrossThreadFlags):
 					result[2] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_HIDEFROMDBG"] = "True"
+					thread1["PsCrossThreadFlagsHideFromDbg"] = "True"
 					
 				if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
 					result[3] = "True"
-					thread1["PS_CROSS_THREAD_FLAGS_SYSTEM"] = "True"
+					thread1["PsCrossThreadFlagsSystem"] = "True"
 				
 				if "PS_CROSS_THREAD_FLAGS_TERMINATED" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_TERMINATED"] = "True"
+					thread1["PsCrossThreadFlagsTerminated"] = "True"
 
 				if "PS_CROSS_THREAD_FLAGS_DEADTHREAD" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_DEADTHREAD"] = "True"
+					thread1["PsCrossThreadFlagsDeadThread"] = "True"
 
 				if "PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION"] = "True"
+					thread1["PsCrossThreadFlagsBreakOnTermination"] = "True"
 
 				if "PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG"] = "True"
+					thread1["PsCrossThreadFlagsSkipCreationMsg"] = "True"
 
 				if "PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG" in str(thread.CrossThreadFlags):
-					thread1["PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG"] = "True"
+					thread1["PsCrossThreadFlagsSkipTerminationMsg"] = "True"
 
 				if owner:
 					owner_name = str(owner.BaseDllName or 'None')
-					thread1["Owner_name"] =  str(owner.BaseDllName or 'None')
+					thread1["OwnerName"] =  str(owner.BaseDllName or 'None')
 				else:
 					owner_name = "Unknown"
-					thread1["Owner_name"] = "Unknown"
+					thread1["OwnerName"] = "Unknown"
 					result[0] = "True"
 
-				thread1["StartAddress"] = int(thread.StartAddress)
+				thread1["StartAddress"] = str(thread.StartAddress)
 				thread1["State"] = str(thread.Tcb.State)
 				thread1["WaitReason"] = str(thread.Tcb.WaitReason)
 				thread1["ThreadId"] = int(thread.Cid.UniqueThread)
 				thread1["CreateTime"] = str(thread.CreateTime)
 				thread1["ExitTime"] = str(thread.ExitTime)
 				thread1["Win32StartAddress"] = str(thread.Win32StartAddress)
-				#print "Add PID: " + str(thread1["ProcessId"]) + " TID: " + str(thread1["ThreadId"])
 				vthreads.append(thread1)
 				thread1 = {}
-				#print vthreads
 			
 			return result
 
@@ -384,21 +382,21 @@ class InputVolatility(Input):
 			pslist1['IsWow64'] = str(process.IsWow64)
 			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
 			pslist1['NumThreads'] = str(int(process.ActiveThreads))
-			pslist1['computer'] = computerid
+			pslist1['Computer'] = computerid
 			pslist1['Source'] = "Memory"
 			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
 			pslist1['idEvent'] = 1 
 			pslist1['ParentImage'] = ""
 			pslist1['ParentCommandLine'] = ""
 			pslist1['ParentProcessGuid'] = ""
-			pslist1["unknown_threads"] = "False"
-			pslist1['pslist'] = str(offset in ps_sources["pslist"])
-			pslist1['psscan'] = str(offset in ps_sources["psscan"])
-			pslist1['threadproc'] = str(offset in ps_sources["thrdproc"])
-			pslist1['pspcid'] = str(offset in ps_sources["pspcid"])
-			pslist1['csrss'] = str(offset in ps_sources["csrss"])
-			pslist1['session'] = str(offset in ps_sources["session"])
-			pslist1['deskthrd'] = str(offset in ps_sources["deskthrd"])
+			pslist1["UnknownThreads"] = "False"
+			pslist1['PsList'] = str(offset in ps_sources["pslist"])
+			pslist1['PsScan'] = str(offset in ps_sources["psscan"])
+			pslist1['ThreadProc'] = str(offset in ps_sources["thrdproc"])
+			pslist1['PsPcid'] = str(offset in ps_sources["pspcid"])
+			pslist1['Csrss'] = str(offset in ps_sources["csrss"])
+			pslist1['Session'] = str(offset in ps_sources["session"])
+			pslist1['DeskThrd'] = str(offset in ps_sources["deskthrd"])
 
 			# Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
 			if pslist1['Image'] == "":
@@ -436,12 +434,12 @@ class InputVolatility(Input):
 			firstpart, secondpart = hex_string[:len(hex_string)/2], hex_string[len(hex_string)/2:]
 
 			if pslist1['Image'] != "" and pslist1['ProcessId'] != "":
-				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
+				result2 = hashlib.md5(pslist1['Computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
 			else:
-				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
+				result2 = hashlib.md5(pslist1['Computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
 
 			syspceid_datetime = date_time_obj.strftime('%Y-%m-%d %H:%M:%S')
-			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+syspceid_datetime)
+			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["Computer"]+syspceid_datetime)
 			pslist1['ProcessGuid'] = result2.hexdigest()
 			pslist1['SyspceId'] = result.hexdigest()
 
@@ -454,7 +452,7 @@ class InputVolatility(Input):
 					if module is not None:
 						modules = modules + "," + str(module.FullDllName)
 
-				pslist1['modules'] = modules
+				pslist1['Modules'] = modules
 			else:
 				sys.exit()
 
@@ -468,7 +466,7 @@ class InputVolatility(Input):
 
 			vad1 = {}
 			if self._running:
-				pslist1["rwx_page"] = "False"
+				pslist1["RwxPage"] = "False"
 				vads = process.get_vads(vad_filter=process._injection_filter)
 				for vad, address_space in vads:
 					if self.is_vad_empty(vad, address_space):
@@ -482,18 +480,16 @@ class InputVolatility(Input):
 						vad1["SyspceId"] = pslist1["SyspceId"]
 						vad1["Image"] = pslist1["Image"]
 						vad1["Source"] = "Memory"
-						vad1['computer'] = pslist1['computer']
+						vad1['Computer'] = pslist1['Computer']
 						# Fields VADs
 						vad1["VadNode"] = str(vad.obj_offset)
-						vad1["Vad_Protection"] = str(protect_flags)
-						vad1["Vad_Start"] = str(vad.Start)
-						vad1["Vad_End"] = str(vad.End)
+						vad1["VadProtection"] = str(protect_flags)
+						vad1["VadStart"] = str(vad.Start)
+						vad1["VadEnd"] = str(vad.End)
 
 						vvads.append(vad1)
 						vad1 = {}
-						pslist1["rwx_page"] = "True"
-						# With one non-empty VAD is enough
-						break
+						pslist1["RwxPage"] = "True"
 			else:
 				sys.exit()
 
@@ -535,9 +531,8 @@ class InputVolatility(Input):
 						p['TerminalSessionId'] = "0"
 					# Check computer 
 					self.check_fields(p)
-					#print str(p['computer'])
-
-					if p['computer'] == 'ffffffff' and computer_alerts == 0:
+					
+					if p['Computer'] == 'ffffffff' and computer_alerts == 0:
 						print "[SYSPCE] Warning computer is ffffffff, problems while we try to read registry key"
 						computer_alerts = 1
 
