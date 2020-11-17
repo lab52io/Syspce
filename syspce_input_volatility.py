@@ -323,29 +323,29 @@ class InputVolatility(Input):
 			self.send_message(vprocess)
 			self.send_message(vthreads)
 			self.send_message(vvads)
-			sys.exit()
+			self.terminate()
 		
 
 		###########################
 		# Get MachineGUID
 		###########################
+		if self._running:
+			self._config.KEY = 'Microsoft\\Cryptography'
 
-		self._config.KEY = 'Microsoft\\Cryptography'
-
-		for reg,key in self.get_registry_keys():
-			if key:
-				for v in rawreg.values(key):
-					tp, dat = rawreg.value_data(v)
-					if (v.Name == "MachineGuid"):
-						self.machineguid = dat
+			for reg,key in self.get_registry_keys():
+				if key:
+					for v in rawreg.values(key):
+						tp, dat = rawreg.value_data(v)
+						if (v.Name == "MachineGuid"):
+							self.machineguid = dat
  
-		if self.machineguid == "":
-			self.machineguid = "ffffffff-2cf2-4c6d-919d-686204658ab6"
+			if self.machineguid == "":
+				self.machineguid = "ffffffff-2cf2-4c6d-919d-686204658ab6"
 
-		mg_vector = self.machineguid.split("-")
-		computerid = mg_vector[0]
+			mg_vector = self.machineguid.split("-")
+			computerid = mg_vector[0]
 
-		print "[SYSPCE] MACHINEGUID detected: " + str(computerid)
+			print "[SYSPCE] MACHINEGUID detected: " + str(computerid)
 
 		###########################
 		# Plugin psxview volatility 
@@ -353,250 +353,252 @@ class InputVolatility(Input):
 
 		if self._running:
 			proc = psxv.PsXview(self._config)
-		else:
-			exit
-		pslist1 = {}
-		vprocess = []
-		vthreads = []
-		vvads = []
 
-		for offset, process, ps_sources in proc.calculate():
+			pslist1 = {}
+			vprocess = []
+			vthreads = []
+			vvads = []
 
-			# Check if PEB structure is ready (psxview is a pool tag plugin)
-			PEB = str(process.Peb)
-			peb_empty = False
-			if PEB == "":
-				peb_empty = True
+			for offset, process, ps_sources in proc.calculate():
+
+				# Check if PEB structure is ready (psxview is a pool tag plugin)
+				PEB = str(process.Peb)
+				peb_empty = False
+				if PEB == "":
+					peb_empty = True
 			
-			# PEB 
-			pslist1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine).replace('\"','')
-			pslist1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
-			pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
-			pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
-			pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
-			# EPROCESS
-			pslist1['UtcTime'] = self.normalize_utc_time(str(process.CreateTime)) 
-			pslist1['ProcessId'] = str(int(process.UniqueProcessId))
-			pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
-			pslist1['TerminalSessionId'] = str(int(process.SessionId))
-			pslist1['ExitTime'] = str(process.ExitTime)
-			pslist1['IsWow64'] = str(process.IsWow64)
-			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
-			pslist1['NumThreads'] = str(int(process.ActiveThreads))
-			pslist1['computer'] = computerid
-			pslist1['Source'] = "Memory"
-			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
-			pslist1['idEvent'] = 1 
-			pslist1['ParentImage'] = ""
-			pslist1['ParentCommandLine'] = ""
-			pslist1['ParentProcessGuid'] = ""
-			pslist1["UnknownThreads"] = "False"
-			pslist1['PsList'] = str(offset in ps_sources["pslist"])
-			pslist1['PsScan'] = str(offset in ps_sources["psscan"])
-			pslist1['ThreadProc'] = str(offset in ps_sources["thrdproc"])
-			pslist1['PsPcid'] = str(offset in ps_sources["pspcid"])
-			pslist1['Csrss'] = str(offset in ps_sources["csrss"])
-			pslist1['Session'] = str(offset in ps_sources["session"])
-			pslist1['DeskThrd'] = str(offset in ps_sources["deskthrd"])
+				# PEB 
+				pslist1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine).replace('\"','')
+				pslist1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
+				pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
+				pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
+				pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
+				# EPROCESS
+				pslist1['UtcTime'] = self.normalize_utc_time(str(process.CreateTime)) 
+				pslist1['ProcessId'] = str(int(process.UniqueProcessId))
+				pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
+				pslist1['TerminalSessionId'] = str(int(process.SessionId))
+				pslist1['ExitTime'] = str(process.ExitTime)
+				pslist1['IsWow64'] = str(process.IsWow64)
+				pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
+				pslist1['NumThreads'] = str(int(process.ActiveThreads))
+				pslist1['computer'] = computerid
+				pslist1['Source'] = "Memory"
+				pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
+				pslist1['idEvent'] = 1 
+				pslist1['IntegrityLevel'] = ""  # por calcular
+				pslist1['User'] = ""  # por calcular
+				pslist1['ParentImage'] = ""
+				pslist1['ParentCommandLine'] = ""
+				pslist1['ParentProcessGuid'] = ""
+				pslist1["UnknownThreads"] = "False"
+				pslist1['PsList'] = str(offset in ps_sources["pslist"])
+				pslist1['PsScan'] = str(offset in ps_sources["psscan"])
+				pslist1['ThreadProc'] = str(offset in ps_sources["thrdproc"])
+				pslist1['PsPcid'] = str(offset in ps_sources["pspcid"])
+				pslist1['Csrss'] = str(offset in ps_sources["csrss"])
+				pslist1['Session'] = str(offset in ps_sources["session"])
+				pslist1['DeskThrd'] = str(offset in ps_sources["deskthrd"])
 
-			# Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
-			if pslist1['Image'] == "":
-				pslist1['Image'] = str(process.ImageFileName)
-				if pslist1['Image'] == "smss.exe":
+				# Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
+				if pslist1['Image'] == "":
+					pslist1['Image'] = str(process.ImageFileName)
+					if pslist1['Image'] == "smss.exe":
+						pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
+						pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
+						pslist1['TerminalSessionId'] = "0"
+
+				# Exception (II) Exception with terminated process
+				if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
+					pslist1['Image'] = str(process.ImageFileName)
+					pslist1['CommandLine'] = str(process.ImageFileName)
+
+				# Exception (III) with kernel
+				if pslist1['ProcessId'] == '4' and pslist1['TerminalSessionId'] == "-1":
+					pslist1['Image'] = "system"
+					pslist1['CommandLine'] = "system"
+					pslist1['TerminalSessionId'] = "0"
+					pslist1['IntegrityLevel'] = "System"
+					pslist1['User'] = "System"  
+				# Exception (IV) with smss.exe
+				if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe" and pslist1['TerminalSessionId'] == "-1":
 					pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
 					pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
+					pslist1['CurrentDirectory'] = "C:\\Windows\\System32\\"
 					pslist1['TerminalSessionId'] = "0"
 
-			# Exception (II) Exception with terminated process
-			if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
-				pslist1['Image'] = str(process.ImageFileName)
-				pslist1['CommandLine'] = str(process.ImageFileName)
 
-			# Exception (III) with kernel
-			if pslist1['ProcessId'] == '4' and pslist1['TerminalSessionId'] == "-1":
-				pslist1['Image'] = "system"
-				pslist1['CommandLine'] = "system"
-				pslist1['TerminalSessionId'] = "0"
+				# We build the "PROCESSGUID" to MERGE this event ID with Sysmon
+				################################################################
+				date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
+				epoch = datetime.datetime.utcfromtimestamp(0)
+				t = (date_time_obj-epoch).total_seconds()
+				hex_string = '{:02x}'.format(int(t))
+				firstpart, secondpart = hex_string[:len(hex_string)/2], hex_string[len(hex_string)/2:]
 
-			# Exception (IV) with smss.exe
-			if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe" and pslist1['TerminalSessionId'] == "-1":
-				pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
-				pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
-				pslist1['CurrentDirectory'] = "C:\\Windows\\System32\\"
-				pslist1['TerminalSessionId'] = "0"
+				if pslist1['Image'] != "" and pslist1['ProcessId'] != "":
+					result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
+				else:
+					result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
 
+				syspceid_datetime = date_time_obj.strftime('%Y-%m-%d %H:%M:%S')
+				result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+syspceid_datetime)
+				pslist1['ProcessGuid'] = result2.hexdigest()
+				pslist1['SyspceId'] = result.hexdigest()
 
-			# We build the "PROCESSGUID" to MERGE this event ID with Sysmon
-			################################################################
-			date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
-			epoch = datetime.datetime.utcfromtimestamp(0)
-			t = (date_time_obj-epoch).total_seconds()
-			hex_string = '{:02x}'.format(int(t))
-			firstpart, secondpart = hex_string[:len(hex_string)/2], hex_string[len(hex_string)/2:]
+				## MODULES
+				###########
 
-			if pslist1['Image'] != "" and pslist1['ProcessId'] != "":
-				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
-			else:
-				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
+				modules = ""
+				if self._running:
+					for module in process.get_load_modules():
+						if module is not None:
+							modules = modules + "," + str(module.FullDllName)
 
-			syspceid_datetime = date_time_obj.strftime('%Y-%m-%d %H:%M:%S')
-			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+syspceid_datetime)
-			pslist1['ProcessGuid'] = result2.hexdigest()
-			pslist1['SyspceId'] = result.hexdigest()
+					pslist1['Modules'] = modules
+				else:
+					sys.exit()
 
-			## MODULES
-			###########
+				## VADS
+				########
+				"""
+				  This looks for private allocations that are committed, 
+				  memory-resident, non-empty (not all zeros) and with an 
+				  original protection that includes write and execute. 
+				"""
 
-			modules = ""
-			if self._running:
-				for module in process.get_load_modules():
-					if module is not None:
-						modules = modules + "," + str(module.FullDllName)
+				vad1 = {}
+				if self._running:
+					pslist1["RwxPage"] = "False"
+					vads = process.get_vads(vad_filter=process._injection_filter)
+					#vads = process.get_vads()
+					for vad, address_space in vads:
+						if self.is_vad_empty(vad, address_space):
+							vad1["VadEmpty"] = "True"
+						else:
+							vad1["VadEmpty"] = "False"
 
-				pslist1['Modules'] = modules
-			else:
-				sys.exit()
-
-			## VADS
-			########
-			"""
-			  This looks for private allocations that are committed, 
-			  memory-resident, non-empty (not all zeros) and with an 
-			  original protection that includes write and execute. 
-			"""
-
-			vad1 = {}
-			if self._running:
-				pslist1["RwxPage"] = "False"
-				vads = process.get_vads(vad_filter=process._injection_filter)
-				#vads = process.get_vads()
-				for vad, address_space in vads:
-					if self.is_vad_empty(vad, address_space):
-						vad1["VadEmpty"] = "True"
-					else:
-						vad1["VadEmpty"] = "False"
-
-					protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
-					# Process fields necessaries to a new idEvent
-					vad1["idEvent"] = 102
-					vad1["ProcessId"] = pslist1["ProcessId"]
-					vad1["ProcessGuid"] = pslist1["ProcessGuid"]
-					vad1["SyspceId"] = pslist1["SyspceId"]
-					vad1["Image"] = pslist1["Image"]
-					vad1["Source"] = "Memory"
-					vad1['computer'] = pslist1['computer']
-					# Fields VADs
-					vad1["VadNode"] = str(vad.obj_offset)
-					vad1["VadProtection"] = str(protect_flags)
-					vad1["VadStart"] = str(vad.Start)
-					vad1["VadEnd"] = str(vad.End)
+						protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
+						# Process fields necessaries to a new idEvent
+						vad1["idEvent"] = 102
+						vad1["ProcessId"] = pslist1["ProcessId"]
+						vad1["ProcessGuid"] = pslist1["ProcessGuid"]
+						vad1["SyspceId"] = pslist1["SyspceId"]
+						vad1["Image"] = pslist1["Image"]
+						vad1["Source"] = "Memory"
+						vad1['computer'] = pslist1['computer']
+						# Fields VADs
+						vad1["VadNode"] = str(vad.obj_offset)
+						vad1["VadProtection"] = str(protect_flags)
+						vad1["VadStart"] = str(vad.Start)
+						vad1["VadEnd"] = str(vad.End)
 						
-					vvads.append(vad1)
-					vad1 = {}
-					pslist1["RwxPage"] = "True"
-			else:
-				sys.exit()
+						vvads.append(vad1)
+						vad1 = {}
+						pslist1["RwxPage"] = "True"
+				else:
+					sys.exit()
 
-			## THREADS
-			###########
+				## THREADS
+				###########
  
-			if self._running:
-				self.get_threads(process,vthreads,pslist1)
-			else:
-				sys.exit()
+				if self._running:
+					self.get_threads(process,vthreads,pslist1)
+				else:
+					sys.exit()
 			
-			vprocess.append(pslist1)
-			pslist1 = {}
+				vprocess.append(pslist1)
+				pslist1 = {}
 
-		## We fill Parent fields with calculated information
-		computer_alerts = 0
-		for p in vprocess:
-			for x in vprocess:
-				if p['ParentProcessId'] == x['ProcessId']:
-					p['ParentImage'] = x['Image']
-					p['ParentCommandLine'] = x['CommandLine']
-					p['ParentProcessGuid'] = x['ProcessGuid']
-					p['RealParent'] = x['Image']
-					# Exception (VII) with lsass.exe
-					if p["Image"].find("lsass.exe") != -1 and p["ParentImage"].find("wininit.exe")!= -1 and p['TerminalSessionId'] == "0":
-						p['CommandLine'] = "C:\\Windows\\System32\\lsass.exe"
-						p['CurrentDirectory'] = "C:\\Windows\\System32\\"
-					# Exception (V) with svchost.exe
-					if p["Image"].find("svchost.exe") != -1 and (p['TerminalSessionId'] == "0" or p['TerminalSessionId'] == "-1") and p["ParentImage"].find("services.exe") != -1:
-						p['CommandLine'] = "C:\\Windows\\System32\\svchost.exe"
-						p['Image'] = "C:\\Windows\\System32\\svchost.exe"
-						p['CurrentDirectory'] = "C:\\Windows\\System32\\"
-						p['TerminalSessionId'] = "0"
-				    # Exception (VI) with sppsvc.exe
-					if p["Image"].find("sppsvc.exe") != -1 and p['TerminalSessionId'] == "-1" and p["ParentImage"].find("services.exe") != -1:
-						p['CommandLine'] = "C:\\Windows\\System32\\sppsvc.exe"
-						p['Image'] = "C:\\Windows\\System32\\sppsvc.exe"
-						p['CurrentDirectory'] = "C:\\Windows\\System32\\"
-						p['TerminalSessionId'] = "0"
-					# Check computer 
-					self.check_fields(p)
+			## We fill Parent fields with calculated information
+			computer_alerts = 0
+			for p in vprocess:
+				for x in vprocess:
+					if p['ParentProcessId'] == x['ProcessId']:
+						p['ParentImage'] = x['Image']
+						p['ParentCommandLine'] = x['CommandLine']
+						p['ParentProcessGuid'] = x['ProcessGuid']
+						p['RealParent'] = x['Image']
+						# Exception (VII) with lsass.exe
+						if p["Image"].find("lsass.exe") != -1 and p["ParentImage"].find("wininit.exe")!= -1 and p['TerminalSessionId'] == "0":
+							p['CommandLine'] = "C:\\Windows\\System32\\lsass.exe"
+							p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+						# Exception (V) with svchost.exe
+						if p["Image"].find("svchost.exe") != -1 and (p['TerminalSessionId'] == "0" or p['TerminalSessionId'] == "-1") and p["ParentImage"].find("services.exe") != -1:
+							p['CommandLine'] = "C:\\Windows\\System32\\svchost.exe"
+							p['Image'] = "C:\\Windows\\System32\\svchost.exe"
+							p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+							p['TerminalSessionId'] = "0"
+						# Exception (VI) with sppsvc.exe
+						if p["Image"].find("sppsvc.exe") != -1 and p['TerminalSessionId'] == "-1" and p["ParentImage"].find("services.exe") != -1:
+							p['CommandLine'] = "C:\\Windows\\System32\\sppsvc.exe"
+							p['Image'] = "C:\\Windows\\System32\\sppsvc.exe"
+							p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+							p['TerminalSessionId'] = "0"
+						# Check computer 
+						self.check_fields(p)
 					
-					if p['computer'] == 'ffffffff' and computer_alerts == 0:
-						print "[SYSPCE] Warning computer is ffffffff, problems while we try to read registry key"
-						computer_alerts = 1
+						if p['computer'] == 'ffffffff' and computer_alerts == 0:
+							print "[SYSPCE] Warning computer is ffffffff, problems while we try to read registry key"
+							computer_alerts = 1
 
-		winlogon_fake_father = False
-		winlogon_csrss_father = False
-		wininit_fake_father = False
-		wininit_csrss_father = False
-		winlogon_father_pid = -1
-		wininit_father_pid = -1
+			winlogon_fake_father = False
+			winlogon_csrss_father = False
+			wininit_fake_father = False
+			wininit_csrss_father = False
+			winlogon_father_pid = -1
+			wininit_father_pid = -1
 
-		for p in vprocess:
-			## WINLOGON problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
-			if p['Image'].find('winlogon') != -1:
-				for x in vprocess:
-					if p['ParentProcessId'] == x['ParentProcessId']:
-						if p['Image'].find('smss.exe') == -1:
-							winlogon_fake_father = True
-							winlogon_father_pid = p['ParentProcessId']
-							break
-				for z in vprocess:
-					if z['Image'].find('csrss') != -1:
-						if z['ParentProcessId'] == winlogon_father_pid:
-							winlogon_csrss_father = True
-							z['ParentImage'] = "smss.exe"
-							z['ParentCommandLine'] = 'smss.exe'
-							z['RealParent'] = "smss.exe"
-							z['ParentProcessId'] = ''
-							z['ParentProcessGuid'] = ''
-							for z in vprocess:
-								if z['Image'].find('winlogon') != -1:
-									if z['ParentProcessId'] == winlogon_father_pid:
-										z['ParentImage'] = 'smss.exe'
-										z['ParentCommandLine'] = 'smss.exe'
-										z['RealParent'] = 'smss.exe'
-										z['ParentProcessId'] = ''
-										z['ParentProcessGuid'] = ''
+			for p in vprocess:
+				## WINLOGON problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
+				if p['Image'].find('winlogon') != -1:
+					for x in vprocess:
+						if p['ParentProcessId'] == x['ParentProcessId']:
+							if p['Image'].find('smss.exe') == -1:
+								winlogon_fake_father = True
+								winlogon_father_pid = p['ParentProcessId']
+								break
+					for z in vprocess:
+						if z['Image'].find('csrss') != -1:
+							if z['ParentProcessId'] == winlogon_father_pid:
+								winlogon_csrss_father = True
+								z['ParentImage'] = "smss.exe"
+								z['ParentCommandLine'] = 'smss.exe'
+								z['RealParent'] = "smss.exe"
+								z['ParentProcessId'] = ''
+								z['ParentProcessGuid'] = ''
+								for z in vprocess:
+									if z['Image'].find('winlogon') != -1:
+										if z['ParentProcessId'] == winlogon_father_pid:
+											z['ParentImage'] = 'smss.exe'
+											z['ParentCommandLine'] = 'smss.exe'
+											z['RealParent'] = 'smss.exe'
+											z['ParentProcessId'] = ''
+											z['ParentProcessGuid'] = ''
 									
-			## WININIT problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
-			if p['Image'].find('wininit') != -1:
-				for x in vprocess:
-					if p['ParentProcessId'] == x['ParentProcessId']:
-						if p['Image'].find('smss.exe') == -1:
-							wininit_fake_father = True
-							wininit_father_pid = p['ParentProcessId']
-							break
-				for z in vprocess:
-					if z['Image'].find('csrss.exe') != -1:
-						if z['ParentProcessId'] == wininit_father_pid:
-							wininit_csrss_father = True
-							z['ParentImage'] = "smss.exe"
-							z['ParentCommandLine'] = 'smss.exe'
-							z['ParentProcessId'] = ''
-							z['ParentProcessGuid'] = ''
-							for z in vprocess:
-								if z['Image'].find('wininit') != -1:
-									if z['ParentProcessId'] == wininit_father_pid:
-										z['ParentImage'] = 'smss.exe'
-										z['ParentCommandLine'] = 'smss.exe'
-										z['ParentProcessId'] = ''
-										z['ParentProcessGuid'] = ''
+				## WININIT problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
+				if p['Image'].find('wininit') != -1:
+					for x in vprocess:
+						if p['ParentProcessId'] == x['ParentProcessId']:
+							if p['Image'].find('smss.exe') == -1:
+								wininit_fake_father = True
+								wininit_father_pid = p['ParentProcessId']
+								break
+					for z in vprocess:
+						if z['Image'].find('csrss.exe') != -1:
+							if z['ParentProcessId'] == wininit_father_pid:
+								wininit_csrss_father = True
+								z['ParentImage'] = "smss.exe"
+								z['ParentCommandLine'] = 'smss.exe'
+								z['ParentProcessId'] = ''
+								z['ParentProcessGuid'] = ''
+								for z in vprocess:
+									if z['Image'].find('wininit') != -1:
+										if z['ParentProcessId'] == wininit_father_pid:
+											z['ParentImage'] = 'smss.exe'
+											z['ParentCommandLine'] = 'smss.exe'
+											z['ParentProcessId'] = ''
+											z['ParentProcessGuid'] = ''
 
 		###########################
 		# Plugin privs volatility
@@ -642,27 +644,28 @@ class InputVolatility(Input):
 
 		# To Send to the CORE
 		############################
-		events_list = vprocess
-		self.send_message(events_list)
-		thread_list = vthreads
-		self.send_message(thread_list)
-		vads_list = vvads
-		self.send_message(vads_list)
-		self.terminate()
-
-		# WE BUILD MEMORY CACHE (PROCESS, THREADS AND VADS)
-		cache_process = hresult+"_"+"process"
-		if not os.path.exists(cache_process):
-			with open (cache_process, 'w') as outfile:
-				json.dump(vprocess,outfile)
-
-		cache_threads = hresult+"_"+"threads"
-		if not os.path.exists(cache_threads):
-			with open (cache_threads, 'w') as outfile:
-				json.dump(vthreads,outfile)
+		if self._running:
+			events_list = vprocess
+			self.send_message(events_list)
+			thread_list = vthreads
+			self.send_message(thread_list)
+			vads_list = vvads
+			self.send_message(vads_list)
 		
-		cache_vads = hresult+"_"+"vads"
-		if not os.path.exists(cache_vads):
-			with open (cache_vads, 'w') as outfile:
-				json.dump(vvads,outfile)
+
+			# WE BUILD MEMORY CACHE (PROCESS, THREADS AND VADS)
+			cache_process = hresult+"_"+"process"
+			if not os.path.exists(cache_process):
+				with open (cache_process, 'w') as outfile:
+					json.dump(vprocess,outfile)
+
+			cache_threads = hresult+"_"+"threads"
+			if not os.path.exists(cache_threads):
+				with open (cache_threads, 'w') as outfile:
+					json.dump(vthreads,outfile)
+		
+			cache_vads = hresult+"_"+"vads"
+			if not os.path.exists(cache_vads):
+				with open (cache_vads, 'w') as outfile:
+					json.dump(vvads,outfile)
 		

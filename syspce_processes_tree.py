@@ -307,12 +307,41 @@ class ProcessesTree(object):
 				match =  self._check_action(type_action, ptree[process], filter_dicc)
 				if not match:
 					break
-					
-			if match:		
+
+			#rules could have variable attributes ($A), lets check this special case
+			if match and self._check_variable_attributes():		
 				matchlist.append(process)
 
 		return matchlist
 
+	def _check_variable_attributes(self):
+		'''Method for managing variable attributes ($A)
+			Uses a auxiliar data structure variable_attribute :
+
+			self.variable_attributes = 
+			{'$A': {'102Vad_Start': ['215089152', '123731968', '3801088', '189005824'],
+					'108StartAddress': ['0x778D26F0'],
+					'101Win32StartAddress': ['2219680']}
+			 '$B': {'102Vad_Start': ['215089152', '123731968', '189005824'],
+					'108StartAddress': ['0x448D26F0'],
+					'101Win32StartAddress': ['2219680', '121212']}
+			}
+
+		'''
+		print self.variable_attributes
+		res = True
+
+		for variable_attr in self.variable_attributes:
+			aux_list = []
+			for type in self.variable_attributes[variable_attr]:
+				if not aux_list: 
+					res = set(aux_list) & \
+						  set(self.variable_attributes[variable_attr][type])
+				if not res:
+					return False
+				aux_list = self.variable_attributes[variable_attr][type]
+
+		return res
 
 	def get_direct_childs(self, ptree, process_list):
 		''' Return a proccesses that match event criteria'''
