@@ -311,12 +311,13 @@
 
 	{
 		"RuleID": 26,
-		"Rulename": "Kernel Orphan threads",
+		"Rulename": "Threads with PsCrossThreadFlagsSystem enable in process different to System",
 		"Content": [
 			{
 				"101": {
 					"PsCrossThreadFlagsSystem": "True",
-					"OwnerName": "Unknown"
+					"OwnerName": "Unknown",
+					"-ParentImage": "system"
 				}
 			}
 		]

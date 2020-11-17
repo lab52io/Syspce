@@ -48,6 +48,7 @@ class InputVolatility(Input):
 					   data_condition_in,
 					   src)
 
+		print "[SYSPCE] Starting INPUT VOLATILITY analysis"
 		# Relative Path
 		filepath2 = ""
 		if filepath.find(":\\") == -1:
@@ -468,28 +469,31 @@ class InputVolatility(Input):
 			if self._running:
 				pslist1["RwxPage"] = "False"
 				vads = process.get_vads(vad_filter=process._injection_filter)
+				#vads = process.get_vads()
 				for vad, address_space in vads:
 					if self.is_vad_empty(vad, address_space):
-						continue
+						vad1["VadEmpty"] = "True"
 					else:
-						protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
-						# Process fields necessaries to a new idEvent
-						vad1["idEvent"] = 102
-						vad1["ProcessId"] = pslist1["ProcessId"]
-						vad1["ProcessGuid"] = pslist1["ProcessGuid"]
-						vad1["SyspceId"] = pslist1["SyspceId"]
-						vad1["Image"] = pslist1["Image"]
-						vad1["Source"] = "Memory"
-						vad1['computer'] = pslist1['computer']
-						# Fields VADs
-						vad1["VadNode"] = str(vad.obj_offset)
-						vad1["VadProtection"] = str(protect_flags)
-						vad1["VadStart"] = str(vad.Start)
-						vad1["VadEnd"] = str(vad.End)
+						vad1["VadEmpty"] = "False"
 
-						vvads.append(vad1)
-						vad1 = {}
-						pslist1["RwxPage"] = "True"
+					protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
+					# Process fields necessaries to a new idEvent
+					vad1["idEvent"] = 102
+					vad1["ProcessId"] = pslist1["ProcessId"]
+					vad1["ProcessGuid"] = pslist1["ProcessGuid"]
+					vad1["SyspceId"] = pslist1["SyspceId"]
+					vad1["Image"] = pslist1["Image"]
+					vad1["Source"] = "Memory"
+					vad1['computer'] = pslist1['computer']
+					# Fields VADs
+					vad1["VadNode"] = str(vad.obj_offset)
+					vad1["VadProtection"] = str(protect_flags)
+					vad1["VadStart"] = str(vad.Start)
+					vad1["VadEnd"] = str(vad.End)
+						
+					vvads.append(vad1)
+					vad1 = {}
+					pslist1["RwxPage"] = "True"
 			else:
 				sys.exit()
 
