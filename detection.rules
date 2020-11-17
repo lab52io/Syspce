@@ -133,7 +133,7 @@
 
 	{
 		"RuleID": 13,
-		"Rulename": "T1502: Parent PID Spoofing - Precess created by injected Thread",
+		"Rulename": "T1502: Parent PID Spoofing - Process created by injected Thread",
 		"Content": [
 			{ "1": { "CreationType": "InjectedThread" } }
 		]
@@ -408,23 +408,16 @@
 		"Rulename": "Process with unknown threads and memory segments created with RWX permissions",
 		"Content": [
 			{
-				"1": {
-					"rwx_page": "True"
+				"108": {
+					"StartAddress": "$A",
+					"StartFunction": "",
+					"StartModule": ""
+				},
+				"102": {
+					"Vad_Start": "$A"
 				},
 				"101": {
-					"Owner_name": "Unknown"
-				}
-			}
-		]
-	},
-	{
-		"RuleID": 33,
-		"Rulename": "PS_CROSS_THREAD_FLAGS_SYSTEM enable in a process distinct of System",
-		"Content": [
-			{
-				"101": {
-					"-Image": "system",
-					"PS_CROSS_THREAD_FLAGS_SYSTEM": "True"
+					"Win32StartAddress": "$A"
 				}
 			}
 		]
@@ -438,17 +431,6 @@
 					"-State": "Terminated",
 					"-ExitTime": "1970-01-01 00:00:00 UTC+0000",
 					"PS_CROSS_THREAD_FLAGS_TERMINATED": "False"
-				}
-			}
-		]
-	},
-	{
-		"RuleID": 35,
-		"Rulename": "Thread with startaddress with one module unknown",
-		"Content": [
-			{
-				"101": {
-					"Owner_name": "None"
 				}
 			}
 		]

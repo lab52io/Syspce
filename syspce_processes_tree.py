@@ -19,6 +19,9 @@ class ProcessesTree(object):
 		self.alerts_notified = []
 		self.stats = {}
 
+		# temporal data struture form managing $A attributes (variable)
+		self.variable_attributes = {}
+
 	def set_macros(self, detection_macros):
 		self.detection_macros = detection_macros
 
@@ -340,7 +343,7 @@ class ProcessesTree(object):
 
 	def _check_action(self, type_action, nodo, filter_list): 
 
-		'''Method that checks rule acctions (1,3...) against process acctions
+		'''Method that checks rule actions (1,3...) against process actions
 		'''			
 		#  Acction types could have "c" (continue) and "-" (reverse, not)
 		# modifiers let's remove them, Example:
@@ -351,13 +354,13 @@ class ProcessesTree(object):
 
 		if "-" in type_action:
 			t_action = t_action.replace('-','')
-			acction_reverse = True
+			action_reverse = True
 		else:
-			acction_reverse = False
+			action_reverse = False
 			
 		if (nodo.acciones[t_action] != []):   
 
-			# Checking all specific acctions from a process
+			# Checking all specific actions from a process
 			for acc in nodo.acciones[t_action]:
 				# Getting all the filters from a rule
 				
@@ -372,13 +375,14 @@ class ProcessesTree(object):
 					else:
 						filter_reverse = False
 					
-					final_reverse = acction_reverse^filter_reverse
+					final_reverse = action_reverse^filter_reverse
 					
 					# Finally comparing if a rule filter match a process action
 					if not (acc.has_key(acc_filter)) or \
 								not self._check_filter_match( 
 											filter_list[type_action][filter], 
-											acc[acc_filter], final_reverse):
+											acc[acc_filter], final_reverse,
+											type_action + filter ):
 						
 						result =  False
 						break
@@ -391,26 +395,42 @@ class ProcessesTree(object):
 						
 					return True
 					
-		# Process has no acctions of this type
+		# Process has no actions of this type
 		else:
-			if acction_reverse:
+			if action_reverse:
 				return True
 		
 		return False
 		
-	'''Method that compares if a rule filter match a process acction
+	'''Method that compares if a rule filter match a process action
 	'''
-	def _check_filter_match(self, filter, acction, reverse):
+	def _check_filter_match(self, filter, action, reverse, 
+							type_and_filter):
 		match = False
 		
-		if filter in self.detection_macros:
-			filter_list =  self.detection_macros[filter]
-		else:
-			filter_list = [filter]
+		#case variable filter ($A)
+		if filter.startswith("$"):
+			if not self.variable_attributes.has_key(filter):
+				self.variable_attributes[filter] = {}
 
-		for f in filter_list:			
-			if f.lower() in acction.lower() or f == "*":
-				match = True
+			if not self.variable_attributes[filter].has_key(type_and_filter):
+				self.variable_attributes[filter][type_and_filter] = []
+
+			self.variable_attributes[filter][type_and_filter].append(action)
+			match = True
+
+
+		# normal filter
+		else:
+			# value could be a macro (list of values)
+			if filter in self.detection_macros:
+				filter_list =  self.detection_macros[filter]
+			else:
+				filter_list = [filter]
+
+			for f in filter_list:			
+				if f.lower() in action.lower() or f == "*":
+					match = True
 				
 		if reverse:
 			return not match

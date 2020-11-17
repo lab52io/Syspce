@@ -63,7 +63,10 @@ class HierarchyEngine(Engine):
 		
 			# dictionary used for printing and output matched alerts
 			self.p_tree.actions_matched = {}
-			
+
+			# temporal structure for manage variable attributes ($A)
+			self.p_tree.variable_attributes = {}
+
 			with self.p_tree.tree_condition_in:
 				log.debug("%s Running in daemon %s..." % (self.name, 
 														  self.daemon_))
