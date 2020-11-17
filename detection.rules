@@ -328,8 +328,8 @@
 		"Content": [
 			{
 				"1": {
-					"pslist": "False",
-					"psscan": "True",
+					"PsList": "False",
+					"PsScan": "True",
 					"ExitTime": "1970-01-01 00:00:00 UTC+0000"
 				}
 			}

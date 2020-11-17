@@ -176,7 +176,7 @@ class InputVolatility(Input):
 				thread1["SyspceId"] = pslist1["SyspceId"]
 				thread1["Image"] = pslist1["Image"]
 				thread1["Source"] = "Memory"
-				thread1['Computer'] = pslist1['computer']
+				thread1['computer'] = pslist1['computer']
 				thread1["OwningProcess"] = str(thread.owning_process().ImageFileName)
 				thread1["AttachedProcess"] = str(thread.attached_process().ImageFileName)
 
@@ -382,7 +382,7 @@ class InputVolatility(Input):
 			pslist1['IsWow64'] = str(process.IsWow64)
 			pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
 			pslist1['NumThreads'] = str(int(process.ActiveThreads))
-			pslist1['Computer'] = computerid
+			pslist1['computer'] = computerid
 			pslist1['Source'] = "Memory"
 			pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
 			pslist1['idEvent'] = 1 
@@ -434,12 +434,12 @@ class InputVolatility(Input):
 			firstpart, secondpart = hex_string[:len(hex_string)/2], hex_string[len(hex_string)/2:]
 
 			if pslist1['Image'] != "" and pslist1['ProcessId'] != "":
-				result2 = hashlib.md5(pslist1['Computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
+				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
 			else:
-				result2 = hashlib.md5(pslist1['Computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
+				result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
 
 			syspceid_datetime = date_time_obj.strftime('%Y-%m-%d %H:%M:%S')
-			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["Computer"]+syspceid_datetime)
+			result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+syspceid_datetime)
 			pslist1['ProcessGuid'] = result2.hexdigest()
 			pslist1['SyspceId'] = result.hexdigest()
 
@@ -480,7 +480,7 @@ class InputVolatility(Input):
 						vad1["SyspceId"] = pslist1["SyspceId"]
 						vad1["Image"] = pslist1["Image"]
 						vad1["Source"] = "Memory"
-						vad1['Computer'] = pslist1['Computer']
+						vad1['computer'] = pslist1['computer']
 						# Fields VADs
 						vad1["VadNode"] = str(vad.obj_offset)
 						vad1["VadProtection"] = str(protect_flags)
@@ -532,7 +532,7 @@ class InputVolatility(Input):
 					# Check computer 
 					self.check_fields(p)
 					
-					if p['Computer'] == 'ffffffff' and computer_alerts == 0:
+					if p['computer'] == 'ffffffff' and computer_alerts == 0:
 						print "[SYSPCE] Warning computer is ffffffff, problems while we try to read registry key"
 						computer_alerts = 1
 
