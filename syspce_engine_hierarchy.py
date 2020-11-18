@@ -105,10 +105,6 @@ class HierarchyEngine(Engine):
 
 			ptree = self.p_tree.processes_tree[machine]
 
-			# temporal structure for manage variable attributes ($A)
-			
-			self.p_tree.variable_attributes = {}
-
 			#first element to process
 			new_candidates = ptree.keys()
 			

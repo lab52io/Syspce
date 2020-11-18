@@ -111,11 +111,6 @@ class ProcessesTree(object):
 										 events_list[i]['ParentProcessId'],
 										 events_list[i]['ParentImage'])
 
-
-			#else:
-			#	print "Image:" + events_list[i]['Image']
-			#	print "Pid:" + events_list[i]['ProcessId']
-
 			#Adding new attributes to EventID 1
 			if events_list[i]['idEvent'] == 1: 
 
@@ -139,6 +134,16 @@ class ProcessesTree(object):
 				lt = self.get_logontime(events_list[i]['LogonGuid'])
 				LogonTime = {"LogonTime": str(lt)}	
 				events_list[i].update(LogonTime)
+
+			#Adding new attributes to EventID 8
+			if events_list[i]['idEvent'] == 8:
+				start_address = events_list[i]['StartAddress']
+				events_list[i]['StartAddressDec'] = unicode(int(start_address, 16)) 
+
+			#Adding new attributes to EventID 108
+			if events_list[i]['idEvent'] == 108:
+				start_address = events_list[i]['StartAddress']
+				events_list[i]['StartAddressDec'] = unicode(int(start_address, 16)) 
 
 			i += 1
 
@@ -165,10 +170,12 @@ class ProcessesTree(object):
 
 		if not host_name in self.processes_tree:
 			self.processes_tree[host_name] = {}
-			self.stats[host_name] = {'Actions':{'1':0, '2':0, '3':0, '5':0,'7':0,
-									 '8':0,'9':0,'10':0,'11':0,'12':0,
+			self.stats[host_name] = {'Actions':{'1':0, '2':0, '3':0, '5':0,
+									 '7':0,'8':0,'9':0,'10':0,'11':0,'12':0,
 									 '13':0,'14':0,'15':0,'17':0,'18':0,
-									 '22':0,'23':0,'100':0,'101':0,'102':0,'108':0,'110':0},
+									 '22':0,'23':0,'100':0,'101':0,'102':0,
+									 '108':0,'110':0},
+
 									 'MergedProcesses': 0,
 									 'DroppedEvents': 0,
 									 'TotalEvents': 0,
@@ -192,12 +199,6 @@ class ProcessesTree(object):
 			# Process node already in tree
 			if computer_ptree.has_key(ProcessGuid):
 				node = computer_ptree[ProcessGuid]
-				#print "Original"
-				#print node.acciones['1'][0]
-				# node found , just update
-				
-				#print "Machacado"
-				#print req
 				
 				# Volatility input has 'Source': 'Memory' key, 
 				# evtx don't have it
@@ -211,13 +212,6 @@ class ProcessesTree(object):
 				else:
 					self.stats[host_name]['MergedProcesses'] += 1
 
-					#print "CUADRAN origin"
-					#print node.acciones['1'][0]
-
-					#print "CUADRAN memoria"
-					#print req
-					#print "\n"
-
 					# Update only new atributes, not all of them, let's
 					# keep untouched sysmon ones
 					for attr in req:
@@ -226,10 +220,6 @@ class ProcessesTree(object):
 
 			# new entry
 			else:
-				#if req.has_key('Source'):
-				#	print "NOOOO CUADRA"
-				#	print req
-				#	print "\n"
 				# Tree Node with process datails
 				node = Node_(req)
 				node.acciones['1'].append(req)
@@ -237,7 +227,7 @@ class ProcessesTree(object):
 			#Adding node to tree
 			computer_ptree[ProcessGuid] = node
 
-		# Es otra accion diferente a la creacion de un proceso
+		# Other action diferent to create process (1)
 		else:
 
 			if (not host_name in self.processes_tree):
@@ -303,18 +293,21 @@ class ProcessesTree(object):
 		for process in process_list:
 			match = True
 
+			# temporal structure for manage variable attributes ($A)
+			self.variable_attributes = {}
+
 			for type_action in filter_dicc.keys():
 				match =  self._check_action(type_action, ptree[process], filter_dicc)
 				if not match:
 					break
 
 			#rules could have variable attributes ($A), lets check this special case
-			if match and self._check_variable_attributes():		
+			if match and self._check_variable_attributes(process):		
 				matchlist.append(process)
 
 		return matchlist
 
-	def _check_variable_attributes(self):
+	def _check_variable_attributes(self, process):
 		'''Method for managing variable attributes ($A)
 			Uses a auxiliar data structure variable_attribute :
 
@@ -328,18 +321,39 @@ class ProcessesTree(object):
 			}
 
 		'''
-		print self.variable_attributes
+
 		res = True
 
 		for variable_attr in self.variable_attributes:
 			aux_list = []
 			for type in self.variable_attributes[variable_attr]:
-				if not aux_list: 
+				if aux_list: 
 					res = set(aux_list) & \
 						  set(self.variable_attributes[variable_attr][type])
 				if not res:
 					return False
 				aux_list = self.variable_attributes[variable_attr][type]
+
+		# need to delete from actions matched not real matched
+		if res and self.variable_attributes:
+			key_value = res.pop()
+			num_actions = len(self.actions_matched[process])
+
+			i = 0
+			while i < num_actions:
+				attr_found = False
+				action = self.actions_matched[process][i]
+
+				for attr in action:
+					if action[attr] == key_value:
+						attr_found = True
+
+				if not attr_found:
+					self.actions_matched[process].pop(i)
+					num_actions -=1
+				else:
+					i +=1
+			res = True
 
 		return res
 
@@ -387,16 +401,19 @@ class ProcessesTree(object):
 		else:
 			action_reverse = False
 			
-		if (nodo.acciones[t_action] != []):   
-
+		if (nodo.acciones[t_action] != []): 
 			# Checking all specific actions from a process
 			for acc in nodo.acciones[t_action]:
 				# Getting all the filters from a rule
 				
 				result = True
-				
+				has_variable_attr = False
+
 				for filter in filter_list[type_action]:
-				
+
+					if filter_list[type_action][filter].startswith("$"):
+						has_variable_attr = True
+
 					# Filter property could have "-" modifier as well
 					acc_filter = filter.replace('-','')
 					if "-" in filter:
@@ -421,9 +438,15 @@ class ProcessesTree(object):
 						self.actions_matched[nodo.guid].append(acc)
 					else:
 						self.actions_matched.update({nodo.guid:[acc]})
-						
-					return True
-					
+
+					# case possible $A, continue nest actions
+					if not has_variable_attr:	
+						return True
+
+			# case possible $A
+			if result:
+				return True
+
 		# Process has no actions of this type
 		else:
 			if action_reverse:

@@ -1,7 +1,7 @@
 [
 	{
 		"RuleID": 1,
-		"Rulename": "Remote Injected code detected",
+		"Rulename": "Probable remote injected code detected",
 		"Content": [
 			{
 				"1": { "RwxPage": "True" },
@@ -406,16 +406,30 @@
 	},
 	{
 		"RuleID": 32,
-		"Rulename": "Process with unknown threads and memory segments created with RWX permissions",
+		"Rulename": "Unknown thread and memory segment with RWX permissions has been created by a remote process (remote code injection)",
 		"Content": [
 			{
 				"108": {
-					"StartAddress": "$A",
+					"StartAddressDec": "$A",
 					"StartFunction": "",
 					"StartModule": ""
 				},
 				"102": {
-					"Vad_Start": "$A"
+					"VadStart": "$A"
+				},
+				"101": {
+					"Win32StartAddress": "$A"
+				}
+			}
+		]
+	},
+	{
+		"RuleID": 33,
+		"Rulename": "Process with an unknown thread and memory segment created with RWX permissions (dynamic code injection)",
+		"Content": [
+			{
+				"102": {
+					"VadStart": "$A"
 				},
 				"101": {
 					"Win32StartAddress": "$A"
