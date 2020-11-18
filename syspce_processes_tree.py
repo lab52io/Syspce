@@ -323,7 +323,10 @@ class ProcessesTree(object):
 		'''
 
 		res = True
+		#if process == '2532a4aea4c2974f5f54f847d26df796':
+		#if process == 'ba8a3c23c904c50a02c51731a704b7ef':
 
+		#	pass
 		for variable_attr in self.variable_attributes:
 			aux_list = []
 			for type in self.variable_attributes[variable_attr]:
@@ -392,7 +395,8 @@ class ProcessesTree(object):
 		# modifiers let's remove them, Example:
 		# {"1c":{"Image":"winword"},"-3":{"Image":"winword"}}
 
-
+		#if nodo.guid == '2532a4aea4c2974f5f54f847d26df796' and t_action == '101':
+		#	pass
 		t_action = type_action.replace('c','')
 
 		if "-" in type_action:
@@ -403,17 +407,17 @@ class ProcessesTree(object):
 			
 		if (nodo.acciones[t_action] != []): 
 			# Checking all specific actions from a process
+			some_variable_attr_match = False
+
 			for acc in nodo.acciones[t_action]:
 				# Getting all the filters from a rule
-				
+				#if nodo.guid == '2532a4aea4c2974f5f54f847d26df796' and t_action == '101' and acc['ThreadId'] == 4744:
+				#	pass				
 				result = True
 				has_variable_attr = False
+				variable_matches_list =[]
 
 				for filter in filter_list[type_action]:
-
-					if filter_list[type_action][filter].startswith("$"):
-						has_variable_attr = True
-
 					# Filter property could have "-" modifier as well
 					acc_filter = filter.replace('-','')
 					if "-" in filter:
@@ -422,13 +426,24 @@ class ProcessesTree(object):
 						filter_reverse = False
 					
 					final_reverse = action_reverse^filter_reverse
-					
+
+					#case variable attr ($A)
+					if filter_list[type_action][filter].startswith("$"):
+						has_variable_attr = True
+
+						variable_filter = filter_list[type_action][filter]
+						variable_action = acc[acc_filter]
+						type_and_filter = type_action + variable_filter 
+
+						variable_matches_list.append([variable_filter,
+													  variable_action,
+													  type_and_filter])
+						
 					# Finally comparing if a rule filter match a process action
 					if not (acc.has_key(acc_filter)) or \
 								not self._check_filter_match( 
 											filter_list[type_action][filter], 
-											acc[acc_filter], final_reverse,
-											type_action + filter ):
+											acc[acc_filter], final_reverse):
 						
 						result =  False
 						break
@@ -442,9 +457,25 @@ class ProcessesTree(object):
 					# case possible $A, continue nest actions
 					if not has_variable_attr:	
 						return True
+					else:
+						some_variable_attr_match = True
+
+						for variable_match in variable_matches_list:
+							variable_filter = variable_match[0]
+							variable_action = variable_match[1]
+							type_and_filter = variable_match[2]
+
+							# Adding to temporal variable
+							if not self.variable_attributes.has_key(variable_filter):
+								self.variable_attributes[variable_filter] = {}
+
+							if not self.variable_attributes[variable_filter].has_key(type_and_filter):
+								self.variable_attributes[variable_filter][type_and_filter] = []
+
+							self.variable_attributes[variable_filter][type_and_filter].append(variable_action)
 
 			# case possible $A
-			if result:
+			if some_variable_attr_match:
 				return True
 
 		# Process has no actions of this type
@@ -456,21 +487,12 @@ class ProcessesTree(object):
 		
 	'''Method that compares if a rule filter match a process action
 	'''
-	def _check_filter_match(self, filter, action, reverse, 
-							type_and_filter):
+	def _check_filter_match(self, filter, action, reverse):
 		match = False
 		
 		#case variable filter ($A)
 		if filter.startswith("$"):
-			if not self.variable_attributes.has_key(filter):
-				self.variable_attributes[filter] = {}
-
-			if not self.variable_attributes[filter].has_key(type_and_filter):
-				self.variable_attributes[filter][type_and_filter] = []
-
-			self.variable_attributes[filter][type_and_filter].append(action)
 			match = True
-
 
 		# normal filter
 		else:
