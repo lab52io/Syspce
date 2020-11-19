@@ -1,7 +1,7 @@
 [
 	{
 		"RuleID": 1,
-		"Rulename": "Probable remote njected code detected",
+		"Rulename": "Probable remote injected code detected",
 		"Content": [
 			{
 				"1": { "RwxPage": "True" },
@@ -376,7 +376,7 @@
 				"1": {
 					"SeDebugPrivilegeEnabled": "True",
 					"-TerminalSessionId": "0",
-					"-Image": "winlogon.exe"
+					"-Image": "SE_DEBUG_PRIVILEGE_ENABLED_CREATES_R_THREAD"
 				},
 				"8": {
 					"-TargetImage": "csrss.exe"
@@ -429,6 +429,30 @@
 					"-ExitTime": "1970-01-01 00:00:00 UTC+0000",
 					"PsCrossThreadFlagsTerminated": "False"
 				}
+			}
+		]
+	},
+	{
+		"RuleID": 35,
+		"Rulename": "Privilege escalation - Stolen System token has been used to create a provileged process (System)",
+		"Content": [
+			{
+				"1": { "SeDebugPrivilegeEnabled": "True","-IntegrityLevel": "System"},
+				"10": { "TargetUser": "SERVICE_USERS", "GrantedAccess": "PROCESS_QUERY_INFORMATION"},
+				"103": { "IntegrityToken": "System" }
+			},
+			{
+				"1": {"Image": "*"}
+			}
+		]
+	},
+	{
+		"RuleID": 36,
+		"Rulename": "Stolen System token in user process (lower integrity than System)",
+		"Content": [
+			{
+				"1": { "SeDebugPrivilegeEnabled": "True","-IntegrityLevel": "System", "-TerminalSessionId": "0", "-Image":"winlogon.exe"},
+				"103": { "IntegrityToken": "System" }
 			}
 		]
 	},
