@@ -599,6 +599,42 @@ class InputVolatility(Input):
 				pslist1['SyspceId'] = result.hexdigest()
 
 				###########
+				# Process Integrity Level and User
+				###########
+
+				tokenprocess = process.get_token()
+				if tokenprocess.is_valid():
+					cont = 0
+					for sid_string in tokenprocess.get_sids():
+						if sid_string in well_known_sids:
+									sid_name = well_known_sids[sid_string]
+						elif sid_string in getservicesids.servicesids:
+									sid_name = getservicesids.servicesids[sid_string]
+						elif sid_string in user_sids:
+									sid_name = user_sids[sid_string]
+						else:
+							sid_name_re = self.find_sid_re(sid_string, well_known_sid_re)
+							if sid_name_re:
+								sid_name = sid_name_re
+							else:
+								sid_name = ""
+
+						if cont == 0:
+							pslist1["User"] = str(sid_name)
+							if sid_string == "S-1-16-8192":
+								pslist1["IntegrityLevel"] = "Medium"
+							elif sid_string == "S-1-16-8448":
+								pslist1["IntegrityLevel"] = "MediumPlus"
+							elif sid_string == "S-1-16-4096":
+								pslist1["IntegrityLevel"] = "Low"
+							elif sid_string == "S-1-16-12288":
+								pslist1["IntegrityLevel"] = "High"
+							elif sid_string == "S-1-16-16384":
+								pslist1["IntegrityLevel"] = "System"
+						
+						break
+
+				###########
 				## TOKENS
 				###########
 
@@ -607,9 +643,7 @@ class InputVolatility(Input):
 					user_sids = self.lookup_user_sids(self._config)
 					for handle in process.ObjectTable.handles():
 						token = handle.dereference_as("_TOKEN")
-
 						if token.is_valid():
-
 							token1["idEvent"] = 103
 							token1["ProcessId"] = pslist1["ProcessId"]
 							token1["ProcessGuid"] = pslist1["ProcessGuid"]
@@ -625,11 +659,9 @@ class InputVolatility(Input):
 							token1["IntegrityToken"] = ""
 							token1["IntegritySid"] = ""
 
+							token_with_sid = 0
 							list_tokens = token.get_sids()
 							cont = 0
-							token1["TokenOffset"] = str(handle.Body.obj_offset)
-							token1["TokenHandleValue"] = str(handle.HandleValue)
-							token1["TokenGrantAccess"] = str(handle.GrantedAccess)
 
 							for sid_string in list_tokens:
 								if sid_string in well_known_sids:
@@ -649,6 +681,7 @@ class InputVolatility(Input):
 									token1["UserSid"] = str(sid_string)
 									token1["User"] = str(sid_name)
 									cont = cont + 1
+								token_with_sid = 1
 								#TOKEN INTEGRITY LEVEL
 								if sid_string == "S-1-16-8192":
 									token1["IntegrityToken"] = "Medium"
@@ -666,9 +699,15 @@ class InputVolatility(Input):
 									token1["IntegrityToken"] = "System"
 									token1["IntegritySid"] = str(sid_string)
 
-							vtokens.append(token1)
+							if token_with_sid:
+								token1["TokenOffset"] = str(handle.Body.obj_offset)
+								token1["TokenHandleValue"] = str(handle.HandleValue)
+								token1["TokenGrantAccess"] = str(handle.GrantedAccess)
+								token_with_sid = 0
+								vtokens.append(token1)
+							
 							token1 = {}
-
+							
 				else:
 					sys.exit()
 
