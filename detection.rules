@@ -67,8 +67,8 @@
 		"Rulename": "Thread created to Session 0 process by a Session 1 process",
 		"Content": [
 			{
-				"-1": { "TerminalSessionId": "0" },
-				"8c": { "TargetSession": "0" }
+				"1": { "-TerminalSessionId": "0", "-Image": "CREATE_R_THREAD_FROM_NON_SESSION_0_TO_0" },
+				"8": { "TargetSession": "0" }
 			}
 		]
 	},
@@ -141,10 +141,10 @@
 
 	{
 		"RuleID": 14,
-		"Rulename": "Process created by a stolen privileged Token",
+		"Rulename": "Non privileged user process created a System process",
 		"Content": [
 			{ "1": { "-User": "PRIVILEGED_USERS" } },
-			{ "1c": { "User": "PRIVILEGED_USERS" } }
+			{ "1": { "User": "PRIVILEGED_USERS" } }
 		]
 	},
 
@@ -208,11 +208,11 @@
 
 	{
 		"RuleID": 19,
-		"Rulename": "System process on user session from user process (priv scalation)",
+		"Rulename": "System process created in user session from services session",
 		"Content": [
-			{ "1": { "Image": "winlogon.exe" } },
+			{ "1": { "TerminalSessionId": "0" } },
 			{
-				"1c": {
+				"1": {
 					"-TerminalSessionId": "0",
 					"User": "System",
 					"-Image": "SYSTEM_PROCESS_ON_USER_SESSION"
@@ -223,13 +223,11 @@
 
 	{
 		"RuleID": 20,
-		"Rulename": "User process create system process",
+		"Rulename": "System process creation after system token impersonation",
 		"Content": [
 			{
-				"1": {
-					"-TerminalSessionId": "0",
-					"-User": "System"
-				}
+				"1": { "-TerminalSessionId": "0", "-User": "System"},
+				"10": { "TargetUser": "SERVICE_USERS", "GrantedAccess": "PROCESS_QUERY_INFORMATION"}
 			},
 			{ "1": { "User": "System" } }
 		]
@@ -241,7 +239,7 @@
 		"Content": [
 			{
 				"1": { "User": "system" },
-				"110c": {
+				"110": {
 					"-SourceUser": "SERVICE_USERS",
 					"-SourceImage": "NO_SYSTEM_P_OPENS_SYSTEM_P",
 					"GrantedAccess": "PROCESS_QUERY_INFORMATION"
@@ -267,24 +265,6 @@
 				}
 			},
 			{ "1": { "Image": "*" } }
-		]
-	},
-	{
-		"RuleID": 23,
-		"Rulename": "User process spawns a system process (priv scalation)",
-		"Content": [
-			{
-				"1": {
-					"-TerminalSessionId": "0",
-					"-User": "System"
-				}
-			},
-			{
-				"1c": {
-					"-TerminalSessionId": "0",
-					"User": "System"
-				}
-			}
 		]
 	},
 

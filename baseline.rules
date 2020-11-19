@@ -123,8 +123,7 @@
 							"SignatureStatus": {"Points": 50, "Value": "MODULE_SIGNATURE_STATUS"}
 							},
 							
-						"8":{"Points": 10, "N": 4, "Seconds": 86400,
-							"TargetImage": {"Points": 20, "Value": "WINLOGON_THREAD_CREATED_TO_REMOTE_PROCESS"}
+						"8":{"Points": 10, "StartModule": {"Points": 50, "Value": "C:\\Windows\\SYSTEM32\\ntdll.dll"}
 						},
 						
 						"108":{"Points": 10, "N": 3, "Seconds": 86400,
@@ -177,7 +176,10 @@
 								 "Signature": {"Points": 10, "Value": "Microsoft Windows"}
 							},
 							
-						"-8":{"Points": 50},
+						"-8":{"Points": 50, "N": 4, "Seconds": 86400,
+							"TargetImage": {"Points": 50, "Value": "SERVICES_THREAD_CREATED_TO_REMOTE_PROCESS"}
+
+						},
 						
 						"108":{"Points": 10, "N": 3, "Seconds": 86400,
 							"SourceImage": {"Points": 20, "Value": "C:\\Windows\\System32\\csrss.exe"}
@@ -185,7 +187,9 @@
 						
 						"-9":{"Points": 10},
 							
-						"-11":{"Points": 10},				
+						"11":{"Points": 10, "N": 50, "Seconds": 3600,
+							"TargetFilename": {"Points": 50, "Value": "C:\\Windows\\System32\\LogFiles\\"}
+						},			
 				
 						"-14":{"Points": 100},
 						

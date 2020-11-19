@@ -45,12 +45,14 @@
 			"Sethc.exe",
 			"MsiExec.exe",
 			"vmware",
-			"mpnotify.exe"
+			"mpnotify.exe",
+			"C:\\Windows\\System32\\Sysprep\\sysprep.exe"
 		],
 
 		"NO_SYSTEM_P_OPENS_SYSTEM_P": [
 			"ProcessHacker.exe",
-			"Procexp.exe"
+			"Procexp.exe",
+			"C:\\Program Files\\Windows Defender\\MSASCui.exe"
 		],
 
 		"PRIVILEGED_USERS": [
@@ -205,23 +207,29 @@
 			"C:\\WINDOWS\\System32\\PhotoScreensaver.scr",
 			"\\HP\\HP ProtectTools Security Manager\\Bin\\DPAgent.exe",
 			"C:\\Windows\\System32\\LaunchTM.exe",
-			"C:\\Windows\\system32\\consent.exe"
+			"C:\\Windows\\system32\\consent.exe",
+			"C:\\Windows\\System32\\Sysprep\\sysprep.exe"
 		],
 
 		"WINLOGON_THREAD_CREATED_TO_REMOTE_PROCESS": [
 			"C:\\Windows\\System32\\wininit.exe",
 			"C:\\Windows\\System32\\services.exe",
-			"C:\\Windows\\System32\\csrss.exe"
+			"C:\\Windows\\System32\\csrss.exe",
+			"C:\\Windows\\System32\\svchost.exe"
 		],
 		"WINLOGON_OPENED_BY": [
 			"C:\\Windows\\System32\\svchost.exe",
 			"C:\\Windows\\System32\\lsass.exe"
 		],
-
+		"SERVICES_THREAD_CREATED_TO_REMOTE_PROCESS": [
+			"C:\\Windows\\System32\\svchost.exe",
+			"C:\\Windows\\System32\\lsass.exe"
+		],
 		"WINLOGON_EXPLORER_THREAD_CREATED_FROM_REMOTE_PROCESS": [
 			"C:\\Windows\\System32\\wbem\\WmiPrvSE.exe",
 			"C:\\Windows\\System32\\svchost.exe",
-			"McAfee\\Endpoint Security\\Threat Prevention\\mfetp.exe"
+			"McAfee\\Endpoint Security\\Threat Prevention\\mfetp.exe",
+			"C:\\Windows\\System32\\Sysprep\\sysprep.exe"
 		],
 
 		"WINLOGON_REG_TARGET_OBJECT": [
@@ -279,11 +287,17 @@
 			"dbghelp.dll"
 		],
 
+		"CREATE_R_THREAD_FROM_NON_SESSION_0_TO_0": [
+			"c:\\Windows\\System32\\winlogon.exe",
+			"C:\\Windows\\System32\\Sysprep\\sysprep.exe"
+		],
+
 		"NORMAL_DEBUG_PRIV_ENABLED_IN_USER_SESSION": [
 			"c:\\Windows\\System32\\csrss.exe",
 			"c:\\Windows\\System32\\winlogon.exe",
 			"\\SystemRoot\\System32\\smss.exe",
 			"c:\\Windows\\System32\\smss.exe",
+			"C:\\Windows\\System32\\LogonUI.exe",
 			"consent.exe"
 		]
 	}									
