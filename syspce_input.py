@@ -26,7 +26,7 @@ class Input(threading.Thread):
 		self.src = src
 		# Event ID from sysmon eventlog that correlator supports.
 		self.EVENTLOG_EVENTID = [1,2,3,5,7,8,9,10,11,12,13,
-								14,15,17,18,22,100,101,102,108,110]
+								14,15,17,18,22,100,101,102,103,108,110]
 		
     def run(self):
 		self._running = True
