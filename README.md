@@ -527,7 +527,7 @@ procesos de navegadores web en sesion de servicios (Sesión 0).
 
 #### Correlación mediante atributos variables
 Puede darse el caso de que queramos correlar valores que desconocemos a priori,
-pero que tengan algunan coincidencia, por lo que dentro del cuerpo de la definición
+pero que tengan alguna coincidencia, por lo que dentro del cuerpo de la definición
 de un proceso podemos poner valores variables identificados con el valor $. Veamos
 el siguiente ejemplo.
 ```
@@ -573,6 +573,13 @@ saltará. Ejemplo:
 	}
 }
 ```
+Desatar que **no es posible utilizar atributos variables entre acciones de procesos
+diferentes**, como se ve a continuación.
+```
+{ "1": { "-TerminalSessionId": "$A" } },	<-----| Son dos precesos diferentes en realción padre-hijo
+{ "1": { "TerminalSessionId": "$A" } }		<-----|
+```
+
 Tambien es posible utilizar las variables para especificar si en el conjunto de acciones
 de un mismo atributo se tienen que todos sus valores son iguales. Esto lo hacemos 
 usando tan solo una variable en un atributo concreto, como se ve en el ejemplo
