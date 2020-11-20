@@ -612,8 +612,8 @@ PHE ALERT [23]: User impersonated
 !--> PROCESS CREATED (2536) [Running] C:\Windows\Explorer.EXE
 !----> PROCESS CREATED (3084) [Running] C:\Windows\system32\cmd.exe
 !------> PROCESS CREATED (2572) [Running] notepad.exe  724
-!----------> [A] TOKEN CREATED pula		<----------------------| Dos tokens diferentes de dos usuarios.
-!----------> [A] TOKEN CREATED System	<----------------------|
+!----------> [A] TOKEN CREATED pula     <----------------------| Dos tokens diferentes de dos usuarios.
+!----------> [A] TOKEN CREATED System   <----------------------|
 !----------> [A] TOKEN CREATED System
 ```
 
