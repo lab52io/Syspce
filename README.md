@@ -525,6 +525,89 @@ al principio de la regla:
 En este ejemplo saltara una alerta si se crean en un periodo de 15min 3 o más
 procesos de navegadores web en sesion de servicios (Sesión 0).
 
+#### Correlación mediante atributos variables
+Puede darse el caso de que queramos correlar valores que desconocemos a priori,
+pero que tengan algunan coincidencia, por lo que dentro del cuerpo de la definición
+de un proceso podemos poner valores variables identificados con el valor $. Veamos
+el siguiente ejemplo.
+```
+{
+	"108": {
+		"StartAddressDec": "$A",
+		"StartFunction": "",
+		"StartModule": ""
+	},
+	"102": {
+		"VadStart": "$A"
+	},
+	"101": {
+		"Win32StartAddress": "$A",
+		"OwnerName": "Unknown"
+	}
+}
+```
+Esta regla busca si algún valor del "StartAddressDec" de un proceso que ha recibido
+un CreateRemoteThread (108), presenta un valor coincidente para el "VadStart" en su
+listado de VADs y si presenta tmabien el mismo valor para el "Win32StartAddress" del
+listado de sus hilos. Básicamente lo que hace es la intersección de los conjuntos de
+valores de los tres atributos. Comentar que se pueden utiliar varias variables y estas
+harán match en su conjunto definido, sí y solo sí todos los valores coinciden la regla
+saltará. Ejemplo:
+
+```
+{
+	"108": {
+		"StartAddressDec": "$A",
+		"StartFunction": "",
+		"StartModule": "",
+		"Image": "$B"
+	},
+	"102": {
+		"VadStart": "$A"
+		"Image": "$B"
+	},
+	"101": {
+		"Win32StartAddress": "$A",
+		"OwnerName": "Unknown",
+		"Image": "$B"
+	}
+}
+```
+Tambien es posible utilizar las variables para especificar si en el conjunto de acciones
+de un mismo atributo se tienen que todos sus valores son iguales. Esto lo hacemos 
+usando tan solo una variable en un atributo concreto, como se ve en el ejemplo
+siguiente.
+
+```
+{
+	"103": { "User": "$A" }
+}
+```
+Esta regla "matchea" con todos los procesos que contengan tokens (103) donde el
+usuario que supuestamente impersona es siempre el mismo. Es decir todos los
+valores del atributo han de ser siempre iguales para que se dispare.
+Una forma interesante de usar esta funcionalidad es realizando la inversa es
+decir, si colocamos un "-" en el valor de la variable Ej "$-A" hará match
+con todos los procesos que contenga valres diferentes para un mismo atributo.
+Por ejemplo la siguiente regla busca si un proceso ha impersonado supuestamente
+a un usuario.
+```
+{
+	"103": { "User": "$-A" }
+}
+```
+Devolviendo por ejemplo el siguiente resultado.
+
+```
+PHE ALERT [23]: User impersonated
+!--> PROCESS CREATED (2536) [Running] C:\Windows\Explorer.EXE
+!----> PROCESS CREATED (3084) [Running] C:\Windows\system32\cmd.exe
+!------> PROCESS CREATED (2572) [Running] notepad.exe  724
+!----------> [A] TOKEN CREATED pula		<----------------------| Dos tokens diferentes de dos usuarios.
+!----------> [A] TOKEN CREATED System	<----------------------|
+!----------> [A] TOKEN CREATED System
+```
+
 #### Creando reglas de correlación para Volatility
 Blah Blah
 
