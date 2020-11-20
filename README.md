@@ -548,11 +548,13 @@ el siguiente ejemplo.
 ```
 Esta regla busca si algún valor del "StartAddressDec" de un proceso que ha recibido
 un CreateRemoteThread (108), presenta un valor coincidente para el "VadStart" en su
-listado de VADs y si presenta tmabien el mismo valor para el "Win32StartAddress" del
+listado de VADs y si presenta también el mismo valor para el "Win32StartAddress" del
 listado de sus hilos. Básicamente lo que hace es la intersección de los conjuntos de
-valores de los tres atributos. Comentar que se pueden utiliar varias variables y estas
-harán match en su conjunto definido, sí y solo sí todos los valores coinciden la regla
-saltará. Ejemplo:
+valores de los tres atributos. Comentar que se pueden utilizar varias variables pudiendo
+hacer "match" cada una en su conjunto definido. Siempre y cuando todos los valores
+coincidan de las diferentes variales coincidan la regla saltará. En el ejemplo siguiente
+por una parte la intersecicción de todas las "$A"s y por otra la intersección de todas
+las "$B"s.
 
 ```
 {
@@ -581,7 +583,7 @@ diferentes**, como se ve a continuación.
 ```
 
 Tambien es posible utilizar las variables para especificar si en el conjunto de acciones
-de un mismo atributo se tienen que todos sus valores son iguales. Esto lo hacemos 
+de un mismo atributo presenta que todos sus valores sean iguales. Esto lo hacemos 
 usando tan solo una variable en un atributo concreto, como se ve en el ejemplo
 siguiente.
 
@@ -591,11 +593,11 @@ siguiente.
 }
 ```
 Esta regla "matchea" con todos los procesos que contengan tokens (103) donde el
-usuario que supuestamente impersona es siempre el mismo. Es decir todos los
+usuario que supuestamente impersona, es siempre el mismo. Es decir, todos los
 valores del atributo han de ser siempre iguales para que se dispare.
-Una forma interesante de usar esta funcionalidad es realizando la inversa es
+Una forma interesante de usar esta funcionalidad es realizando la inversa, es
 decir, si colocamos un "-" en el valor de la variable Ej "$-A" hará match
-con todos los procesos que contenga valres diferentes para un mismo atributo.
+con todos los procesos que contenga valores diferentes para un mismo atributo.
 Por ejemplo la siguiente regla busca si un proceso ha impersonado supuestamente
 a un usuario.
 ```
