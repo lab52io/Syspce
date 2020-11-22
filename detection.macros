@@ -58,7 +58,8 @@
 		"PRIVILEGED_USERS": [
 			"Administrator",
 			"Administrador",
-			"NT AUTHORITY\\SYSTEM"
+			"NT AUTHORITY\\SYSTEM",
+			"System"
 		],
 		"SERVICE_USERS": [
 			"NT AUTHORITY\\SYSTEM",

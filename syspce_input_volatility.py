@@ -447,23 +447,27 @@ class InputVolatility(Input):
 			with open (cache_process, 'r') as outfile:
 				vprocess = json.load(outfile)
 				cache = True
+				outfile.close()
 		cache_threads = hresult+"_"+"threads"
 		if os.path.exists(cache_threads):
 			with open (cache_threads, 'r') as outfile:
 				vthreads = json.load(outfile)
 				cache = True
+				outfile.close()
 
 		cache_vads = hresult+"_"+"vads"
 		if os.path.exists(cache_vads):
 			with open (cache_vads, 'r') as outfile:
 				vvads = json.load(outfile)
 				cache = True
+				outfile.close()
 		
 		cache_tokens = hresult+"_"+"tokens"
 		if os.path.exists(cache_tokens):
 			with open (cache_tokens, 'r') as outfile:
 				vtokens = json.load(outfile)
 				cache = True
+				outfile.close()
 		if cache:
 			print "[SYSPCE] Using process cache file: "+cache_process
 			print "[SYSPCE] Using threads cache file: "+cache_threads
@@ -603,6 +607,7 @@ class InputVolatility(Input):
 				###########
 
 				tokenprocess = process.get_token()
+				user_sids = self.lookup_user_sids(self._config)
 				if tokenprocess.is_valid():
 					cont = 0
 					for sid_string in tokenprocess.get_sids():
@@ -618,21 +623,22 @@ class InputVolatility(Input):
 								sid_name = sid_name_re
 							else:
 								sid_name = ""
-
+				
 						if cont == 0:
 							pslist1["User"] = str(sid_name)
-							if sid_string == "S-1-16-8192":
-								pslist1["IntegrityLevel"] = "Medium"
-							elif sid_string == "S-1-16-8448":
-								pslist1["IntegrityLevel"] = "MediumPlus"
-							elif sid_string == "S-1-16-4096":
-								pslist1["IntegrityLevel"] = "Low"
-							elif sid_string == "S-1-16-12288":
-								pslist1["IntegrityLevel"] = "High"
-							elif sid_string == "S-1-16-16384":
-								pslist1["IntegrityLevel"] = "System"
-						
-						break
+							cont = cont + 1 
+				
+						if sid_string == "S-1-16-8192":
+							pslist1["IntegrityLevel"] = "Medium"
+						elif sid_string == "S-1-16-8448":
+							pslist1["IntegrityLevel"] = "MediumPlus"
+						elif sid_string == "S-1-16-4096":
+							pslist1["IntegrityLevel"] = "Low"
+						elif sid_string == "S-1-16-12288":
+							pslist1["IntegrityLevel"] = "High"
+						elif sid_string == "S-1-16-16384":
+							pslist1["IntegrityLevel"] = "System"
+					
 
 				###########
 				## TOKENS
@@ -640,10 +646,11 @@ class InputVolatility(Input):
 
 				token1 = {}
 				if self._running:
-					user_sids = self.lookup_user_sids(self._config)
+					#user_sids = self.lookup_user_sids(self._config)
 					for handle in process.ObjectTable.handles():
 						token = handle.dereference_as("_TOKEN")
 						if token.is_valid():
+
 							token1["idEvent"] = 103
 							token1["ProcessId"] = pslist1["ProcessId"]
 							token1["ProcessGuid"] = pslist1["ProcessGuid"]
@@ -764,9 +771,6 @@ class InputVolatility(Input):
 						pslist1["RwxPage"] = "True"
 				else:
 					sys.exit()
-
-
-				
 
 				## THREADS
 				###########
@@ -929,18 +933,22 @@ class InputVolatility(Input):
 			if not os.path.exists(cache_process):
 				with open (cache_process, 'w') as outfile:
 					json.dump(vprocess,outfile)
+					outfile.close()
 
 			cache_threads = hresult+"_"+"threads"
 			if not os.path.exists(cache_threads):
 				with open (cache_threads, 'w') as outfile:
 					json.dump(vthreads,outfile)
+					outfile.close()
 		
 			cache_vads = hresult+"_"+"vads"
 			if not os.path.exists(cache_vads):
 				with open (cache_vads, 'w') as outfile:
 					json.dump(vvads,outfile)
+					outfile.close()
 		
 			cache_tokens = hresult+"_"+"tokens"
 			if not os.path.exists(cache_tokens):
 				with open (cache_tokens, 'w') as outfile:
 					json.dump(vtokens,outfile)
+					outfile.close()
