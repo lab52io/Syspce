@@ -293,6 +293,11 @@
 			"C:\\Windows\\System32\\Sysprep\\sysprep.exe"
 		],
 
+		"SE_DEBUG_PRIVILEGE_ENABLED_CREATES_R_THREAD": [
+			"c:\\Windows\\System32\\winlogon.exe",
+			"c:\\Windows\\System32\\csrss.exe"
+		],
+
 		"NORMAL_DEBUG_PRIV_ENABLED_IN_USER_SESSION": [
 			"c:\\Windows\\System32\\csrss.exe",
 			"c:\\Windows\\System32\\winlogon.exe",

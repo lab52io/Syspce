@@ -323,23 +323,41 @@ class ProcessesTree(object):
 		'''
 
 		res = True
-		#if process == '2532a4aea4c2974f5f54f847d26df796':
-		#if process == 'ba8a3c23c904c50a02c51731a704b7ef':
 
-		#	pass
+		# Could hav more than 1 variable attrib $A , $B , $C
 		for variable_attr in self.variable_attributes:
 			aux_list = []
-			for type in self.variable_attributes[variable_attr]:
-				if aux_list: 
-					res = set(aux_list) & \
-						  set(self.variable_attributes[variable_attr][type])
-				if not res:
-					return False
-				aux_list = self.variable_attributes[variable_attr][type]
+
+			# case only 1 variable atrtibute in $A
+			if len(self.variable_attributes[variable_attr]) <= 1:
+				for key in self.variable_attributes[variable_attr]:
+
+					# we need more than 1 to take into account this
+					if len(self.variable_attributes[variable_attr][key]) <= 1:
+						return False
+
+					res = set(self.variable_attributes[variable_attr][key])
+
+					#$-A means all values different and $A all values equal
+					if "-" in variable_attr and len(res) == 1:
+						return False
+
+					if "-" not in variable_attr and len(res) > 1:
+						return False
+
+			# more than 1 like in the example above
+			else:
+				for type in self.variable_attributes[variable_attr]:
+					if aux_list: 
+						res = set(aux_list) & \
+							  set(self.variable_attributes[variable_attr][type])
+					if not res:
+						return False
+					aux_list = self.variable_attributes[variable_attr][type]
 
 		# need to delete from actions matched not real matched
 		if res and self.variable_attributes:
-			key_value = res.pop()
+			#key_value = res.pop()
 			num_actions = len(self.actions_matched[process])
 
 			i = 0
@@ -348,7 +366,7 @@ class ProcessesTree(object):
 				action = self.actions_matched[process][i]
 
 				for attr in action:
-					if action[attr] == key_value:
+					if action[attr] in res:
 						attr_found = True
 
 				if not attr_found:
@@ -435,6 +453,7 @@ class ProcessesTree(object):
 						variable_action = acc[acc_filter]
 						type_and_filter = type_action + variable_filter 
 
+						# becouse can have more than 1 var attr , $A, $B...
 						variable_matches_list.append([variable_filter,
 													  variable_action,
 													  type_and_filter])
