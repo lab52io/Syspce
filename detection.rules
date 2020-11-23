@@ -267,6 +267,7 @@
 			{ "1": { "Image": "*" } }
 		]
 	},
+
 	{
 		"RuleID": 23,
 		"Rulename": "User impersonated",
@@ -277,6 +278,7 @@
 			}
 		]
 	},
+
 	{
 		"RuleID": 24,
 		"Rulename": "Application executed from external device (USB/Network)",
