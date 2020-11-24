@@ -84,7 +84,7 @@ pip install enum34 --user
 Descarga e instala [Visual C++ for phyton](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
 Descarga e instala de aquí [distorm3](https://github.com/gdabah/distorm/releases/tag/v3.3.4)
 pip install pycrypto
-pip install volatility261
+Descarga e instala [Última versión de Volatility](https://github.com/volatilityfoundation/volatility)
 ```
 
 3. El entorno esta listo, pero antes necesitamos saber un par de cosas más...
