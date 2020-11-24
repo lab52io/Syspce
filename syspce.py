@@ -62,11 +62,6 @@ from syspce_manager_input import InputManager
 from syspce_manager_engine import EngineManager
 from syspce_manager_control import ControlManager
 
-#python syspce.py -m file:///C:\Users\ramad\Desktop\josemi\cridex.vmem -p WinXPSP2x86
-#python syspce.py -m file:///C:\Users\ramad\source\repos\Syspce\Memdump\Windows_10_x86_cobalt.vmem -p Win10x86
-#python syspce.py -m "C:\Users\ramad\source\repos\Syspce\Memdump\Windows_10_x86_cobalt.vmem" -p Win10x86 -f C:\Users\ramad\source\\repos\Syspce\Evtx\cobaltstrike4_23.evtx -s sysmonSchema4.23.xml
-
-#python syspce.py -m "C:\Users\ramad\Documents\Trabajo\Presentaciones\STIC 2020\reglas a mostrar\DEMO 2\Windows 8 Pro 64 bits-stealtoken.vmem" -p Win8SP0x64 -f "C:\Users\ramad\Documents\Trabajo\Presentaciones\STIC 2020\reglas a mostrar\DEMO 2\stealtoken.evtx" -s sysmonSchema4.40.xml
 
 class Syspce(object):
 
