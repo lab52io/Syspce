@@ -74,7 +74,8 @@ Syspce puede utilizarse con diversas finalidades:
  - pycrypto
  - distorm3
 ### Instalación 🔧
-
+0. Puedes bajarte la realease de la [sección](https://github.com/lab52io/Syspce/releases) y no necesitas nada más
+o si por el contrario  quieres intalarlo a mano continua con los siguientes pasos.
 1. Desplegamos Python 2.7 de la web oficial [Python Download](https://www.python.org/download/releases/2.7/)
 2. Instalamos dependencia con Pip en este orden
 ```
