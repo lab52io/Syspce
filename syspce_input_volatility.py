@@ -164,7 +164,10 @@ class InputVolatility(Input):
 					   data_condition_in,
 					   src)
 
-		print "[SYSPCE] Starting INPUT VOLATILITY analysis"
+		self.name = 'Input Volatility'
+		self.module_id = Module.INPUT_VOLATILITY
+		self.machineguid = ""
+		self.console_print("Starting INPUT VOLATILITY analysis")
 		# Relative Path
 		filepath2 = ""
 		if filepath.find(":\\") == -1:
@@ -187,9 +190,7 @@ class InputVolatility(Input):
 		registry.register_global_options(self._config, commands.Command)
 		registry.register_global_options(self._config, addrspace.BaseAddressSpace)
 
-		self.name = 'Input Volatility'
-		self.module_id = Module.INPUT_VOLATILITY
-		self.machineguid = ""
+
 
 	''' 
 	Name: get_registry_key()
@@ -214,7 +215,7 @@ class InputVolatility(Input):
 			root = rawreg.get_root(h)
 			if not root:
 				if self._config.HIVE_OFFSET:
-					print("Unable to find root key. Is the hive offset correct?")
+					self.console_print("Unable to find root key. Is the hive offset correct?")
 			else:
 				if self._config.KEY:
 					yield name, rawreg.open_key(root, self._config.KEY.split('\\'))
@@ -395,13 +396,13 @@ class InputVolatility(Input):
 			# Check EPROCESS empty or odd fields
 
 			if pslist1['ProcessId'] == "":
-				print "[SYSPCE] Warning ProcessId empty in: " + " Image: "+ str(pslist1['Image'])
+				self.console_print("Warning ProcessId empty in: " + " Image: "+ str(pslist1['Image']))
 
 			if pslist1['ParentProcessId'] == "":
-				print "[SYSPCE] Warning ParentProcessId empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(pslist1['Image'])
+				self.console_print("Warning ParentProcessId empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(pslist1['Image']))
 
 			if pslist1['TerminalSessionId'] == "-1":
-				print "[SYSPCE] Warning TerminalSessionId is -1: " + " Image: "+ str(pslist1['Image']) + " " + str(pslist1['ProcessId'])
+				self.console_print("Warning TerminalSessionId is -1: " + " Image: "+ str(pslist1['Image']) + " " + str(pslist1['ProcessId']))
 
 
 
@@ -437,9 +438,9 @@ class InputVolatility(Input):
 		# Memory analysis CACHE
 		###########################
 
-		print "\n[SYSPCE] Calculating memory hash: "+self.filepath
+		self.console_print("Calculating memory hash: "+self.filepath)
 		hresult = self.sha256hash(self.filepath)
-		print "[SYSPCE] SHA256: " + hresult
+		self.console_print("SHA256: " + hresult)
 		cache = False
 		# WE CHECK IF THIS MEMORY HAS CACHE
 		cache_process = hresult+"_"+"process"
@@ -469,11 +470,10 @@ class InputVolatility(Input):
 				cache = True
 				outfile.close()
 		if cache:
-			print "[SYSPCE] Using process cache file: "+cache_process
-			print "[SYSPCE] Using threads cache file: "+cache_threads
-			print "[SYSPCE] Using threads cache file: "+cache_vads
-			print "[SYSPCE] Using threads cache file: "+cache_tokens
-			print "\n"
+			self.console_print("Using process cache file: "+cache_process)
+			self.console_print("Using threads cache file: "+cache_threads)
+			self.console_print("Using vads cache file: "+cache_vads)
+			self.console_print("Using tokens cache file: "+cache_tokens)
 			self.send_message(vprocess)
 			self.send_message(vthreads)
 			self.send_message(vvads)
