@@ -4,6 +4,41 @@ import re
 
 log = logging.getLogger('sysmoncorrelator')
 
+class ParseError(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+class KeyNotFound(ParseError):
+    """Exception raised for errors finding Sysmon registry key.
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+		self.log_message = "Missing Sysmon/Operational registry key: " + message
+		self.message = self.log_message
+		self.message += "\tAdd key located in RegistryKey directory"
+		self.message += "\tSee README for more info"
+
+		log.error(self.log_message)
+
+class WrongSchema(ParseError):
+    """Exception raised for errors parsing with a concrete schema.
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+		self.log_message = "[Error] Probably wrong Sysmon Schema version: " + message + "\n"
+		self.message = self.log_message
+		self.message += "\tUse: #sysmon -s > schemaVersion.xml\n"
+		self.message += "\tThen: #python syspce.py -s schemaVersion.xml\n"
+		log.error(self.log_message)
+
+
+
 def get_image_fileName(image):
 	ImageFileName = ''
 	
@@ -29,11 +64,10 @@ def get_sysmon_xml_schema(xmlfile):
 def parse_eventlog_IDx(schema, event):
 	event_details = {'computer': '', 'idEvent': event.EventID}
 	message = event.StringInserts
-	
+
 	i = 0
 	if not message:
-		log.error("Add registry key, in order to read sysmon event log")
-		exit(1)
+		raise KeyNotFound
 
 	for line in message:
 		#special case for error 255
@@ -45,13 +79,13 @@ def parse_eventlog_IDx(schema, event):
 			event_details[ event_parameter ] = line
 
 		except Exception, e:
-			log.error("Probably wrong Sysmon Schema version %s " % str(e))
-			log.error("Use: #sysmon -s > schemaVersion.xml")
-			log.error("     #python sysmonCorrelator.py -s schemaVersion.xml")
-			exit(1)
-		i += 1
+			raise WrongSchema(str(e))
 
-	event_details['computer'] = get_machine_guid(event_details['ProcessGuid'])
+		i += 1
+	try:
+		event_details['computer'] = get_machine_guid(event_details['ProcessGuid'])
+	except Exception, e:
+		raise WrongSchema(str(e))
 
 	return event_details
 
@@ -70,66 +104,69 @@ def get_list_of_actions(action):
 		Event 8, 10, 1 -> 108, 110, 100
 		So if we find an ID 8 we need to return both 8 and the new one 108
 	'''
-	action_list = [action]
+	try:
+		action_list = [action]
 	
-	newreq = action.copy()
-	multi_action = False
+		newreq = action.copy()
+		multi_action = False
 	
-	if (action['idEvent'] == 8):
+		if (action['idEvent'] == 8):
 	
-		newreq['idEvent'] = 108
+			newreq['idEvent'] = 108
 		
-		aux = newreq['TargetProcessGuid']
-		newreq['SourceProcessGuid'] = newreq['ProcessGuid']
-		newreq['ProcessGuid'] = aux	
+			aux = newreq['TargetProcessGuid']
+			newreq['SourceProcessGuid'] = newreq['ProcessGuid']
+			newreq['ProcessGuid'] = aux	
 		
-		aux = newreq['TargetImage']
-		newreq['SourceImage'] = newreq['Image']
-		newreq['Image'] = aux
+			aux = newreq['TargetImage']
+			newreq['SourceImage'] = newreq['Image']
+			newreq['Image'] = aux
 
-		aux = newreq['TargetProcessId']
-		newreq['SourceProcessId'] = newreq['ProcessId']
-		newreq['ProcessId'] = aux
+			aux = newreq['TargetProcessId']
+			newreq['SourceProcessId'] = newreq['ProcessId']
+			newreq['ProcessId'] = aux
 		
-		action_list.append(newreq)
+			action_list.append(newreq)
 		
-	elif (action['idEvent'] == 10):
+		elif (action['idEvent'] == 10):
 	
-		newreq['idEvent'] = 110
+			newreq['idEvent'] = 110
 		
-		aux = newreq['TargetProcessGuid']
-		newreq['SourceProcessGuid'] = newreq['ProcessGuid']
-		newreq['ProcessGuid'] = aux
+			aux = newreq['TargetProcessGuid']
+			newreq['SourceProcessGuid'] = newreq['ProcessGuid']
+			newreq['ProcessGuid'] = aux
 						
-		aux = newreq['TargetImage']
-		newreq['SourceImage'] = newreq['Image']
-		newreq['Image'] = aux
+			aux = newreq['TargetImage']
+			newreq['SourceImage'] = newreq['Image']
+			newreq['Image'] = aux
 
-		aux = newreq['TargetProcessId']
-		newreq['SourceProcessId'] = newreq['ProcessId']
-		newreq['ProcessId'] = aux
+			aux = newreq['TargetProcessId']
+			newreq['SourceProcessId'] = newreq['ProcessId']
+			newreq['ProcessId'] = aux
 		
-		action_list.append(newreq)
+			action_list.append(newreq)
 		
-	elif (action['idEvent'] == 1):
+		elif (action['idEvent'] == 1):
 
-		newreq = {}
-		newreq['computer'] = action['computer']
-		newreq['idEvent'] = 100
-		newreq['ChildProcessGuid'] = action['ProcessGuid']
-		newreq['ChildProcessId'] = action['ProcessId']
-		newreq['ChildCommandLine'] = action['CommandLine']
-		newreq['ChildLogonGuid'] = action['LogonGuid']
-		newreq['ChildImage'] = action['Image']
-		newreq['ProcessGuid'] = action['ParentProcessGuid']
-		newreq['ProcessId'] = action['ParentProcessId']
-		newreq['Image'] = action['ParentImage']
-		newreq['UtcTime'] = action['UtcTime']
-		action_list.append(newreq)
+			newreq = {}
+			newreq['computer'] = action['computer']
+			newreq['idEvent'] = 100
+			newreq['ChildProcessGuid'] = action['ProcessGuid']
+			newreq['ChildProcessId'] = action['ProcessId']
+			newreq['ChildCommandLine'] = action['CommandLine']
+			newreq['ChildLogonGuid'] = action['LogonGuid']
+			newreq['ChildImage'] = action['Image']
+			newreq['ProcessGuid'] = action['ParentProcessGuid']
+			newreq['ProcessId'] = action['ParentProcessId']
+			newreq['Image'] = action['ParentImage']
+			newreq['UtcTime'] = action['UtcTime']
+			action_list.append(newreq)
 		
-	else:
-		newreq = {}
-		
+		else:
+			newreq = {}
+	except Exception, e:
+		raise KeyNotFound(str(e))
+
 	return action_list
 	
 

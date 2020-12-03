@@ -114,7 +114,7 @@ Security.
 Acto seguido podemos ejecutar el correlador de la siguiente manera para leer
 del registro de sysmon del propio equipo:
 
-	#python sysmonCorrelator.py	
+	#python syspce.py	
 	
 ```
 24/01/2020 11:12:09  [WARNING] Using default Sysmon config schema 3.4
@@ -135,12 +135,12 @@ comando en la herramienta Sysmon:
 
 A continuación lanzamos el corerlador con el parámetro -s nuevamente. 
 
-	#python sysmonCorrelator.py -s schemaVersion.xml
+	#python syspce.py -s schemaVersion.xml
 
 Si queremos ejecutar el correlador contra un fichero .evtx previamente obtenido,
 podemos ejecutar las siguientes opciones.
 
-	#python sysmonCorrelator.py -s schemaVersion4.21.xml -f sysmonlog.evtx
+	#python syspce.py -s schemaVersion4.21.xml -f sysmonlog.evtx
 	
 ```
 [INFO] Using schema sysmonSchema4.21.xml for log parsing

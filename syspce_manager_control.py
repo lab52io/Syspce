@@ -39,8 +39,10 @@ class ControlManager(Manager_):
                         'detection_macros_content' : {},
                         'baseline_rules_content' : {},
                         'daemon': False,
+						'eventlog': False,
                         'evtx_file' : '',
                         'memdump' : '',
+                        'memcache' : '',
                         'profile' : '',
                         'search_filter' : {},
                         'filter_attribute' : '',
@@ -175,7 +177,7 @@ class ControlManager(Manager_):
 		read_evtx_job.start()
 		self.add_working_module(read_evtx_job.name, [read_evtx_job])
 
-    def read_memdump(self, filepath, profile,  detection_rules,
+    def read_memdump(self, filepath, profile, memcache,  detection_rules,
 				     detection_macros,  baseline_rules,
 				     origin):
 
@@ -187,7 +189,7 @@ class ControlManager(Manager_):
 
 		read_memdump_job.configure_IM(MessageType.COMMAND,
 								      MessageSubType.READ_FROM_MEMDUMP,
-								      [filepath, profile])
+								      [filepath, profile, memcache])
 
 		read_memdump_job.configure_EM(MessageType.DATAIN,
 								      MessageSubType.DETECT_SINGLE,
@@ -341,9 +343,12 @@ class ControlManager(Manager_):
 
 		if not error:
 
-			if self.config_['memdump'] and self.config_['profile']:
+			if (self.config_['memdump'] and self.config_['profile']) or \
+			   self.config_['memcache']:
+
 				self.read_memdump(self.config_['memdump'],
 								  self.config_['profile'],
+								  self.config_['memcache'],
 								  self.config_['detection_rules_content'],
 								  self.config_['detection_macros_content'],
 								  self.config_['baseline_rules_content'],
@@ -370,16 +375,16 @@ class ControlManager(Manager_):
 											  self.config_['baseline_rules_content'],
 											  self.config_['sysmon_schema_content'],
 											  Origin.SYSPCE_CORE)
-			'''
+
 			# REading from eventlog only 1 time
-			else:
+			if self.config_['eventlog']:
 				self.read_evtx('',
 							   self.config_['detection_rules_content'],
 							   self.config_['detection_macros_content'],
 							   self.config_['baseline_rules_content'],
 							   self.config_['sysmon_schema_content'],
 							   Origin.SYSPCE_CORE)
-			'''
+
 		else:
 			self.console.print_command_result("Config error, check logfile")
 
@@ -430,6 +435,10 @@ class ControlManager(Manager_):
         if self.args.daemon:
             self.config_['daemon'] = True
 
+        # Read eventlog only one time
+        if self.args.eventlog:
+            self.config_['eventlog'] = True
+
         # Evtx file search filter functionality
         if self.args.eventid:
 			self.config_['search_filter'] = self.args.eventid[0]
@@ -445,6 +454,9 @@ class ControlManager(Manager_):
         # Memdump
         if self.args.memdump:
             self.config_['memdump'] = self.args.memdump[0]
+        # Memdump
+        if self.args.memcache:
+            self.config_['memcache'] = self.args.memcache[0]
 
         # Memedump profile
         if self.args.profile:
