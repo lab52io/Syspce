@@ -88,18 +88,18 @@ class Syspce(object):
 
         parser.add_argument("-p", "--profile",
                             nargs=1, 
-                            metavar='Volatility profile',
+                            metavar='Profile',
                             help="Volatility memdump profile" )
 
         parser.add_argument("-m", "--memdump",
                             nargs=1,
-                            help="Memdump",
-                            metavar='Volatility memdump')
+                            help="Volatility Memdump",
+                            metavar='Memdump')
 
         parser.add_argument("-c", "--memcache",
                             nargs=1,
                             help="Memory dump Hash",
-                            metavar='Memdump cache hash')
+                            metavar='Hash')
 
         parser.add_argument("-v", "--verbose", 
                             help="Verbose debug",

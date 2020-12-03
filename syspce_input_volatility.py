@@ -158,7 +158,7 @@ class InputVolatility(Input):
 
 	def __init__(self, data_buffer_in,
 				 data_condition_in, src, 
-				 filepath, profile):
+				 filepath, profile, memcache):
 
 		Input.__init__(self, data_buffer_in,
 					   data_condition_in,
@@ -167,6 +167,16 @@ class InputVolatility(Input):
 		self.name = 'Input Volatility'
 		self.module_id = Module.INPUT_VOLATILITY
 		self.machineguid = ""
+		self.memcache = memcache
+
+		if self.memcache:
+			self.console_print("Memcache es :" + self.memcache)
+
+			''' COMPRUEBA AQUI TUS COSAS'''
+			self.send_message([])
+			self.terminate()
+			sys.exit(0)
+
 		self.console_print("Starting INPUT VOLATILITY analysis")
 		# Relative Path
 		filepath2 = ""
