@@ -170,12 +170,44 @@ class InputVolatility(Input):
 		self.memcache = memcache
 
 		if self.memcache:
-			self.console_print("Memcache es :" + self.memcache)
-
-			''' COMPRUEBA AQUI TUS COSAS'''
-			self.send_message([])
-			self.terminate()
-			sys.exit(0)
+			self.console_print("Memcache is:" + self.memcache)
+			# WE CHECK IF THIS MEMORY HAS CACHE
+			cache_process = self.memcache+"_"+"process"
+			cache = False
+			if os.path.exists(cache_process):
+				with open (cache_process, 'r') as outfile:
+					vprocess = json.load(outfile)
+					cache = True
+					outfile.close()
+			cache_threads = self.memcache+"_"+"threads"
+			if os.path.exists(cache_threads):
+				with open (cache_threads, 'r') as outfile:
+					vthreads = json.load(outfile)
+					cache = True
+					outfile.close()
+			cache_vads = self.memcache+"_"+"vads"
+			if os.path.exists(cache_vads):
+				with open (cache_vads, 'r') as outfile:
+					vvads = json.load(outfile)
+					cache = True
+					outfile.close()
+			cache_tokens = self.memcache+"_"+"tokens"
+			if os.path.exists(cache_tokens):
+				with open (cache_tokens, 'r') as outfile:
+					vtokens = json.load(outfile)
+					cache = True
+					outfile.close()
+			if cache:
+				self.console_print("Using process cache file: "+cache_process)
+				self.console_print("Using threads cache file: "+cache_threads)
+				self.console_print("Using vads cache file: "+cache_vads)
+				self.console_print("Using tokens cache file: "+cache_tokens)
+				self.send_message(vprocess)
+				self.send_message(vthreads)
+				self.send_message(vvads)
+				self.send_message(vtokens)
+				self.terminate()
+				sys.exit(0)
 
 		self.console_print("Starting INPUT VOLATILITY analysis")
 		# Relative Path
