@@ -183,19 +183,19 @@ class InputVolatility(Input):
 			if os.path.exists(cache_threads):
 				with open (cache_threads, 'r') as outfile:
 					vthreads = json.load(outfile)
-					cache = True
+					#cache = True
 					outfile.close()
 			cache_vads = self.memcache+"_"+"vads"
 			if os.path.exists(cache_vads):
 				with open (cache_vads, 'r') as outfile:
 					vvads = json.load(outfile)
-					cache = True
+					#cache = True
 					outfile.close()
 			cache_tokens = self.memcache+"_"+"tokens"
 			if os.path.exists(cache_tokens):
 				with open (cache_tokens, 'r') as outfile:
 					vtokens = json.load(outfile)
-					cache = True
+					#cache = True
 					outfile.close()
 			if cache:
 				self.console_print("Using process cache file: "+cache_process)
@@ -208,6 +208,10 @@ class InputVolatility(Input):
 				self.send_message(vtokens)
 				self.terminate()
 				sys.exit(0)
+			else:
+				self.console_print("Memcache is not found")
+				sys.exit(0)
+
 
 		self.console_print("Starting INPUT VOLATILITY analysis")
 		# Relative Path
@@ -428,13 +432,6 @@ class InputVolatility(Input):
 
 	def check_fields(self,pslist1):
 
-			# Check PEB empty fileds
-
-			#if pslist1['CommandLine'] == "":
-			#	print "[SYSPCE] Warning commandline empty in: " + str(pslist1['ProcessId']) + " Image: " + str(pslist1['Image'])
-			#if pslist1['CurrentDirectory'] == "":
-			#	print "[SYSPCE] Warning CurrentDirectory empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(pslist1['Image'])
-
 			# Check EPROCESS empty or odd fields
 
 			if pslist1['ProcessId'] == "":
@@ -495,21 +492,21 @@ class InputVolatility(Input):
 		if os.path.exists(cache_threads):
 			with open (cache_threads, 'r') as outfile:
 				vthreads = json.load(outfile)
-				cache = True
+				#cache = True
 				outfile.close()
 
 		cache_vads = hresult+"_"+"vads"
 		if os.path.exists(cache_vads):
 			with open (cache_vads, 'r') as outfile:
 				vvads = json.load(outfile)
-				cache = True
+				#cache = True
 				outfile.close()
 		
 		cache_tokens = hresult+"_"+"tokens"
 		if os.path.exists(cache_tokens):
 			with open (cache_tokens, 'r') as outfile:
 				vtokens = json.load(outfile)
-				cache = True
+				#cache = True
 				outfile.close()
 		if cache:
 			self.console_print("Using process cache file: "+cache_process)
@@ -542,7 +539,7 @@ class InputVolatility(Input):
 			mg_vector = self.machineguid.split("-")
 			computerid = mg_vector[0]
 
-			print "[SYSPCE] MACHINEGUID detected: " + str(computerid)
+			self.console_print("MACHINEGUID detected: " + str(computerid))
 
 		###########################
 		# Plugin psxview volatility 
@@ -556,6 +553,10 @@ class InputVolatility(Input):
 			vthreads = []
 			vvads = []
 			vtokens = []
+
+			##
+			## PRINCIPAL LOOP TO GET THE PROCESSES
+			##
 
 			for offset, process, ps_sources in proc.calculate():
 
@@ -597,6 +598,8 @@ class InputVolatility(Input):
 				pslist1['Csrss'] = str(offset in ps_sources["csrss"])
 				pslist1['Session'] = str(offset in ps_sources["session"])
 				pslist1['DeskThrd'] = str(offset in ps_sources["deskthrd"])
+
+				self.console_print("Extraction information of process with PID: "+str(pslist1['ProcessId']))
 
 				# Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
 				if pslist1['Image'] == "":
@@ -644,47 +647,79 @@ class InputVolatility(Input):
 				pslist1['ProcessGuid'] = result2.hexdigest()
 				pslist1['SyspceId'] = result.hexdigest()
 
+
+				###########
+				# Privileges
+				###########
+				if self._running:
+					privileges = process.get_token().privileges()
+					for value, present, enabled, default in privileges:
+						try:
+							name, desc = privm.PRIVILEGE_INFO[int(value)]
+							#print name
+						except KeyError:
+							continue
+
+						privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
+							  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
+
+						if str(name) in privileges_logged:
+							#print str(name+"Present")
+							#print str(name+"Enabled")
+							pslist1[str(name)+"Present"] = "False"
+							pslist1[str(name)+"Enabled"] = "False"
+							if present:
+								pslist1[name+"Present"] = "True"
+							if enabled or default:
+								pslist1[name+"Enabled"] = "True"
+					
+				else:
+					sys.exit()
+
 				###########
 				# Process Integrity Level and User
 				###########
 
-				tokenprocess = process.get_token()
-				user_sids = self.lookup_user_sids(self._config)
-				if tokenprocess.is_valid():
-					cont = 0
-					for sid_string in tokenprocess.get_sids():
-						if sid_string in well_known_sids:
-									sid_name = well_known_sids[sid_string]
-						elif sid_string in getservicesids.servicesids:
-									sid_name = getservicesids.servicesids[sid_string]
-						elif sid_string in user_sids:
-									sid_name = user_sids[sid_string]
-						else:
-							sid_name_re = self.find_sid_re(sid_string, well_known_sid_re)
-							if sid_name_re:
-								sid_name = sid_name_re
+				if self._running:
+					tokenprocess = process.get_token()
+					user_sids = self.lookup_user_sids(self._config)
+					if tokenprocess.is_valid():
+						cont = 0
+						for sid_string in tokenprocess.get_sids():
+							if sid_string in well_known_sids:
+										sid_name = well_known_sids[sid_string]
+							elif sid_string in getservicesids.servicesids:
+										sid_name = getservicesids.servicesids[sid_string]
+							elif sid_string in user_sids:
+										sid_name = user_sids[sid_string]
 							else:
-								sid_name = ""
+								sid_name_re = self.find_sid_re(sid_string, well_known_sid_re)
+								if sid_name_re:
+									sid_name = sid_name_re
+								else:
+									sid_name = ""
 				
-						if cont == 0:
-							pslist1["User"] = str(sid_name)
-							cont = cont + 1 
+							if cont == 0:
+								pslist1["User"] = str(sid_name)
+								cont = cont + 1 
 				
-						if sid_string == "S-1-16-8192":
-							pslist1["IntegrityLevel"] = "Medium"
-						elif sid_string == "S-1-16-8448":
-							pslist1["IntegrityLevel"] = "MediumPlus"
-						elif sid_string == "S-1-16-4096":
-							pslist1["IntegrityLevel"] = "Low"
-						elif sid_string == "S-1-16-12288":
-							pslist1["IntegrityLevel"] = "High"
-						elif sid_string == "S-1-16-16384":
-							pslist1["IntegrityLevel"] = "System"
+							if sid_string == "S-1-16-8192":
+								pslist1["IntegrityLevel"] = "Medium"
+							elif sid_string == "S-1-16-8448":
+								pslist1["IntegrityLevel"] = "MediumPlus"
+							elif sid_string == "S-1-16-4096":
+								pslist1["IntegrityLevel"] = "Low"
+							elif sid_string == "S-1-16-12288":
+								pslist1["IntegrityLevel"] = "High"
+							elif sid_string == "S-1-16-16384":
+								pslist1["IntegrityLevel"] = "System"
 					
+				else:
+					sys.exit()
 
-				###########
-				## TOKENS
-				###########
+				#################################
+				## HANDLES TOKENS OPENS IN OTHER PROCESS
+				#################################
 
 				token1 = {}
 				if self._running:
@@ -824,7 +859,8 @@ class InputVolatility(Input):
 				vprocess.append(pslist1)
 				pslist1 = {}
 
-			## We fill Parent fields with calculated information
+			## POST-EXTRACTION TASKS
+			## 1) FILL PARENT INFORMATION
 			computer_alerts = 0
 			for p in vprocess:
 				for x in vprocess:
@@ -863,6 +899,8 @@ class InputVolatility(Input):
 			winlogon_father_pid = -1
 			wininit_father_pid = -1
 
+			## POST-EXTRACTION TASKS
+			## 2) FIX PROBLEMS WITH MEMORY EXTRACTION
 			for p in vprocess:
 				## WINLOGON problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
 				if p['Image'].find('winlogon') != -1:
@@ -918,42 +956,42 @@ class InputVolatility(Input):
 		# Plugin privs volatility
 		###########################
 
-		if self._running:
-			priv = privm.Privs(self._config)
+		#if self._running:
+		#	priv = privm.Privs(self._config)
 		
-			privs_1 = {}
-			privs_2 = {}
-			priv_vector = []
+		#	privs_1 = {}
+		#	privs_2 = {}
+		#	priv_vector = []
 
-			for privs in priv.calculate():
-				privileges = privs.get_token().privileges()
-				for value, present, enabled, default in privileges:
-					try:
-						name, desc = privm.PRIVILEGE_INFO[int(value)]
-					except KeyError:
-						continue
-					privs_1 = {}
-					privs_1['ProcessId'] = str(int(privs.UniqueProcessId))
-					privs_1['Name'] = name 
-
-					privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
-						  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
-					privs_1['Present'] = "False"
-					privs_1['Enabled'] = "False"
-					if str(name) in privileges_logged:
-						if present:
-							privs_1['Present'] = "True"
-						if enabled or default:
-							privs_1["Enabled"] = "True"
-						priv_vector.append(privs_1)
-
-			for p in vprocess:
-				for x in priv_vector:
-					if p['ProcessId'] == x['ProcessId']:
-							pvp = x['Name'] + "Present"
-							p[pvp] = x['Present']
-							pve = x['Name'] + "Enabled"
-							p[pve] = x['Enabled']
+		#	for privs in priv.calculate():
+		#		privileges = privs.get_token().privileges()
+		#		for value, present, enabled, default in privileges:
+		#			try:
+		#				name, desc = privm.PRIVILEGE_INFO[int(value)]
+		#			except KeyError:
+		#				continue
+		#			privs_1 = {}
+		#			privs_1['ProcessId'] = str(int(privs.UniqueProcessId))
+		#			privs_1['Name'] = name 
+		#
+		#			privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
+		#				  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
+		#			privs_1['Present'] = "False"
+		#			privs_1['Enabled'] = "False"
+		#			if str(name) in privileges_logged:
+		#				if present:
+		#					privs_1['Present'] = "True"
+		#				if enabled or default:
+		#					privs_1["Enabled"] = "True"
+		#				priv_vector.append(privs_1)
+		#
+		#	for p in vprocess:
+		#		for x in priv_vector:
+		#			if p['ProcessId'] == x['ProcessId']:
+		#					pvp = x['Name'] + "Present"
+		#					p[pvp] = x['Present']
+		#					pve = x['Name'] + "Enabled"
+		#					p[pve] = x['Enabled']
 
 
 		# To Send to the CORE
@@ -967,8 +1005,6 @@ class InputVolatility(Input):
 			self.send_message(vads_list)
 			token_list = vtokens
 			self.send_message(token_list)
-
-		
 
 			# WE BUILD MEMORY CACHE (PROCESS, THREADS AND VADS)
 			cache_process = hresult+"_"+"process"
