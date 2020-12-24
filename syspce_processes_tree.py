@@ -641,9 +641,11 @@ class Node_(object):
 
 						if node.acciones["1"][0]["ProcessGuid"] == \
 						   req["TargetProcessGuid"] and \
-						   "unknown" in req["CallTrace"].lower() and \
+						   ("unknown" in req["CallTrace"].lower() or \
+						   "loadlibrary" in action108["StartFunction"].lower()) and \
 						   req["GrantedAccess"].lower() == '0x1fffff':
-						
+							#loadlibrary check added -> bug #14 opened by aoshiken
+
 							parent = "(" + action108["SourceProcessId"] + \
 										") " + action108["SourceImage"]
 										

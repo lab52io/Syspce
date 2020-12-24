@@ -30,7 +30,7 @@ class InputEvtx(Input):
 
 	def do_action(self):
 
-		server = "localhost"
+		server = None
 		events_list = []
 
 		# Reading from a file 

@@ -1,12 +1,9 @@
 [
 	{
-			"RuleID": 23,
-			"Rulename": "User impersonated",
-			"Content": [
-				{
-					"1": { "-IntegrityLevel": "System"},
-					"103": { "User": "$-A" }
-				}
-			]
+		"RuleID": 13,
+		"Rulename": "T1502: Parent PID Spoofing - Process created by injected Thread",
+		"Content": [
+			{ "1": { "CreationType": "InjectedThread" } }
+		]
 	}
 ]
