@@ -8,9 +8,7 @@ except:
 	exit(1)
 
 from syspce_input import Input
-from syspce_parser import get_action_from_id
-from syspce_parser import parse_eventlog_IDx
-from syspce_parser import get_list_of_actions
+from syspce_parser import *
 from syspce_message import *
 
 log = logging.getLogger('sysmoncorrelator')
@@ -32,7 +30,7 @@ class InputEvtx(Input):
 
 	def do_action(self):
 
-		server = "localhost"
+		server = None
 		events_list = []
 
 		# Reading from a file 
@@ -41,6 +39,7 @@ class InputEvtx(Input):
 				h_log = win32evtlog.OpenBackupEventLog(server, self.filepath)
 			except Exception, e:
 				log.error(str(e))
+				self.console_print(e.args[2])
 				exit(1)
 			
 		# Reading from evetnlog
@@ -50,11 +49,16 @@ class InputEvtx(Input):
 			#	Services\EventLog\Microsoft-Windows-Sysmon/Operational
 		
 			source_type = "Microsoft-Windows-Sysmon/Operational" 
-			h_log = win32evtlog.OpenEventLog(server, source_type)
+			try:
+				h_log = win32evtlog.OpenEventLog(server, source_type)
+			except win32evtlogutil.error, details:
+				self.console_print(str(details))
+				log.error(str(details))
+				exit(1)
 		
 		total_events = win32evtlog.GetNumberOfEventLogRecords(h_log)
 
-		#log.info("Total events: %d" % total_events)
+		log.info("Total events: %d" % total_events)
 
 		flags = win32evtlog.EVENTLOG_FORWARDS_READ|\
 				win32evtlog.EVENTLOG_SEQUENTIAL_READ
@@ -71,15 +75,19 @@ class InputEvtx(Input):
 			for event in records:
 				req_parsed = {}
 				if event.EventID in self.EVENTLOG_EVENTID:
-					req_parsed = parse_eventlog_IDx(self.schema,
-													event)
+					try:
+						req_parsed = parse_eventlog_IDx(self.schema, event)
+					except KeyNotFound as knf:
+						self.console_print(knf.message)
+						exit(1)
+					except WrongSchema as ws:
+						self.console_print(ws.message)
+						exit(1)
+
 					try:
 						actions_list = get_list_of_actions(req_parsed)
-					except Exception, e:
-						log.error(str(e))
-						log.error("Missing Sysmon/Operational registry key")
-						log.error("Add key located in RegistryKey directory")
-						log.error("See README for more info")
+					except KeyNotFound as knf:
+						self.console_print(knf.message)
 						exit(1)
 
 					for action in actions_list:

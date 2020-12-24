@@ -43,7 +43,17 @@ class Input(threading.Thread):
 					 self.origin,
 					 [content])
 
-	
+    def console_print(self, content):
+
+		message = Message(self.data_buffer_in, self.data_condition_in)
+
+		message.send(MessageType.COMMAND_RES,
+                     None,
+                     self.module_id,
+                     Module.CONTROL_MANAGER,
+					 self.origin,
+					 ["\n\t["  + str(self.module_id) + "] " + content])	
+		
     def do_action(self):
 		# To be overridden
 		pass

@@ -89,13 +89,18 @@ class Syspce(object):
 
         parser.add_argument("-p", "--profile",
                             nargs=1, 
-                            metavar='Volatility profile',
+                            metavar='Profile',
                             help="Volatility memdump profile" )
 
         parser.add_argument("-m", "--memdump",
                             nargs=1,
-                            help="Memdump",
-                            metavar='Volatility memdump')
+                            help="Volatility Memdump",
+                            metavar='Memdump')
+
+        parser.add_argument("-c", "--memcache",
+                            nargs=1,
+                            help="Memory dump Hash",
+                            metavar='Hash')
 
         parser.add_argument("-v", "--verbose", 
                             help="Verbose debug",
@@ -137,7 +142,9 @@ class Syspce(object):
                             help="Full actions details of process chain",
 						    action="store_true")
 
-
+        parser.add_argument("-g", "--eventlog", 
+                            help="Read local event log one time and generates alerts",
+						    action="store_true")
 
         self.args = parser.parse_args()
     

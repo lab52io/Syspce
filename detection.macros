@@ -66,6 +66,11 @@
 			"NT AUTHORITY\\NETWORK SERVICE",
 			"NT AUTHORITY\\LOCAL SERVICE"
 		],
+		"SERVICE_USERS2": [
+			"SYSTEM",
+			"NETWORK SERVICE",
+			"LOCAL SERVICE"
+		],
 		"LOW_INTEGRITY": [
 			"Medium",
 			"Low"
