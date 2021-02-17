@@ -36,7 +36,7 @@ import re, ntpath
 log = logging.getLogger('sysmoncorrelator')
 
 # Example input memory execution:
-# Param -p: Volatility profile 
+# Param -p: Volatility profile
 # Param -m: Memory file
 # python.exe syspce.py -m C:\Users\john\RAM.raw -p Win7SP1x64
 
@@ -156,877 +156,877 @@ well_known_sids = {
 
 class InputVolatility(Input):
 
-	def __init__(self, data_buffer_in,
-				 data_condition_in, src, 
-				 filepath, profile, memcache):
-
-		Input.__init__(self, data_buffer_in,
-					   data_condition_in,
-					   src)
-
-		self.name = 'Input Volatility'
-		self.module_id = Module.INPUT_VOLATILITY
-		self.machineguid = ""
-		self.memcache = memcache
-
-		if self.memcache:
-			self.console_print("Memcache is:" + self.memcache)
-			# WE CHECK IF THIS MEMORY HAS CACHE
-			cache_process = self.memcache+"_"+"process"
-			cache = False
-			if os.path.exists(cache_process):
-				with open (cache_process, 'r') as outfile:
-					vprocess = json.load(outfile)
-					cache = True
-					outfile.close()
-			cache_threads = self.memcache+"_"+"threads"
-			if os.path.exists(cache_threads):
-				with open (cache_threads, 'r') as outfile:
-					vthreads = json.load(outfile)
-					#cache = True
-					outfile.close()
-			cache_vads = self.memcache+"_"+"vads"
-			if os.path.exists(cache_vads):
-				with open (cache_vads, 'r') as outfile:
-					vvads = json.load(outfile)
-					#cache = True
-					outfile.close()
-			cache_tokens = self.memcache+"_"+"tokens"
-			if os.path.exists(cache_tokens):
-				with open (cache_tokens, 'r') as outfile:
-					vtokens = json.load(outfile)
-					#cache = True
-					outfile.close()
-			if cache:
-				self.console_print("Using process cache file: "+cache_process)
-				self.console_print("Using threads cache file: "+cache_threads)
-				self.console_print("Using vads cache file: "+cache_vads)
-				self.console_print("Using tokens cache file: "+cache_tokens)
-				self.send_message(vprocess)
-				self.send_message(vthreads)
-				self.send_message(vvads)
-				self.send_message(vtokens)
-				self.terminate()
-				sys.exit(0)
-			else:
-				self.console_print("Memcache is not found")
-				sys.exit(0)
-
-
-		self.console_print("Starting INPUT VOLATILITY analysis")
-		# Relative Path
-		filepath2 = ""
-		if filepath.find(":\\") == -1:
-			filepath2 = os.getcwd()+"\\"+filepath
-			self.filepath = filepath2
-			filepath = "file:///" + filepath2
-		else:
-		# Absolute path
-			self.filepath = filepath
-			filepath = "file:///" + filepath
-
-		self._config = conf.ConfObject()
-		self._config.PROFILE = profile
-		self._config.LOCATION = filepath
-		self._config.hive_offset = None
-		self._config.HIVE_OFFSET = None
-		
-
-		registry.PluginImporter()
-		registry.register_global_options(self._config, commands.Command)
-		registry.register_global_options(self._config, addrspace.BaseAddressSpace)
-
-
-
-	''' 
-	Name: get_registry_key()
-	Params: volatility class
-	Return: Return value from "self._config.KEY"
-	Description: This function returns registry value fixed in in self._config.KEY
-	'''
-	def get_registry_keys(self):
-
-		addr_space = utils.load_as(self._config)
-
-		hl = hivelist.HiveList(self._config)
-
-		if not self._config.HIVE_OFFSET:
-			hive_offsets = [h.obj_offset for h in hl.calculate()]
-		else:
-			hive_offsets = [self._config.HIVE_OFFSET]
-		
-		for hoff in set(hive_offsets):
-			h = hivemod.HiveAddressSpace(addr_space, self._config, hoff)
-			name = obj.Object("_CMHIVE", vm = addr_space, offset = hoff).get_name()
-			root = rawreg.get_root(h)
-			if not root:
-				if self._config.HIVE_OFFSET:
-					self.console_print("Unable to find root key. Is the hive offset correct?")
-			else:
-				if self._config.KEY:
-					yield name, rawreg.open_key(root, self._config.KEY.split('\\'))
-				else:
-					yield name, root
-
-	''' 
-	Name: get_threads()
-	Params: Process handle to extract the threads
-	Return: True o False if PS_CROSS_THREAD_FLAGS_SYSTEM, PS_CROSS_THREAD_FLAGS_HIDEFROMDBG, PS_CROSS_THREAD_FLAGS_IMPERSONATING or UNKNOWN THREADS is enable o disable
-	Description: This function detect unknown thread, hidden from debugger threads and impersonation threads. This funtion is very slow, be patient.
-	'''
-	def get_threads(self,process,vthreads,pslist1):
-
-			result = []
-			result.append("False")
-			result.append("False")
-			result.append("False")
-			result.append("False")
-
-			thread1 = {}
-
-			addr_space = utils.load_as(self._config)
-			system_range = tasks.get_kdbg(addr_space).MmSystemRangeStart.dereference_as("Pointer")
-			mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in moduless.lsmod(addr_space))
-			mod_addrs = sorted(mods.keys())
-			seen_threads = dict()
-
-			## Gather threads by list traversal of active/linked processes 
-			for thread in process.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
-				seen_threads[thread.obj_vm.vtop(thread.obj_offset)] = (False, thread)
-
-			process_dll_info = {}
-
-			for _offset, (found_by_scanner, thread) in seen_threads.items():
-				# Do we need to gather DLLs for module resolution 
-				if addr_space.address_compare(thread.StartAddress, system_range) != -1:
-					owner = tasks.find_module(mods, mod_addrs,addr_space.address_mask(thread.StartAddress))
-				else:
-					owning_process = thread.owning_process() 
-					if not owning_process.is_valid(): 
-						owner = None
-					else:
-						try:
-							user_mod_addrs, user_mods = process_dll_info[owning_process.obj_offset]
-						except KeyError:
-							user_mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in owning_process.get_load_modules())
-							user_mod_addrs = sorted(user_mods.keys())
-							process_dll_info[owning_process.obj_offset] = (user_mod_addrs, user_mods)
-
-						owner = tasks.find_module(user_mods, user_mod_addrs, addr_space.address_mask(thread.StartAddress))
-				
-				# Specific fields
-				thread1["ThreadId"] = ""
-				thread1["PsCrossThreadFlagsImpersonating"] = "False"
-				thread1["PsCrossThreadFlagsHideFromDbg"] = "False"
-				thread1["PsCrossThreadFlagsSystem"] = "False"
-				thread1["PsCrossThreadFlagsTerminated"] = "False"
-				thread1["PsCrossThreadFlagsDeadThread"] = "False"
-				thread1["PsCrossThreadFlagsBreakOnTermination"] = "False"
-				thread1["PsCrossThreadFlagsSkipCreationMsg"] = "False"
-				thread1["PsCrossThreadFlagsSkipTerminationMsg"] = "False"
-				thread1["StartAddress"] = ""
-				thread1["State"] = ""
-				thread1["WaitReason"] = "" 
-				thread1["CreateTime"] = ""
-				thread1["ExitTime"] = ""
-				thread1["OwnerName"] = ""
-				thread1["OwningProcess"] = ""
-				thread1["AttachedProcess"] = ""
-				thread1["Win32StartAddress"] = ""
-				# Process fields necessaries to a new idEvent
-				thread1["idEvent"] = 101
-				thread1["ProcessId"] = pslist1["ProcessId"]
-				thread1["ProcessGuid"] = pslist1["ProcessGuid"]
-				thread1["SyspceId"] = pslist1["SyspceId"]
-				thread1["Image"] = pslist1["Image"]
-				thread1["Source"] = "Memory"
-				thread1['computer'] = pslist1['computer']
-				thread1["OwningProcess"] = str(thread.owning_process().ImageFileName)
-				thread1["AttachedProcess"] = str(thread.attached_process().ImageFileName)
-
-				if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
-					result[1] = "True"
-					thread1["PsCrossThreadFlagsImpersonating"] = "True"
-					
-				if "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG" in str(thread.CrossThreadFlags):
-					result[2] = "True"
-					thread1["PsCrossThreadFlagsHideFromDbg"] = "True"
-					
-				if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
-					result[3] = "True"
-					thread1["PsCrossThreadFlagsSystem"] = "True"
-				
-				if "PS_CROSS_THREAD_FLAGS_TERMINATED" in str(thread.CrossThreadFlags):
-					thread1["PsCrossThreadFlagsTerminated"] = "True"
-
-				if "PS_CROSS_THREAD_FLAGS_DEADTHREAD" in str(thread.CrossThreadFlags):
-					thread1["PsCrossThreadFlagsDeadThread"] = "True"
-
-				if "PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION" in str(thread.CrossThreadFlags):
-					thread1["PsCrossThreadFlagsBreakOnTermination"] = "True"
-
-				if "PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG" in str(thread.CrossThreadFlags):
-					thread1["PsCrossThreadFlagsSkipCreationMsg"] = "True"
-
-				if "PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG" in str(thread.CrossThreadFlags):
-					thread1["PsCrossThreadFlagsSkipTerminationMsg"] = "True"
-
-				if owner:
-					owner_name = str(owner.BaseDllName or 'None')
-					thread1["OwnerName"] =  str(owner.BaseDllName or 'None')
-				else:
-					owner_name = "Unknown"
-					thread1["OwnerName"] = "Unknown"
-					result[0] = "True"
-
-				thread1["StartAddress"] = str(thread.StartAddress)
-				thread1["State"] = str(thread.Tcb.State)
-				thread1["WaitReason"] = str(thread.Tcb.WaitReason)
-				thread1["ThreadId"] = int(thread.Cid.UniqueThread)
-				thread1["CreateTime"] = str(thread.CreateTime)
-				thread1["ExitTime"] = str(thread.ExitTime)
-				thread1["Win32StartAddress"] = str(thread.Win32StartAddress)
-				vthreads.append(thread1)
-				thread1 = {}
-			
-			return result
-
-	''' 
-	Name: is_vad_empty()
-	Params: 
-	Return: True o False if VAD is empty
-	Description: This function detect if VAD is empty
-	'''
-	def is_vad_empty(self, vad, address_space):
-		 PAGE_SIZE = 0x1000
-		 all_zero_page = "\x00" * PAGE_SIZE
-		 offset = 0
-		 while offset < vad.Length:
-			next_addr = vad.Start + offset
-			if (address_space.is_valid_address(next_addr) and address_space.read(next_addr, PAGE_SIZE) != all_zero_page):
-				return False
-			offset += PAGE_SIZE
-		 return True
-
-	def normalize_utc_time(self, utc_time):
-		
-		try:
-			aux = utc_time.split(' ')
-			normalized = aux[0] + ' ' + aux[1] + '.000'
-		except:
-			normalized = ''
-
-		return normalized
-
-	def sha256hash(self,filename):
-		
-		sha256_hash = hashlib.sha256()
-		result_hash = ""
-		with open(filename,"rb") as f:
-			# Read and update hash string value in blocks of 4K
-			for byte_block in iter(lambda: f.read(4096),b""):
-				sha256_hash.update(byte_block)
-			#print(sha256_hash.hexdigest())
-			result_hash = sha256_hash.hexdigest()
-		return result_hash
-
-	def check_fields(self,pslist1):
-
-			# Check EPROCESS empty or odd fields
-
-			if pslist1['ProcessId'] == "":
-				self.console_print("Warning ProcessId empty in: " + " Image: "+ str(pslist1['Image']))
-
-			if pslist1['ParentProcessId'] == "":
-				self.console_print("Warning ParentProcessId empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(pslist1['Image']))
-
-			if pslist1['TerminalSessionId'] == "-1":
-				self.console_print("Warning TerminalSessionId is -1: " + " Image: "+ str(pslist1['Image']) + " " + str(pslist1['ProcessId']))
-
-
-
-	def find_sid_re(self,sid_string, sid_re_list):
-		for reg, name in sid_re_list:
-			if reg.search(sid_string):
-				return name
-
-	def lookup_user_sids(self,config):
-
-		regapi = registryapi.RegistryApi(config)
-		regapi.set_current("hklm")
-
-		key = "Microsoft\\Windows NT\\CurrentVersion\\ProfileList"
-		val = "ProfileImagePath"
-
-		sids = {}
-
-		for subkey in regapi.reg_get_all_subkeys(None, key = key):
-			sid = str(subkey.Name)
-			path = regapi.reg_get_value(None, key = "", value = val, given_root = subkey)
-			if path:
-				path = str(path).replace("\x00", "")
-				user = ntpath.basename(path)
-				sids[sid] = user
-
-		return sids
-
-
-	def do_action(self):
-
-		###########################
-		# Memory analysis CACHE
-		###########################
-
-		self.console_print("Calculating memory hash: "+self.filepath)
-		hresult = self.sha256hash(self.filepath)
-		self.console_print("SHA256: " + hresult)
-		cache = False
-		# WE CHECK IF THIS MEMORY HAS CACHE
-		cache_process = hresult+"_"+"process"
-		if os.path.exists(cache_process):
-			with open (cache_process, 'r') as outfile:
-				vprocess = json.load(outfile)
-				cache = True
-				outfile.close()
-		cache_threads = hresult+"_"+"threads"
-		if os.path.exists(cache_threads):
-			with open (cache_threads, 'r') as outfile:
-				vthreads = json.load(outfile)
-				#cache = True
-				outfile.close()
-
-		cache_vads = hresult+"_"+"vads"
-		if os.path.exists(cache_vads):
-			with open (cache_vads, 'r') as outfile:
-				vvads = json.load(outfile)
-				#cache = True
-				outfile.close()
-		
-		cache_tokens = hresult+"_"+"tokens"
-		if os.path.exists(cache_tokens):
-			with open (cache_tokens, 'r') as outfile:
-				vtokens = json.load(outfile)
-				#cache = True
-				outfile.close()
-		if cache:
-			self.console_print("Using process cache file: "+cache_process)
-			self.console_print("Using threads cache file: "+cache_threads)
-			self.console_print("Using vads cache file: "+cache_vads)
-			self.console_print("Using tokens cache file: "+cache_tokens)
-			self.send_message(vprocess)
-			self.send_message(vthreads)
-			self.send_message(vvads)
-			self.send_message(vtokens)
-			self.terminate()
-		
-
-		###########################
-		# Get MachineGUID
-		###########################
-		if self._running:
-			self._config.KEY = 'Microsoft\\Cryptography'
-
-			for reg,key in self.get_registry_keys():
-				if key:
-					for v in rawreg.values(key):
-						tp, dat = rawreg.value_data(v)
-						if (v.Name == "MachineGuid"):
-							self.machineguid = dat
- 
-			if self.machineguid == "":
-				self.machineguid = "ffffffff-2cf2-4c6d-919d-686204658ab6"
-
-			mg_vector = self.machineguid.split("-")
-			computerid = mg_vector[0]
-
-			self.console_print("MACHINEGUID detected: " + str(computerid))
-
-		###########################
-		# Plugin psxview volatility 
-		###########################
-
-		if self._running:
-			proc = psxv.PsXview(self._config)
-
-			pslist1 = {}
-			vprocess = []
-			vthreads = []
-			vvads = []
-			vtokens = []
-
-			##
-			## PRINCIPAL LOOP TO GET THE PROCESSES
-			##
-
-			for offset, process, ps_sources in proc.calculate():
-
-				# Check if PEB structure is ready (psxview is a pool tag plugin)
-				PEB = str(process.Peb)
-				peb_empty = False
-				if PEB == "":
-					peb_empty = True
-			
-				# PEB 
-				pslist1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine).replace('\"','')
-				pslist1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
-				pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
-				pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
-				pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
-				# EPROCESS
-				pslist1['UtcTime'] = self.normalize_utc_time(str(process.CreateTime)) 
-				pslist1['ProcessId'] = str(int(process.UniqueProcessId))
-				pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
-				pslist1['TerminalSessionId'] = str(int(process.SessionId))
-				pslist1['ExitTime'] = str(process.ExitTime)
-				pslist1['IsWow64'] = str(process.IsWow64)
-				pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
-				pslist1['NumThreads'] = str(int(process.ActiveThreads))
-				pslist1['computer'] = computerid
-				pslist1['Source'] = "Memory"
-				pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
-				pslist1['idEvent'] = 1 
-				pslist1['IntegrityLevel'] = ""  # por calcular
-				pslist1['User'] = ""  # por calcular
-				pslist1['ParentImage'] = ""
-				pslist1['ParentCommandLine'] = ""
-				pslist1['ParentProcessGuid'] = ""
-				pslist1["UnknownThreads"] = "False"
-				pslist1['PsList'] = str(offset in ps_sources["pslist"])
-				pslist1['PsScan'] = str(offset in ps_sources["psscan"])
-				pslist1['ThreadProc'] = str(offset in ps_sources["thrdproc"])
-				pslist1['PsPcid'] = str(offset in ps_sources["pspcid"])
-				pslist1['Csrss'] = str(offset in ps_sources["csrss"])
-				pslist1['Session'] = str(offset in ps_sources["session"])
-				pslist1['DeskThrd'] = str(offset in ps_sources["deskthrd"])
-
-				self.console_print("Extraction information of process with PID: "+str(pslist1['ProcessId']))
-
-				# Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
-				if pslist1['Image'] == "":
-					pslist1['Image'] = str(process.ImageFileName)
-					if pslist1['Image'] == "smss.exe":
-						pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
-						pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
-						pslist1['TerminalSessionId'] = "0"
-
-				# Exception (II) Exception with terminated process
-				if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
-					pslist1['Image'] = str(process.ImageFileName)
-					pslist1['CommandLine'] = str(process.ImageFileName)
-
-				# Exception (III) with kernel
-				if pslist1['ProcessId'] == '4' and pslist1['TerminalSessionId'] == "-1":
-					pslist1['Image'] = "system"
-					pslist1['CommandLine'] = "system"
-					pslist1['TerminalSessionId'] = "0"
-					pslist1['IntegrityLevel'] = "System"
-					pslist1['User'] = "System"  
-				# Exception (IV) with smss.exe
-				if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe" and pslist1['TerminalSessionId'] == "-1":
-					pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
-					pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
-					pslist1['CurrentDirectory'] = "C:\\Windows\\System32\\"
-					pslist1['TerminalSessionId'] = "0"
-
-
-				# We build the "PROCESSGUID" to MERGE this event ID with Sysmon
-				################################################################
-				date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
-				epoch = datetime.datetime.utcfromtimestamp(0)
-				t = (date_time_obj-epoch).total_seconds()
-				hex_string = '{:02x}'.format(int(t))
-				firstpart, secondpart = hex_string[:len(hex_string)/2], hex_string[len(hex_string)/2:]
-
-				if pslist1['Image'] != "" and pslist1['ProcessId'] != "":
-					result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
-				else:
-					result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
-
-				syspceid_datetime = date_time_obj.strftime('%Y-%m-%d %H:%M:%S')
-				result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+syspceid_datetime)
-				pslist1['ProcessGuid'] = result2.hexdigest()
-				pslist1['SyspceId'] = result.hexdigest()
-
-
-				###########
-				# Privileges
-				###########
-				if self._running:
-					privileges = process.get_token().privileges()
-					for value, present, enabled, default in privileges:
-						try:
-							name, desc = privm.PRIVILEGE_INFO[int(value)]
-							#print name
-						except KeyError:
-							continue
-
-						privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
-							  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
-
-						if str(name) in privileges_logged:
-							#print str(name+"Present")
-							#print str(name+"Enabled")
-							pslist1[str(name)+"Present"] = "False"
-							pslist1[str(name)+"Enabled"] = "False"
-							if present:
-								pslist1[name+"Present"] = "True"
-							if enabled or default:
-								pslist1[name+"Enabled"] = "True"
-					
-				else:
-					sys.exit()
-
-				###########
-				# Process Integrity Level and User
-				###########
-
-				if self._running:
-					tokenprocess = process.get_token()
-					user_sids = self.lookup_user_sids(self._config)
-					if tokenprocess.is_valid():
-						cont = 0
-						for sid_string in tokenprocess.get_sids():
-							if sid_string in well_known_sids:
-										sid_name = well_known_sids[sid_string]
-							elif sid_string in getservicesids.servicesids:
-										sid_name = getservicesids.servicesids[sid_string]
-							elif sid_string in user_sids:
-										sid_name = user_sids[sid_string]
-							else:
-								sid_name_re = self.find_sid_re(sid_string, well_known_sid_re)
-								if sid_name_re:
-									sid_name = sid_name_re
-								else:
-									sid_name = ""
-				
-							if cont == 0:
-								pslist1["User"] = str(sid_name)
-								cont = cont + 1 
-				
-							if sid_string == "S-1-16-8192":
-								pslist1["IntegrityLevel"] = "Medium"
-							elif sid_string == "S-1-16-8448":
-								pslist1["IntegrityLevel"] = "MediumPlus"
-							elif sid_string == "S-1-16-4096":
-								pslist1["IntegrityLevel"] = "Low"
-							elif sid_string == "S-1-16-12288":
-								pslist1["IntegrityLevel"] = "High"
-							elif sid_string == "S-1-16-16384":
-								pslist1["IntegrityLevel"] = "System"
-					
-				else:
-					sys.exit()
-
-				#################################
-				## HANDLES TOKENS OPENS IN OTHER PROCESS
-				#################################
-
-				token1 = {}
-				if self._running:
-					#user_sids = self.lookup_user_sids(self._config)
-					for handle in process.ObjectTable.handles():
-						token = handle.dereference_as("_TOKEN")
-						if token.is_valid():
-
-							token1["idEvent"] = 103
-							token1["ProcessId"] = pslist1["ProcessId"]
-							token1["ProcessGuid"] = pslist1["ProcessGuid"]
-							token1["SyspceId"] = pslist1["SyspceId"]
-							token1["Image"] = pslist1["Image"]
-							token1["Source"] = "Memory"
-							token1['computer'] = pslist1['computer']
-							token1["TokenOffset"] = ""
-							token1["TokenHandleValue"] = ""
-							token1["TokenGrantAccess"] = ""
-							token1["User"] = ""
-							token1["UserSid"] = ""
-							token1["IntegrityToken"] = ""
-							token1["IntegritySid"] = ""
-
-							token_with_sid = 0
-							list_tokens = token.get_sids()
-							cont = 0
-
-							for sid_string in list_tokens:
-								if sid_string in well_known_sids:
-									sid_name = well_known_sids[sid_string]
-								elif sid_string in getservicesids.servicesids:
-									sid_name = getservicesids.servicesids[sid_string]
-								elif sid_string in user_sids:
-									sid_name = user_sids[sid_string]
-								else:
-									sid_name_re = self.find_sid_re(sid_string, well_known_sid_re)
-									if sid_name_re:
-										sid_name = sid_name_re
-									else:
-										sid_name = ""
-
-								if cont == 0:
-									token1["UserSid"] = str(sid_string)
-									token1["User"] = str(sid_name)
-									cont = cont + 1
-								token_with_sid = 1
-								#TOKEN INTEGRITY LEVEL
-								if sid_string == "S-1-16-8192":
-									token1["IntegrityToken"] = "Medium"
-									token1["IntegritySid"] = str(sid_string)
-								elif sid_string == "S-1-16-8448":
-									token1["IntegrityToken"] = "MediumPlus"
-									token1["IntegritySid"] = str(sid_string)
-								elif sid_string == "S-1-16-4096":
-									token1["IntegrityToken"] = "Low"
-									token1["IntegritySid"] = str(sid_string)
-								elif sid_string == "S-1-16-12288":
-									token1["IntegrityToken"] = "High"
-									token1["IntegritySid"] = str(sid_string)
-								elif sid_string == "S-1-16-16384":
-									token1["IntegrityToken"] = "System"
-									token1["IntegritySid"] = str(sid_string)
-
-							if token_with_sid:
-								token1["TokenOffset"] = str(handle.Body.obj_offset)
-								token1["TokenHandleValue"] = str(handle.HandleValue)
-								token1["TokenGrantAccess"] = str(handle.GrantedAccess)
-								token_with_sid = 0
-								vtokens.append(token1)
-							
-							token1 = {}
-							
-				else:
-					sys.exit()
-
-
-				## MODULES
-				###########
-
-				modules = ""
-				if self._running:
-					for module in process.get_load_modules():
-						if module is not None:
-							modules = modules + "," + str(module.FullDllName)
-
-					pslist1['Modules'] = modules
-				else:
-					sys.exit()
-
-				## VADS
-				########
-				"""
-				  This looks for private allocations that are committed, 
-				  memory-resident, non-empty (not all zeros) and with an 
-				  original protection that includes write and execute. 
-				"""
-
-				vad1 = {}
-				if self._running:
-					pslist1["RwxPage"] = "False"
-					vads = process.get_vads(vad_filter=process._injection_filter)
-					#vads = process.get_vads()
-					for vad, address_space in vads:
-						if self.is_vad_empty(vad, address_space):
-							vad1["VadEmpty"] = "True"
-						else:
-							vad1["VadEmpty"] = "False"
-
-						protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
-						# Process fields necessaries to a new idEvent
-						vad1["idEvent"] = 102
-						vad1["ProcessId"] = pslist1["ProcessId"]
-						vad1["ProcessGuid"] = pslist1["ProcessGuid"]
-						vad1["SyspceId"] = pslist1["SyspceId"]
-						vad1["Image"] = pslist1["Image"]
-						vad1["Source"] = "Memory"
-						vad1['computer'] = pslist1['computer']
-						# Fields VADs
-						vad1["VadNode"] = str(vad.obj_offset)
-						vad1["VadProtection"] = str(protect_flags)
-						vad1["VadStart"] = str(vad.Start)
-						vad1["VadEnd"] = str(vad.End)
-						
-						vvads.append(vad1)
-						vad1 = {}
-						pslist1["RwxPage"] = "True"
-				else:
-					sys.exit()
-
-				## THREADS
-				###########
-				if self._running:
-					self.get_threads(process,vthreads,pslist1)
-				else:
-					sys.exit()
-			
-				vprocess.append(pslist1)
-				pslist1 = {}
-
-			## POST-EXTRACTION TASKS
-			## 1) FILL PARENT INFORMATION
-			computer_alerts = 0
-			for p in vprocess:
-				for x in vprocess:
-					if p['ParentProcessId'] == x['ProcessId']:
-						p['ParentImage'] = x['Image']
-						p['ParentCommandLine'] = x['CommandLine']
-						p['ParentProcessGuid'] = x['ProcessGuid']
-						p['RealParent'] = x['Image']
-						# Exception (VII) with lsass.exe
-						if p["Image"].find("lsass.exe") != -1 and p["ParentImage"].find("wininit.exe")!= -1 and p['TerminalSessionId'] == "0":
-							p['CommandLine'] = "C:\\Windows\\System32\\lsass.exe"
-							p['CurrentDirectory'] = "C:\\Windows\\System32\\"
-						# Exception (V) with svchost.exe
-						if p["Image"].find("svchost.exe") != -1 and (p['TerminalSessionId'] == "0" or p['TerminalSessionId'] == "-1") and p["ParentImage"].find("services.exe") != -1:
-							p['CommandLine'] = "C:\\Windows\\System32\\svchost.exe"
-							p['Image'] = "C:\\Windows\\System32\\svchost.exe"
-							p['CurrentDirectory'] = "C:\\Windows\\System32\\"
-							p['TerminalSessionId'] = "0"
-						# Exception (VI) with sppsvc.exe
-						if p["Image"].find("sppsvc.exe") != -1 and p['TerminalSessionId'] == "-1" and p["ParentImage"].find("services.exe") != -1:
-							p['CommandLine'] = "C:\\Windows\\System32\\sppsvc.exe"
-							p['Image'] = "C:\\Windows\\System32\\sppsvc.exe"
-							p['CurrentDirectory'] = "C:\\Windows\\System32\\"
-							p['TerminalSessionId'] = "0"
-						# Check computer 
-						self.check_fields(p)
-					
-						if p['computer'] == 'ffffffff' and computer_alerts == 0:
-							print "[SYSPCE] Warning computer is ffffffff, problems while we try to read registry key"
-							computer_alerts = 1
-
-			winlogon_fake_father = False
-			winlogon_csrss_father = False
-			wininit_fake_father = False
-			wininit_csrss_father = False
-			winlogon_father_pid = -1
-			wininit_father_pid = -1
-
-			## POST-EXTRACTION TASKS
-			## 2) FIX PROBLEMS WITH MEMORY EXTRACTION
-			for p in vprocess:
-				## WINLOGON problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
-				if p['Image'].find('winlogon') != -1:
-					for x in vprocess:
-						if p['ParentProcessId'] == x['ParentProcessId']:
-							if p['Image'].find('smss.exe') == -1:
-								winlogon_fake_father = True
-								winlogon_father_pid = p['ParentProcessId']
-								break
-					for z in vprocess:
-						if z['Image'].find('csrss') != -1:
-							if z['ParentProcessId'] == winlogon_father_pid:
-								winlogon_csrss_father = True
-								z['ParentImage'] = "smss.exe"
-								z['ParentCommandLine'] = 'smss.exe'
-								z['RealParent'] = "smss.exe"
-								z['ParentProcessId'] = ''
-								z['ParentProcessGuid'] = ''
-								for z in vprocess:
-									if z['Image'].find('winlogon') != -1:
-										if z['ParentProcessId'] == winlogon_father_pid:
-											z['ParentImage'] = 'smss.exe'
-											z['ParentCommandLine'] = 'smss.exe'
-											z['RealParent'] = 'smss.exe'
-											z['ParentProcessId'] = ''
-											z['ParentProcessGuid'] = ''
-									
-				## WININIT problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
-				if p['Image'].find('wininit') != -1:
-					for x in vprocess:
-						if p['ParentProcessId'] == x['ParentProcessId']:
-							if p['Image'].find('smss.exe') == -1:
-								wininit_fake_father = True
-								wininit_father_pid = p['ParentProcessId']
-								break
-					for z in vprocess:
-						if z['Image'].find('csrss.exe') != -1:
-							if z['ParentProcessId'] == wininit_father_pid:
-								wininit_csrss_father = True
-								z['ParentImage'] = "smss.exe"
-								z['ParentCommandLine'] = 'smss.exe'
-								z['ParentProcessId'] = ''
-								z['ParentProcessGuid'] = ''
-								for z in vprocess:
-									if z['Image'].find('wininit') != -1:
-										if z['ParentProcessId'] == wininit_father_pid:
-											z['ParentImage'] = 'smss.exe'
-											z['ParentCommandLine'] = 'smss.exe'
-											z['ParentProcessId'] = ''
-											z['ParentProcessGuid'] = ''
-
-		###########################
-		# Plugin privs volatility
-		###########################
-
-		#if self._running:
-		#	priv = privm.Privs(self._config)
-		
-		#	privs_1 = {}
-		#	privs_2 = {}
-		#	priv_vector = []
-
-		#	for privs in priv.calculate():
-		#		privileges = privs.get_token().privileges()
-		#		for value, present, enabled, default in privileges:
-		#			try:
-		#				name, desc = privm.PRIVILEGE_INFO[int(value)]
-		#			except KeyError:
-		#				continue
-		#			privs_1 = {}
-		#			privs_1['ProcessId'] = str(int(privs.UniqueProcessId))
-		#			privs_1['Name'] = name 
-		#
-		#			privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
-		#				  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
-		#			privs_1['Present'] = "False"
-		#			privs_1['Enabled'] = "False"
-		#			if str(name) in privileges_logged:
-		#				if present:
-		#					privs_1['Present'] = "True"
-		#				if enabled or default:
-		#					privs_1["Enabled"] = "True"
-		#				priv_vector.append(privs_1)
-		#
-		#	for p in vprocess:
-		#		for x in priv_vector:
-		#			if p['ProcessId'] == x['ProcessId']:
-		#					pvp = x['Name'] + "Present"
-		#					p[pvp] = x['Present']
-		#					pve = x['Name'] + "Enabled"
-		#					p[pve] = x['Enabled']
-
-
-		# To Send to the CORE
-		############################
-		if self._running:
-			events_list = vprocess
-			self.send_message(events_list)
-			thread_list = vthreads
-			self.send_message(thread_list)
-			vads_list = vvads
-			self.send_message(vads_list)
-			token_list = vtokens
-			self.send_message(token_list)
-
-			# WE BUILD MEMORY CACHE (PROCESS, THREADS AND VADS)
-			cache_process = hresult+"_"+"process"
-			if not os.path.exists(cache_process):
-				with open (cache_process, 'w') as outfile:
-					json.dump(vprocess,outfile)
-					outfile.close()
-
-			cache_threads = hresult+"_"+"threads"
-			if not os.path.exists(cache_threads):
-				with open (cache_threads, 'w') as outfile:
-					json.dump(vthreads,outfile)
-					outfile.close()
-		
-			cache_vads = hresult+"_"+"vads"
-			if not os.path.exists(cache_vads):
-				with open (cache_vads, 'w') as outfile:
-					json.dump(vvads,outfile)
-					outfile.close()
-		
-			cache_tokens = hresult+"_"+"tokens"
-			if not os.path.exists(cache_tokens):
-				with open (cache_tokens, 'w') as outfile:
-					json.dump(vtokens,outfile)
-					outfile.close()
+    def __init__(self, data_buffer_in,
+                             data_condition_in, src,
+                             filepath, profile, memcache):
+
+        Input.__init__(self, data_buffer_in,
+                                   data_condition_in,
+                                   src)
+
+        self.name = 'Input Volatility'
+        self.module_id = Module.INPUT_VOLATILITY
+        self.machineguid = ""
+        self.memcache = memcache
+
+        if self.memcache:
+            self.console_print("Memcache is:" + self.memcache)
+            # WE CHECK IF THIS MEMORY HAS CACHE
+            cache_process = self.memcache+"_"+"process"
+            cache = False
+            if os.path.exists(cache_process):
+                with open (cache_process, 'r') as outfile:
+                    vprocess = json.load(outfile)
+                    cache = True
+                    outfile.close()
+            cache_threads = self.memcache+"_"+"threads"
+            if os.path.exists(cache_threads):
+                with open (cache_threads, 'r') as outfile:
+                    vthreads = json.load(outfile)
+                    #cache = True
+                    outfile.close()
+            cache_vads = self.memcache+"_"+"vads"
+            if os.path.exists(cache_vads):
+                with open (cache_vads, 'r') as outfile:
+                    vvads = json.load(outfile)
+                    #cache = True
+                    outfile.close()
+            cache_tokens = self.memcache+"_"+"tokens"
+            if os.path.exists(cache_tokens):
+                with open (cache_tokens, 'r') as outfile:
+                    vtokens = json.load(outfile)
+                    #cache = True
+                    outfile.close()
+            if cache:
+                self.console_print("Using process cache file: "+cache_process)
+                self.console_print("Using threads cache file: "+cache_threads)
+                self.console_print("Using vads cache file: "+cache_vads)
+                self.console_print("Using tokens cache file: "+cache_tokens)
+                self.send_message(vprocess)
+                self.send_message(vthreads)
+                self.send_message(vvads)
+                self.send_message(vtokens)
+                self.terminate()
+                sys.exit(0)
+            else:
+                self.console_print("Memcache is not found")
+                sys.exit(0)
+
+
+        self.console_print("Starting INPUT VOLATILITY analysis")
+        # Relative Path
+        filepath2 = ""
+        if filepath.find(":\\") == -1:
+            filepath2 = os.getcwd()+"\\"+filepath
+            self.filepath = filepath2
+            filepath = "file:///" + filepath2
+        else:
+        # Absolute path
+            self.filepath = filepath
+            filepath = "file:///" + filepath
+
+        self._config = conf.ConfObject()
+        self._config.PROFILE = profile
+        self._config.LOCATION = filepath
+        self._config.hive_offset = None
+        self._config.HIVE_OFFSET = None
+
+
+        registry.PluginImporter()
+        registry.register_global_options(self._config, commands.Command)
+        registry.register_global_options(self._config, addrspace.BaseAddressSpace)
+
+
+
+    '''
+    Name: get_registry_key()
+    Params: volatility class
+    Return: Return value from "self._config.KEY"
+    Description: This function returns registry value fixed in in self._config.KEY
+    '''
+    def get_registry_keys(self):
+
+        addr_space = utils.load_as(self._config)
+
+        hl = hivelist.HiveList(self._config)
+
+        if not self._config.HIVE_OFFSET:
+            hive_offsets = [h.obj_offset for h in hl.calculate()]
+        else:
+            hive_offsets = [self._config.HIVE_OFFSET]
+
+        for hoff in set(hive_offsets):
+            h = hivemod.HiveAddressSpace(addr_space, self._config, hoff)
+            name = obj.Object("_CMHIVE", vm = addr_space, offset = hoff).get_name()
+            root = rawreg.get_root(h)
+            if not root:
+                if self._config.HIVE_OFFSET:
+                    self.console_print("Unable to find root key. Is the hive offset correct?")
+            else:
+                if self._config.KEY:
+                    yield name, rawreg.open_key(root, self._config.KEY.split('\\'))
+                else:
+                    yield name, root
+
+    '''
+    Name: get_threads()
+    Params: Process handle to extract the threads
+    Return: True o False if PS_CROSS_THREAD_FLAGS_SYSTEM, PS_CROSS_THREAD_FLAGS_HIDEFROMDBG, PS_CROSS_THREAD_FLAGS_IMPERSONATING or UNKNOWN THREADS is enable o disable
+    Description: This function detect unknown thread, hidden from debugger threads and impersonation threads. This funtion is very slow, be patient.
+    '''
+    def get_threads(self,process,vthreads,pslist1):
+
+        result = []
+        result.append("False")
+        result.append("False")
+        result.append("False")
+        result.append("False")
+
+        thread1 = {}
+
+        addr_space = utils.load_as(self._config)
+        system_range = tasks.get_kdbg(addr_space).MmSystemRangeStart.dereference_as("Pointer")
+        mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in moduless.lsmod(addr_space))
+        mod_addrs = sorted(mods.keys())
+        seen_threads = dict()
+
+        ## Gather threads by list traversal of active/linked processes
+        for thread in process.ThreadListHead.list_of_type("_ETHREAD", "ThreadListEntry"):
+            seen_threads[thread.obj_vm.vtop(thread.obj_offset)] = (False, thread)
+
+        process_dll_info = {}
+
+        for _offset, (found_by_scanner, thread) in seen_threads.items():
+            # Do we need to gather DLLs for module resolution
+            if addr_space.address_compare(thread.StartAddress, system_range) != -1:
+                owner = tasks.find_module(mods, mod_addrs,addr_space.address_mask(thread.StartAddress))
+            else:
+                owning_process = thread.owning_process()
+                if not owning_process.is_valid():
+                    owner = None
+                else:
+                    try:
+                        user_mod_addrs, user_mods = process_dll_info[owning_process.obj_offset]
+                    except KeyError:
+                        user_mods = dict((addr_space.address_mask(mod.DllBase), mod) for mod in owning_process.get_load_modules())
+                        user_mod_addrs = sorted(user_mods.keys())
+                        process_dll_info[owning_process.obj_offset] = (user_mod_addrs, user_mods)
+
+                    owner = tasks.find_module(user_mods, user_mod_addrs, addr_space.address_mask(thread.StartAddress))
+
+            # Specific fields
+            thread1["ThreadId"] = ""
+            thread1["PsCrossThreadFlagsImpersonating"] = "False"
+            thread1["PsCrossThreadFlagsHideFromDbg"] = "False"
+            thread1["PsCrossThreadFlagsSystem"] = "False"
+            thread1["PsCrossThreadFlagsTerminated"] = "False"
+            thread1["PsCrossThreadFlagsDeadThread"] = "False"
+            thread1["PsCrossThreadFlagsBreakOnTermination"] = "False"
+            thread1["PsCrossThreadFlagsSkipCreationMsg"] = "False"
+            thread1["PsCrossThreadFlagsSkipTerminationMsg"] = "False"
+            thread1["StartAddress"] = ""
+            thread1["State"] = ""
+            thread1["WaitReason"] = ""
+            thread1["CreateTime"] = ""
+            thread1["ExitTime"] = ""
+            thread1["OwnerName"] = ""
+            thread1["OwningProcess"] = ""
+            thread1["AttachedProcess"] = ""
+            thread1["Win32StartAddress"] = ""
+            # Process fields necessaries to a new idEvent
+            thread1["idEvent"] = 101
+            thread1["ProcessId"] = pslist1["ProcessId"]
+            thread1["ProcessGuid"] = pslist1["ProcessGuid"]
+            thread1["SyspceId"] = pslist1["SyspceId"]
+            thread1["Image"] = pslist1["Image"]
+            thread1["Source"] = "Memory"
+            thread1['computer'] = pslist1['computer']
+            thread1["OwningProcess"] = str(thread.owning_process().ImageFileName)
+            thread1["AttachedProcess"] = str(thread.attached_process().ImageFileName)
+
+            if "PS_CROSS_THREAD_FLAGS_IMPERSONATING" in str(thread.CrossThreadFlags):
+                result[1] = "True"
+                thread1["PsCrossThreadFlagsImpersonating"] = "True"
+
+            if "PS_CROSS_THREAD_FLAGS_HIDEFROMDBG" in str(thread.CrossThreadFlags):
+                result[2] = "True"
+                thread1["PsCrossThreadFlagsHideFromDbg"] = "True"
+
+            if "PS_CROSS_THREAD_FLAGS_SYSTEM" in str(thread.CrossThreadFlags):
+                result[3] = "True"
+                thread1["PsCrossThreadFlagsSystem"] = "True"
+
+            if "PS_CROSS_THREAD_FLAGS_TERMINATED" in str(thread.CrossThreadFlags):
+                thread1["PsCrossThreadFlagsTerminated"] = "True"
+
+            if "PS_CROSS_THREAD_FLAGS_DEADTHREAD" in str(thread.CrossThreadFlags):
+                thread1["PsCrossThreadFlagsDeadThread"] = "True"
+
+            if "PS_CROSS_THREAD_FLAGS_BREAK_ON_TERMINATION" in str(thread.CrossThreadFlags):
+                thread1["PsCrossThreadFlagsBreakOnTermination"] = "True"
+
+            if "PS_CROSS_THREAD_FLAGS_SKIP_CREATION_MSG" in str(thread.CrossThreadFlags):
+                thread1["PsCrossThreadFlagsSkipCreationMsg"] = "True"
+
+            if "PS_CROSS_THREAD_FLAGS_SKIP_TERMINATION_MSG" in str(thread.CrossThreadFlags):
+                thread1["PsCrossThreadFlagsSkipTerminationMsg"] = "True"
+
+            if owner:
+                owner_name = str(owner.BaseDllName or 'None')
+                thread1["OwnerName"] =  str(owner.BaseDllName or 'None')
+            else:
+                owner_name = "Unknown"
+                thread1["OwnerName"] = "Unknown"
+                result[0] = "True"
+
+            thread1["StartAddress"] = str(thread.StartAddress)
+            thread1["State"] = str(thread.Tcb.State)
+            thread1["WaitReason"] = str(thread.Tcb.WaitReason)
+            thread1["ThreadId"] = int(thread.Cid.UniqueThread)
+            thread1["CreateTime"] = str(thread.CreateTime)
+            thread1["ExitTime"] = str(thread.ExitTime)
+            thread1["Win32StartAddress"] = str(thread.Win32StartAddress)
+            vthreads.append(thread1)
+            thread1 = {}
+
+        return result
+
+    '''
+    Name: is_vad_empty()
+    Params:
+    Return: True o False if VAD is empty
+    Description: This function detect if VAD is empty
+    '''
+    def is_vad_empty(self, vad, address_space):
+        PAGE_SIZE = 0x1000
+        all_zero_page = "\x00" * PAGE_SIZE
+        offset = 0
+        while offset < vad.Length:
+            next_addr = vad.Start + offset
+            if (address_space.is_valid_address(next_addr) and address_space.read(next_addr, PAGE_SIZE) != all_zero_page):
+                return False
+            offset += PAGE_SIZE
+        return True
+
+    def normalize_utc_time(self, utc_time):
+
+        try:
+            aux = utc_time.split(' ')
+            normalized = aux[0] + ' ' + aux[1] + '.000'
+        except:
+            normalized = ''
+
+        return normalized
+
+    def sha256hash(self,filename):
+
+        sha256_hash = hashlib.sha256()
+        result_hash = ""
+        with open(filename,"rb") as f:
+            # Read and update hash string value in blocks of 4K
+            for byte_block in iter(lambda: f.read(4096),b""):
+                sha256_hash.update(byte_block)
+            #print(sha256_hash.hexdigest())
+            result_hash = sha256_hash.hexdigest()
+        return result_hash
+
+    def check_fields(self,pslist1):
+
+            # Check EPROCESS empty or odd fields
+
+        if pslist1['ProcessId'] == "":
+            self.console_print("Warning ProcessId empty in: " + " Image: "+ str(pslist1['Image']))
+
+        if pslist1['ParentProcessId'] == "":
+            self.console_print("Warning ParentProcessId empty in: " + str(pslist1['ProcessId']) + " Image: "+ str(pslist1['Image']))
+
+        if pslist1['TerminalSessionId'] == "-1":
+            self.console_print("Warning TerminalSessionId is -1: " + " Image: "+ str(pslist1['Image']) + " " + str(pslist1['ProcessId']))
+
+
+
+    def find_sid_re(self,sid_string, sid_re_list):
+        for reg, name in sid_re_list:
+            if reg.search(sid_string):
+                return name
+
+    def lookup_user_sids(self,config):
+
+        regapi = registryapi.RegistryApi(config)
+        regapi.set_current("hklm")
+
+        key = "Microsoft\\Windows NT\\CurrentVersion\\ProfileList"
+        val = "ProfileImagePath"
+
+        sids = {}
+
+        for subkey in regapi.reg_get_all_subkeys(None, key = key):
+            sid = str(subkey.Name)
+            path = regapi.reg_get_value(None, key = "", value = val, given_root = subkey)
+            if path:
+                path = str(path).replace("\x00", "")
+                user = ntpath.basename(path)
+                sids[sid] = user
+
+        return sids
+
+
+    def do_action(self):
+
+        ###########################
+        # Memory analysis CACHE
+        ###########################
+
+        self.console_print("Calculating memory hash: "+self.filepath)
+        hresult = self.sha256hash(self.filepath)
+        self.console_print("SHA256: " + hresult)
+        cache = False
+        # WE CHECK IF THIS MEMORY HAS CACHE
+        cache_process = hresult+"_"+"process"
+        if os.path.exists(cache_process):
+            with open (cache_process, 'r') as outfile:
+                vprocess = json.load(outfile)
+                cache = True
+                outfile.close()
+        cache_threads = hresult+"_"+"threads"
+        if os.path.exists(cache_threads):
+            with open (cache_threads, 'r') as outfile:
+                vthreads = json.load(outfile)
+                #cache = True
+                outfile.close()
+
+        cache_vads = hresult+"_"+"vads"
+        if os.path.exists(cache_vads):
+            with open (cache_vads, 'r') as outfile:
+                vvads = json.load(outfile)
+                #cache = True
+                outfile.close()
+
+        cache_tokens = hresult+"_"+"tokens"
+        if os.path.exists(cache_tokens):
+            with open (cache_tokens, 'r') as outfile:
+                vtokens = json.load(outfile)
+                #cache = True
+                outfile.close()
+        if cache:
+            self.console_print("Using process cache file: "+cache_process)
+            self.console_print("Using threads cache file: "+cache_threads)
+            self.console_print("Using vads cache file: "+cache_vads)
+            self.console_print("Using tokens cache file: "+cache_tokens)
+            self.send_message(vprocess)
+            self.send_message(vthreads)
+            self.send_message(vvads)
+            self.send_message(vtokens)
+            self.terminate()
+
+
+        ###########################
+        # Get MachineGUID
+        ###########################
+        if self._running:
+            self._config.KEY = 'Microsoft\\Cryptography'
+
+            for reg,key in self.get_registry_keys():
+                if key:
+                    for v in rawreg.values(key):
+                        tp, dat = rawreg.value_data(v)
+                        if (v.Name == "MachineGuid"):
+                            self.machineguid = dat
+
+            if self.machineguid == "":
+                self.machineguid = "ffffffff-2cf2-4c6d-919d-686204658ab6"
+
+            mg_vector = self.machineguid.split("-")
+            computerid = mg_vector[0]
+
+            self.console_print("MACHINEGUID detected: " + str(computerid))
+
+        ###########################
+        # Plugin psxview volatility
+        ###########################
+
+        if self._running:
+            proc = psxv.PsXview(self._config)
+
+            pslist1 = {}
+            vprocess = []
+            vthreads = []
+            vvads = []
+            vtokens = []
+
+            ##
+            ## PRINCIPAL LOOP TO GET THE PROCESSES
+            ##
+
+            for offset, process, ps_sources in proc.calculate():
+
+                # Check if PEB structure is ready (psxview is a pool tag plugin)
+                PEB = str(process.Peb)
+                peb_empty = False
+                if PEB == "":
+                    peb_empty = True
+
+                # PEB
+                pslist1['CommandLine'] = str(process.Peb.ProcessParameters.CommandLine).replace('\"','')
+                pslist1['CurrentDirectory'] = str(process.Peb.ProcessParameters.CurrentDirectory.DosPath)
+                pslist1['Image'] = str(process.Peb.ProcessParameters.ImagePathName)
+                pslist1['BeingDebugged'] = str(process.Peb.BeingDebugged)
+                pslist1['DllPath'] = str(process.Peb.ProcessParameters.DllPath)
+                # EPROCESS
+                pslist1['UtcTime'] = self.normalize_utc_time(str(process.CreateTime))
+                pslist1['ProcessId'] = str(int(process.UniqueProcessId))
+                pslist1['ParentProcessId'] = str(int(process.InheritedFromUniqueProcessId))
+                pslist1['TerminalSessionId'] = str(int(process.SessionId))
+                pslist1['ExitTime'] = str(process.ExitTime)
+                pslist1['IsWow64'] = str(process.IsWow64)
+                pslist1['NumHandles'] = str(int(process.ObjectTable.HandleCount))
+                pslist1['NumThreads'] = str(int(process.ActiveThreads))
+                pslist1['computer'] = computerid
+                pslist1['Source'] = "Memory"
+                pslist1['LogonGuid'] = "{" + computerid + "-0000-0000-0000-000000000000}"
+                pslist1['idEvent'] = 1
+                pslist1['IntegrityLevel'] = ""  # por calcular
+                pslist1['User'] = ""  # por calcular
+                pslist1['ParentImage'] = ""
+                pslist1['ParentCommandLine'] = ""
+                pslist1['ParentProcessGuid'] = ""
+                pslist1["UnknownThreads"] = "False"
+                pslist1['PsList'] = str(offset in ps_sources["pslist"])
+                pslist1['PsScan'] = str(offset in ps_sources["psscan"])
+                pslist1['ThreadProc'] = str(offset in ps_sources["thrdproc"])
+                pslist1['PsPcid'] = str(offset in ps_sources["pspcid"])
+                pslist1['Csrss'] = str(offset in ps_sources["csrss"])
+                pslist1['Session'] = str(offset in ps_sources["session"])
+                pslist1['DeskThrd'] = str(offset in ps_sources["deskthrd"])
+
+                self.console_print("Extraction information of process with PID: "+str(pslist1['ProcessId']))
+
+                # Exception (I) If we don't find smss.exe in PEB structure, we get ImageFileName from EPROCESS.
+                if pslist1['Image'] == "":
+                    pslist1['Image'] = str(process.ImageFileName)
+                    if pslist1['Image'] == "smss.exe":
+                        pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
+                        pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
+                        pslist1['TerminalSessionId'] = "0"
+
+                # Exception (II) Exception with terminated process
+                if pslist1['ExitTime'] != "1970-01-01 00:00:00 UTC+0000":
+                    pslist1['Image'] = str(process.ImageFileName)
+                    pslist1['CommandLine'] = str(process.ImageFileName)
+
+                # Exception (III) with kernel
+                if pslist1['ProcessId'] == '4' and pslist1['TerminalSessionId'] == "-1":
+                    pslist1['Image'] = "system"
+                    pslist1['CommandLine'] = "system"
+                    pslist1['TerminalSessionId'] = "0"
+                    pslist1['IntegrityLevel'] = "System"
+                    pslist1['User'] = "System"
+                # Exception (IV) with smss.exe
+                if pslist1['Image'] == "\\SystemRoot\\System32\\smss.exe" and pslist1['TerminalSessionId'] == "-1":
+                    pslist1['CommandLine'] = "C:\\Windows\\System32\\smss.exe"
+                    pslist1['Image'] = "C:\\Windows\\System32\\smss.exe"
+                    pslist1['CurrentDirectory'] = "C:\\Windows\\System32\\"
+                    pslist1['TerminalSessionId'] = "0"
+
+
+                # We build the "PROCESSGUID" to MERGE this event ID with Sysmon
+                ################################################################
+                date_time_obj = datetime.datetime.strptime(pslist1["UtcTime"], '%Y-%m-%d %H:%M:%S.%f')
+                epoch = datetime.datetime.utcfromtimestamp(0)
+                t = (date_time_obj-epoch).total_seconds()
+                hex_string = '{:02x}'.format(int(t))
+                firstpart, secondpart = hex_string[:len(hex_string)/2], hex_string[len(hex_string)/2:]
+
+                if pslist1['Image'] != "" and pslist1['ProcessId'] != "":
+                    result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+pslist1['ProcessId']+pslist1['Image'].lower())
+                else:
+                    result2 = hashlib.md5(pslist1['computer']+"-"+secondpart+"-"+firstpart+"-"+"666666"+"C:\syspce\dummy.exe")
+
+                syspceid_datetime = date_time_obj.strftime('%Y-%m-%d %H:%M:%S')
+                result = hashlib.md5(pslist1["ProcessId"]+pslist1["ParentProcessId"]+pslist1["computer"]+syspceid_datetime)
+                pslist1['ProcessGuid'] = result2.hexdigest()
+                pslist1['SyspceId'] = result.hexdigest()
+
+
+                ###########
+                # Privileges
+                ###########
+                if self._running:
+                    privileges = process.get_token().privileges()
+                    for value, present, enabled, default in privileges:
+                        try:
+                            name, desc = privm.PRIVILEGE_INFO[int(value)]
+                            #print name
+                        except KeyError:
+                            continue
+
+                        privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
+                                  "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
+
+                        if str(name) in privileges_logged:
+                            #print str(name+"Present")
+                            #print str(name+"Enabled")
+                            pslist1[str(name)+"Present"] = "False"
+                            pslist1[str(name)+"Enabled"] = "False"
+                            if present:
+                                pslist1[name+"Present"] = "True"
+                            if enabled or default:
+                                pslist1[name+"Enabled"] = "True"
+
+                else:
+                    sys.exit()
+
+                ###########
+                # Process Integrity Level and User
+                ###########
+
+                if self._running:
+                    tokenprocess = process.get_token()
+                    user_sids = self.lookup_user_sids(self._config)
+                    if tokenprocess.is_valid():
+                        cont = 0
+                        for sid_string in tokenprocess.get_sids():
+                            if sid_string in well_known_sids:
+                                sid_name = well_known_sids[sid_string]
+                            elif sid_string in getservicesids.servicesids:
+                                sid_name = getservicesids.servicesids[sid_string]
+                            elif sid_string in user_sids:
+                                sid_name = user_sids[sid_string]
+                            else:
+                                sid_name_re = self.find_sid_re(sid_string, well_known_sid_re)
+                                if sid_name_re:
+                                    sid_name = sid_name_re
+                                else:
+                                    sid_name = ""
+
+                            if cont == 0:
+                                pslist1["User"] = str(sid_name)
+                                cont = cont + 1
+
+                            if sid_string == "S-1-16-8192":
+                                pslist1["IntegrityLevel"] = "Medium"
+                            elif sid_string == "S-1-16-8448":
+                                pslist1["IntegrityLevel"] = "MediumPlus"
+                            elif sid_string == "S-1-16-4096":
+                                pslist1["IntegrityLevel"] = "Low"
+                            elif sid_string == "S-1-16-12288":
+                                pslist1["IntegrityLevel"] = "High"
+                            elif sid_string == "S-1-16-16384":
+                                pslist1["IntegrityLevel"] = "System"
+
+                else:
+                    sys.exit()
+
+                #################################
+                ## HANDLES TOKENS OPENS IN OTHER PROCESS
+                #################################
+
+                token1 = {}
+                if self._running:
+                    #user_sids = self.lookup_user_sids(self._config)
+                    for handle in process.ObjectTable.handles():
+                        token = handle.dereference_as("_TOKEN")
+                        if token.is_valid():
+
+                            token1["idEvent"] = 103
+                            token1["ProcessId"] = pslist1["ProcessId"]
+                            token1["ProcessGuid"] = pslist1["ProcessGuid"]
+                            token1["SyspceId"] = pslist1["SyspceId"]
+                            token1["Image"] = pslist1["Image"]
+                            token1["Source"] = "Memory"
+                            token1['computer'] = pslist1['computer']
+                            token1["TokenOffset"] = ""
+                            token1["TokenHandleValue"] = ""
+                            token1["TokenGrantAccess"] = ""
+                            token1["User"] = ""
+                            token1["UserSid"] = ""
+                            token1["IntegrityToken"] = ""
+                            token1["IntegritySid"] = ""
+
+                            token_with_sid = 0
+                            list_tokens = token.get_sids()
+                            cont = 0
+
+                            for sid_string in list_tokens:
+                                if sid_string in well_known_sids:
+                                    sid_name = well_known_sids[sid_string]
+                                elif sid_string in getservicesids.servicesids:
+                                    sid_name = getservicesids.servicesids[sid_string]
+                                elif sid_string in user_sids:
+                                    sid_name = user_sids[sid_string]
+                                else:
+                                    sid_name_re = self.find_sid_re(sid_string, well_known_sid_re)
+                                    if sid_name_re:
+                                        sid_name = sid_name_re
+                                    else:
+                                        sid_name = ""
+
+                                if cont == 0:
+                                    token1["UserSid"] = str(sid_string)
+                                    token1["User"] = str(sid_name)
+                                    cont = cont + 1
+                                token_with_sid = 1
+                                #TOKEN INTEGRITY LEVEL
+                                if sid_string == "S-1-16-8192":
+                                    token1["IntegrityToken"] = "Medium"
+                                    token1["IntegritySid"] = str(sid_string)
+                                elif sid_string == "S-1-16-8448":
+                                    token1["IntegrityToken"] = "MediumPlus"
+                                    token1["IntegritySid"] = str(sid_string)
+                                elif sid_string == "S-1-16-4096":
+                                    token1["IntegrityToken"] = "Low"
+                                    token1["IntegritySid"] = str(sid_string)
+                                elif sid_string == "S-1-16-12288":
+                                    token1["IntegrityToken"] = "High"
+                                    token1["IntegritySid"] = str(sid_string)
+                                elif sid_string == "S-1-16-16384":
+                                    token1["IntegrityToken"] = "System"
+                                    token1["IntegritySid"] = str(sid_string)
+
+                            if token_with_sid:
+                                token1["TokenOffset"] = str(handle.Body.obj_offset)
+                                token1["TokenHandleValue"] = str(handle.HandleValue)
+                                token1["TokenGrantAccess"] = str(handle.GrantedAccess)
+                                token_with_sid = 0
+                                vtokens.append(token1)
+
+                            token1 = {}
+
+                else:
+                    sys.exit()
+
+
+                ## MODULES
+                ###########
+
+                modules = ""
+                if self._running:
+                    for module in process.get_load_modules():
+                        if module is not None:
+                            modules = modules + "," + str(module.FullDllName)
+
+                    pslist1['Modules'] = modules
+                else:
+                    sys.exit()
+
+                ## VADS
+                ########
+                """
+                  This looks for private allocations that are committed,
+                  memory-resident, non-empty (not all zeros) and with an
+                  original protection that includes write and execute.
+                """
+
+                vad1 = {}
+                if self._running:
+                    pslist1["RwxPage"] = "False"
+                    vads = process.get_vads(vad_filter=process._injection_filter)
+                    #vads = process.get_vads()
+                    for vad, address_space in vads:
+                        if self.is_vad_empty(vad, address_space):
+                            vad1["VadEmpty"] = "True"
+                        else:
+                            vad1["VadEmpty"] = "False"
+
+                        protect_flags = str(vadinfo.PROTECT_FLAGS.get(vad.VadFlags.Protection.v(), ""))
+                        # Process fields necessaries to a new idEvent
+                        vad1["idEvent"] = 102
+                        vad1["ProcessId"] = pslist1["ProcessId"]
+                        vad1["ProcessGuid"] = pslist1["ProcessGuid"]
+                        vad1["SyspceId"] = pslist1["SyspceId"]
+                        vad1["Image"] = pslist1["Image"]
+                        vad1["Source"] = "Memory"
+                        vad1['computer'] = pslist1['computer']
+                        # Fields VADs
+                        vad1["VadNode"] = str(vad.obj_offset)
+                        vad1["VadProtection"] = str(protect_flags)
+                        vad1["VadStart"] = str(vad.Start)
+                        vad1["VadEnd"] = str(vad.End)
+
+                        vvads.append(vad1)
+                        vad1 = {}
+                        pslist1["RwxPage"] = "True"
+                else:
+                    sys.exit()
+
+                ## THREADS
+                ###########
+                if self._running:
+                    self.get_threads(process,vthreads,pslist1)
+                else:
+                    sys.exit()
+
+                vprocess.append(pslist1)
+                pslist1 = {}
+
+            ## POST-EXTRACTION TASKS
+            ## 1) FILL PARENT INFORMATION
+            computer_alerts = 0
+            for p in vprocess:
+                for x in vprocess:
+                    if p['ParentProcessId'] == x['ProcessId']:
+                        p['ParentImage'] = x['Image']
+                        p['ParentCommandLine'] = x['CommandLine']
+                        p['ParentProcessGuid'] = x['ProcessGuid']
+                        p['RealParent'] = x['Image']
+                        # Exception (VII) with lsass.exe
+                        if p["Image"].find("lsass.exe") != -1 and p["ParentImage"].find("wininit.exe")!= -1 and p['TerminalSessionId'] == "0":
+                            p['CommandLine'] = "C:\\Windows\\System32\\lsass.exe"
+                            p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+                        # Exception (V) with svchost.exe
+                        if p["Image"].find("svchost.exe") != -1 and (p['TerminalSessionId'] == "0" or p['TerminalSessionId'] == "-1") and p["ParentImage"].find("services.exe") != -1:
+                            p['CommandLine'] = "C:\\Windows\\System32\\svchost.exe"
+                            p['Image'] = "C:\\Windows\\System32\\svchost.exe"
+                            p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+                            p['TerminalSessionId'] = "0"
+                        # Exception (VI) with sppsvc.exe
+                        if p["Image"].find("sppsvc.exe") != -1 and p['TerminalSessionId'] == "-1" and p["ParentImage"].find("services.exe") != -1:
+                            p['CommandLine'] = "C:\\Windows\\System32\\sppsvc.exe"
+                            p['Image'] = "C:\\Windows\\System32\\sppsvc.exe"
+                            p['CurrentDirectory'] = "C:\\Windows\\System32\\"
+                            p['TerminalSessionId'] = "0"
+                        # Check computer
+                        self.check_fields(p)
+
+                        if p['computer'] == 'ffffffff' and computer_alerts == 0:
+                            print "[SYSPCE] Warning computer is ffffffff, problems while we try to read registry key"
+                            computer_alerts = 1
+
+            winlogon_fake_father = False
+            winlogon_csrss_father = False
+            wininit_fake_father = False
+            wininit_csrss_father = False
+            winlogon_father_pid = -1
+            wininit_father_pid = -1
+
+            ## POST-EXTRACTION TASKS
+            ## 2) FIX PROBLEMS WITH MEMORY EXTRACTION
+            for p in vprocess:
+                ## WINLOGON problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
+                if p['Image'].find('winlogon') != -1:
+                    for x in vprocess:
+                        if p['ParentProcessId'] == x['ParentProcessId']:
+                            if p['Image'].find('smss.exe') == -1:
+                                winlogon_fake_father = True
+                                winlogon_father_pid = p['ParentProcessId']
+                                break
+                    for z in vprocess:
+                        if z['Image'].find('csrss') != -1:
+                            if z['ParentProcessId'] == winlogon_father_pid:
+                                winlogon_csrss_father = True
+                                z['ParentImage'] = "smss.exe"
+                                z['ParentCommandLine'] = 'smss.exe'
+                                z['RealParent'] = "smss.exe"
+                                z['ParentProcessId'] = ''
+                                z['ParentProcessGuid'] = ''
+                                for z in vprocess:
+                                    if z['Image'].find('winlogon') != -1:
+                                        if z['ParentProcessId'] == winlogon_father_pid:
+                                            z['ParentImage'] = 'smss.exe'
+                                            z['ParentCommandLine'] = 'smss.exe'
+                                            z['RealParent'] = 'smss.exe'
+                                            z['ParentProcessId'] = ''
+                                            z['ParentProcessGuid'] = ''
+
+                ## WININIT problems with hierarchy in memory dumps (SMSS.exe die then it's possible collisions by pid)
+                if p['Image'].find('wininit') != -1:
+                    for x in vprocess:
+                        if p['ParentProcessId'] == x['ParentProcessId']:
+                            if p['Image'].find('smss.exe') == -1:
+                                wininit_fake_father = True
+                                wininit_father_pid = p['ParentProcessId']
+                                break
+                    for z in vprocess:
+                        if z['Image'].find('csrss.exe') != -1:
+                            if z['ParentProcessId'] == wininit_father_pid:
+                                wininit_csrss_father = True
+                                z['ParentImage'] = "smss.exe"
+                                z['ParentCommandLine'] = 'smss.exe'
+                                z['ParentProcessId'] = ''
+                                z['ParentProcessGuid'] = ''
+                                for z in vprocess:
+                                    if z['Image'].find('wininit') != -1:
+                                        if z['ParentProcessId'] == wininit_father_pid:
+                                            z['ParentImage'] = 'smss.exe'
+                                            z['ParentCommandLine'] = 'smss.exe'
+                                            z['ParentProcessId'] = ''
+                                            z['ParentProcessGuid'] = ''
+
+        ###########################
+        # Plugin privs volatility
+        ###########################
+
+        #if self._running:
+        #       priv = privm.Privs(self._config)
+
+        #       privs_1 = {}
+        #       privs_2 = {}
+        #       priv_vector = []
+
+        #       for privs in priv.calculate():
+        #               privileges = privs.get_token().privileges()
+        #               for value, present, enabled, default in privileges:
+        #                       try:
+        #                               name, desc = privm.PRIVILEGE_INFO[int(value)]
+        #                       except KeyError:
+        #                               continue
+        #                       privs_1 = {}
+        #                       privs_1['ProcessId'] = str(int(privs.UniqueProcessId))
+        #                       privs_1['Name'] = name
+        #
+        #                       privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
+        #                                 "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
+        #                       privs_1['Present'] = "False"
+        #                       privs_1['Enabled'] = "False"
+        #                       if str(name) in privileges_logged:
+        #                               if present:
+        #                                       privs_1['Present'] = "True"
+        #                               if enabled or default:
+        #                                       privs_1["Enabled"] = "True"
+        #                               priv_vector.append(privs_1)
+        #
+        #       for p in vprocess:
+        #               for x in priv_vector:
+        #                       if p['ProcessId'] == x['ProcessId']:
+        #                                       pvp = x['Name'] + "Present"
+        #                                       p[pvp] = x['Present']
+        #                                       pve = x['Name'] + "Enabled"
+        #                                       p[pve] = x['Enabled']
+
+
+        # To Send to the CORE
+        ############################
+        if self._running:
+            events_list = vprocess
+            self.send_message(events_list)
+            thread_list = vthreads
+            self.send_message(thread_list)
+            vads_list = vvads
+            self.send_message(vads_list)
+            token_list = vtokens
+            self.send_message(token_list)
+
+            # WE BUILD MEMORY CACHE (PROCESS, THREADS AND VADS)
+            cache_process = hresult+"_"+"process"
+            if not os.path.exists(cache_process):
+                with open (cache_process, 'w') as outfile:
+                    json.dump(vprocess,outfile)
+                    outfile.close()
+
+            cache_threads = hresult+"_"+"threads"
+            if not os.path.exists(cache_threads):
+                with open (cache_threads, 'w') as outfile:
+                    json.dump(vthreads,outfile)
+                    outfile.close()
+
+            cache_vads = hresult+"_"+"vads"
+            if not os.path.exists(cache_vads):
+                with open (cache_vads, 'w') as outfile:
+                    json.dump(vvads,outfile)
+                    outfile.close()
+
+            cache_tokens = hresult+"_"+"tokens"
+            if not os.path.exists(cache_tokens):
+                with open (cache_tokens, 'w') as outfile:
+                    json.dump(vtokens,outfile)
+                    outfile.close()

@@ -1,27 +1,27 @@
 # -*- coding: utf-8 -*-
-'''                                                                                
-   _____           _                             
-  / ____|         | |                            
- | (___  _   _ ___| |_ ___ _ __ ___              
-  \___ \| | | / __| __/ _ \ '_ ` _ \             
-  ____) | |_| \__ \ ||  __/ | | | | |            
- |_____/ \__, |___/\__\___|_| |_| |_|            
-          __/ |                                  
-  _ __  _|___/__   ___ ___  ___ ___              
- | '_ \| '__/ _ \ / __/ _ \/ __/ __|             
- | |_) | | | (_) | (_|  __/\__ \__ \             
- | .__/|_|  \___/ \___\___||___/___/             
- | |                     | |     | |             
- |_|__ ___  _ __ _ __ ___| | __ _| |_ ___  _ __  
-  / __/ _ \| '__| '__/ _ \ |/ _` | __/ _ \| '__| 
- | (_| (_) | |  | |_|  __/ | (_| | || (_) | |    
-  \___\___/|_|  |_(_)\___|_|\__,_|\__\___/|_|    
-   ___ _ __   __ _ _ _ __   ___                  
-  / _ \ '_ \ / _` | | '_ \ / _ \                 
- |  __/ | | | (_| | | | | |  __/                 
-  \___|_| |_|\__, |_|_| |_|\___|                 
-              __/ |                              
-             |___/                                                                       
+'''
+   _____           _
+  / ____|         | |
+ | (___  _   _ ___| |_ ___ _ __ ___
+  \___ \| | | / __| __/ _ \ '_ ` _ \
+  ____) | |_| \__ \ ||  __/ | | | | |
+ |_____/ \__, |___/\__\___|_| |_| |_|
+          __/ |
+  _ __  _|___/__   ___ ___  ___ ___
+ | '_ \| '__/ _ \ / __/ _ \/ __/ __|
+ | |_) | | | (_) | (_|  __/\__ \__ \
+ | .__/|_|  \___/ \___\___||___/___/
+ | |                     | |     | |
+ |_|__ ___  _ __ _ __ ___| | __ _| |_ ___  _ __
+  / __/ _ \| '__| '__/ _ \ |/ _` | __/ _ \| '__|
+ | (_| (_) | |  | |_|  __/ | (_| | || (_) | |
+  \___\___/|_|  |_(_)\___|_|\__,_|\__\___/|_|
+   ___ _ __   __ _ _ _ __   ___
+  / _ \ '_ \ / _` | | '_ \ / _ \
+ |  __/ | | | (_| | | | | |  __/
+  \___|_| |_|\__, |_|_| |_|\___|
+              __/ |
+             |___/
 
  This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ class Syspce(object):
         parser = argparse.ArgumentParser()
 
         parser.add_argument("-p", "--profile",
-                            nargs=1, 
+                            nargs=1,
                             metavar='Profile',
                             help="Volatility memdump profile" )
 
@@ -102,60 +102,60 @@ class Syspce(object):
                             help="Memory dump Hash",
                             metavar='Hash')
 
-        parser.add_argument("-v", "--verbose", 
+        parser.add_argument("-v", "--verbose",
                             help="Verbose debug",
                             action="store_true")
 
-        parser.add_argument("-d", "--daemon", 
+        parser.add_argument("-d", "--daemon",
                             help="Live detection",
                             action="store_true")
 
-        parser.add_argument("-b", "--baseline", 
+        parser.add_argument("-b", "--baseline",
                             help="Baseline detection engine",
                             action="store_true")
 
-        parser.add_argument("-r", "--rules", 
-                            nargs=1, 
+        parser.add_argument("-r", "--rules",
+                            nargs=1,
                             metavar='FileName',
                             help="Rules definition file")
 
         parser.add_argument("-f", "--file",
-                            nargs=1, 
+                            nargs=1,
                             metavar='FileName',
                             help="File .evtx to process")
 
         parser.add_argument("-e", "--eventid",
                             nargs=1,
                             metavar='Dictionary',
-					        help="Search for EventIDs or attributes as JSON filter")
+                                                help="Search for EventIDs or attributes as JSON filter")
 
         parser.add_argument("-a", "--attribute",
                             nargs=1, metavar='Attribute',
-					        help="Show only an specific attribute when using -e option")
+                                                help="Show only an specific attribute when using -e option")
 
         parser.add_argument("-s", "--schema",
                             nargs=1,
                             metavar='FileName',
-					        help="Sysmon schema xml file")
+                                                help="Sysmon schema xml file")
 
-        parser.add_argument("-l", "--full_log", 
+        parser.add_argument("-l", "--full_log",
                             help="Full actions details of process chain",
-						    action="store_true")
+                                                    action="store_true")
 
-        parser.add_argument("-g", "--eventlog", 
+        parser.add_argument("-g", "--eventlog",
                             help="Read local event log one time and generates alerts",
-						    action="store_true")
+                                                    action="store_true")
 
         self.args = parser.parse_args()
-    
+
         if self.args.verbose:
             loglevel = logging.DEBUG
         else:
             loglevel = logging.INFO
 
-        
+
         logging.basicConfig(level=loglevel,
-						    filename= 'syspce.log',
+                                                    filename= 'syspce.log',
                             format='%(asctime)s [%(levelname)s] %(message)s',
                             datefmt='%d/%m/%Y %H:%M:%S ')
         '''
@@ -163,9 +163,9 @@ class Syspce(object):
         logging.basicConfig(level=loglevel,
                             format='%(asctime)s [%(levelname)s] %(message)s',
                             datefmt='%d/%m/%Y %H:%M:%S ')
-             
+
         '''
-        
+
         log = logging
 
 
@@ -173,9 +173,9 @@ class Syspce(object):
     def start(self):
         """Initialization Function"""
 
-        
-        console = Console(self.data_buffer_in, self.data_condition_in, 
-							   self.output_lock)
+
+        console = Console(self.data_buffer_in, self.data_condition_in,
+                                                           self.output_lock)
 
         input_manager = InputManager(self.data_buffer_in,
                                      self.data_condition_in)

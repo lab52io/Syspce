@@ -1,9 +1,9 @@
 try:
     from enum import Enum
 except:
-	print "Missing dependencies enum"
-	print "#pip install enum34 --user"
-	exit(1)
+    print "Missing dependencies enum"
+    print "#pip install enum34 --user"
+    exit(1)
 
 
 
@@ -100,13 +100,13 @@ class Message(object):
 
         if type:
             self._type = type
-            self._subtype = subtype    
+            self._subtype = subtype
             self._src = src
             self._dst = dst
 
-            # which command/module produced the creation of this 
-		    # message, needed for identify which module produced
-		    # de requested action/command.
+            # which command/module produced the creation of this
+                    # message, needed for identify which module produced
+                    # de requested action/command.
             self._origin = origin
 
             self._content = content
@@ -115,4 +115,3 @@ class Message(object):
             self.buffer.append(self)
             #print str(self.buffer[0]) + "\n"
             self.condition.notify_all()
-
