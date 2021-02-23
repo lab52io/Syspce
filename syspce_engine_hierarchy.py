@@ -15,235 +15,234 @@ log = logging.getLogger('sysmoncorrelator')
 
 
 class HierarchyEngine(Engine):
-	def __init__(self, data_buffer_in, data_condition_in,
-				 processes_tree, src, detection_rules,
-				 detection_macros, daemon):
+    def __init__(self, data_buffer_in, data_condition_in,
+                             processes_tree, src, detection_rules,
+                             detection_macros, daemon):
 
-		# Detection rules vector
-		# Process search is based on  "contains" filter and case insensitive.
-		# Example: cmd.exe matches Image:"c:\Windows\System32\CMD.exe"
+        # Detection rules vector
+        # Process search is based on  "contains" filter and case insensitive.
+        # Example: cmd.exe matches Image:"c:\Windows\System32\CMD.exe"
 
-		Engine.__init__(self, data_buffer_in,
-					   data_condition_in,
-					   src, daemon)
+        Engine.__init__(self, data_buffer_in,
+                                   data_condition_in,
+                                   src, daemon)
 
-		self.name = 'Hierarchy Engine'
+        self.name = 'Hierarchy Engine'
 
-		self.module_id = Module.HIERARCHY_ENGINE
+        self.module_id = Module.HIERARCHY_ENGINE
 
-		self.detection_rules = detection_rules
-		
-		self.detection_macros = detection_macros
+        self.detection_rules = detection_rules
 
-		self.p_tree = processes_tree
+        self.detection_macros = detection_macros
 
-		self.process_tree = self.p_tree.processes_tree
+        self.p_tree = processes_tree
 
-		self.p_tree.set_macros(self.detection_macros)
+        self.process_tree = self.p_tree.processes_tree
 
-		
-		self.buckets = BucketSystem()
-		
-		self.total_alerts = 0
+        self.p_tree.set_macros(self.detection_macros)
 
-	def do_action(self):
 
-		# if this engine is configured as daemon run always
-		if self.daemon_:
-			while self._running:
-				#Wait time to start again detection
-				time.sleep(10)
-				self.start_engine()	
-		else:
-			self.start_engine()
+        self.buckets = BucketSystem()
 
-	def start_engine(self):
-		out = Output_()
-		for rule in self.detection_rules:
-		
-			# dictionary used for printing and output matched alerts
-			self.p_tree.actions_matched = {}
+        self.total_alerts = 0
 
-			with self.p_tree.tree_condition_in:
-				log.debug("%s Running in daemon %s..." % (self.name, 
-														  self.daemon_))
+    def do_action(self):
 
-				# processing each rule 
-				anom_res = self._process_rule(rule)
+        # if this engine is configured as daemon run always
+        if self.daemon_:
+            while self._running:
+                #Wait time to start again detection
+                time.sleep(10)
+                self.start_engine()
+        else:
+            self.start_engine()
 
-				self.p_tree.tree_condition_in.notify_all()
+    def start_engine(self):
+        out = Output_()
+        for rule in self.detection_rules:
 
-		
-			if anom_res:
-				# presenting the results
-				# logfile + eventlog
-				out.process_result_hierarchy(anom_res) 
+            # dictionary used for printing and output matched alerts
+            self.p_tree.actions_matched = {}
 
-				#sending alerts as a string
-				self.send_message(out.format_result_hierarchy(anom_res)) 
+            with self.p_tree.tree_condition_in:
+                log.debug("%s Running in daemon %s..." % (self.name,
+                                                                                                  self.daemon_))
 
-				# lets disable already notified actions
-				for anomaly in anom_res:
-					self.p_tree.setAlertToAction(anomaly['ProcessChain'], False)
-					self.total_alerts += 1
+                # processing each rule
+                anom_res = self._process_rule(rule)
 
-			if not self._running:
-				break
+                self.p_tree.tree_condition_in.notify_all()
 
-		if self.daemon_ == False:
-			self.terminate()
-			log.debug("%s Terminated." % (self.name))
 
-	def _process_rule(self, rule):
+            if anom_res:
+                # presenting the results
+                # logfile + eventlog
+                out.process_result_hierarchy(anom_res)
 
-		res = []
-	
-		#recorremos cada una de las maquinas
-		for machine in self.p_tree.processes_tree:
-			# Time Stats execution
-			start = time.time()
+                #sending alerts as a string
+                self.send_message(out.format_result_hierarchy(anom_res))
 
-			ptree = self.p_tree.processes_tree[machine]
+                # lets disable already notified actions
+                for anomaly in anom_res:
+                    self.p_tree.setAlertToAction(anomaly['ProcessChain'], False)
+                    self.total_alerts += 1
 
-			#first element to process
-			new_candidates = ptree.keys()
-			
-			ntimes_enabled = False
+            if not self._running:
+                break
 
-			process_list = []
-			for i, filter_dicc in enumerate(rule['Content']):
+        if self.daemon_ == False:
+            self.terminate()
+            log.debug("%s Terminated." % (self.name))
 
-				if filter_dicc.has_key("N") and filter_dicc.has_key("Seconds"):
-				
-					ntimes_enabled = True
-	
-					for process in process_list:
-						pchain = self.get_process_chain(process, machine)
-						bucket_name = self.get_anomaly_id(machine, rule['RuleID'],
-														pchain)
-				
-						bucket = self.buckets.getBucket(bucket_name)
-						
-						if not bucket:
-							log.debug("bucket created %s" % bucket_name)
-							bucket = self.buckets.createBucket(bucket_name, 
-												filter_dicc["N"],
-												filter_dicc["Seconds"])
+    def _process_rule(self, rule):
 
-				else:
-					# not first filter line
-					if i:
-						if 'c' in filter_dicc.keys()[0]:
-							new_candidates = []
-							self.p_tree.get_all_childs(ptree,
-													   process_list,
-													   new_candidates)
-						else:
-							new_candidates = self.p_tree.get_direct_childs(ptree,
-																		   process_list)
+        res = []
 
-					process_list = self.p_tree.get_candidates(ptree,
-															  new_candidates,
-															  filter_dicc)
+        #recorremos cada una de las maquinas
+        for machine in self.p_tree.processes_tree:
+            # Time Stats execution
+            start = time.time()
 
-			# process_list now has all nodes (processes) that mached 
-			# filter criteria
-			if process_list:
+            ptree = self.p_tree.processes_tree[machine]
 
-				for process in process_list:
-					pchain = self.get_process_chain(process, machine)
+            #first element to process
+            new_candidates = ptree.keys()
 
-					pnode =  ptree[process]
+            ntimes_enabled = False
 
-					# it has been notified yet?
-					anom_id = self.get_anomaly_id(machine, rule['RuleID'], pchain)
-					
-					if anom_id not in self.p_tree.alerts_notified:	
-					
-						result = True 
-						if ntimes_enabled:
-							# True - there are more than "n" actions in 
-							#a time period	
-							bucket = self.find_bucket(pnode, machine, 
-													rule['RuleID'])
-													
-							if 	bucket.actionExists(
-										pnode.acciones["1"][0]["UtcTime"]):	
-								result = False	
-	
-							else:
-								log.debug("Inserted %s in bucket %s" % 
-													(rule['RuleID'], 
-													bucket.bucket_name))
-								result = bucket.insertAction(
-											pnode.acciones["1"][0]["UtcTime"])
-												
+            process_list = []
+            for i, filter_dicc in enumerate(rule['Content']):
 
-						if result:
-							self.p_tree.alerts_notified.append(anom_id)
-							res.append({'Computer': machine,
-										'ProcessChain': pchain,
-										'Rulename': rule['Rulename'],
-										'RuleID': rule['RuleID']})
-										
-							self.p_tree.setAlertToAction(pchain, True)
-					else:
-						log.debug("Alert already notified %s" % anom_id)
+                if filter_dicc.has_key("N") and filter_dicc.has_key("Seconds"):
 
-			elapsed_time = (time.time() - start)
-			self.p_tree.stats[machine]['RulesExecTime'][rule['RuleID']] = elapsed_time
-			self.p_tree.stats[machine]['TotalEnginesOn'] += elapsed_time
-					
-		return res	
+                    ntimes_enabled = True
 
-	def get_process_chain(self, src_process_guid, machine):
-		pchain = []
-		# Due to a bug in Sysmon parent-Child relation we need
-		#to detect infinite loops here.
-		anti_loop = []
+                    for process in process_list:
+                        pchain = self.get_process_chain(process, machine)
+                        bucket_name = self.get_anomaly_id(machine, rule['RuleID'],
+                                                                                        pchain)
 
-		while True:
-			if src_process_guid in anti_loop:
-				log.warning("Infinite loop detected during process chain calculation (Sysmon bug)")
-				anti_loop = []
-				break
+                        bucket = self.buckets.getBucket(bucket_name)
 
-			pnode = self.p_tree.processes_tree[machine][src_process_guid]
-			pchain.append(pnode)
-			anti_loop.append(src_process_guid)
+                        if not bucket:
+                            log.debug("bucket created %s" % bucket_name)
+                            bucket = self.buckets.createBucket(bucket_name,
+                                                                    filter_dicc["N"],
+                                                                    filter_dicc["Seconds"])
 
-			if not self.p_tree.processes_tree[machine].has_key(pnode.ParentProcessGuid):
-				anti_loop = []
-				break
-			else:
-				src_process_guid = pnode.ParentProcessGuid
+                else:
+                    # not first filter line
+                    if i:
+                        if 'c' in filter_dicc.keys()[0]:
+                            new_candidates = []
+                            self.p_tree.get_all_childs(ptree,
+                                                                               process_list,
+                                                                               new_candidates)
+                        else:
+                            new_candidates = self.p_tree.get_direct_childs(ptree,
+                                                                                                                       process_list)
 
-		return pchain
-	def get_anomaly_id(self, machine, ruleid, pchain):
-		
-		anomalyid = machine + str(ruleid)
-		for process in pchain:
-			anomalyid += process.guid
-			
-		anomalyid = hashlib.sha1(anomalyid).hexdigest()
-		return anomalyid		
-		
-			
-	def find_bucket(self, process, machine, RuleID):
-		while True: # node root
-		
-			pchain = self.get_process_chain(process.guid, machine)
-			bucket_name = self.get_anomaly_id(machine, RuleID, pchain)
-			bucket = self.buckets.getBucket(bucket_name)
-			
-			if bucket:
-				return bucket
+                    process_list = self.p_tree.get_candidates(ptree,
+                                                                                                      new_candidates,
+                                                                                                      filter_dicc)
 
-			if not self.process_tree[machine].has_key(process.ParentProcessGuid):
-				break 
-				
-			process = self.process_tree[machine][process.ParentProcessGuid]
-			
-		log.error("Bucket not found")
-		return False
-		
+            # process_list now has all nodes (processes) that mached
+            # filter criteria
+            if process_list:
+
+                for process in process_list:
+                    pchain = self.get_process_chain(process, machine)
+
+                    pnode =  ptree[process]
+
+                    # it has been notified yet?
+                    anom_id = self.get_anomaly_id(machine, rule['RuleID'], pchain)
+
+                    if anom_id not in self.p_tree.alerts_notified:
+
+                        result = True
+                        if ntimes_enabled:
+                            # True - there are more than "n" actions in
+                            #a time period
+                            bucket = self.find_bucket(pnode, machine,
+                                                                            rule['RuleID'])
+
+                            if      bucket.actionExists(
+                                                    pnode.acciones["1"][0]["UtcTime"]):
+                                result = False
+
+                            else:
+                                log.debug("Inserted %s in bucket %s" %
+                                                                        (rule['RuleID'],
+                                                                        bucket.bucket_name))
+                                result = bucket.insertAction(
+                                                        pnode.acciones["1"][0]["UtcTime"])
+
+
+                        if result:
+                            self.p_tree.alerts_notified.append(anom_id)
+                            res.append({'Computer': machine,
+                                                    'ProcessChain': pchain,
+                                                    'Rulename': rule['Rulename'],
+                                                    'RuleID': rule['RuleID']})
+
+                            self.p_tree.setAlertToAction(pchain, True)
+                    else:
+                        log.debug("Alert already notified %s" % anom_id)
+
+            elapsed_time = (time.time() - start)
+            self.p_tree.stats[machine]['RulesExecTime'][rule['RuleID']] = elapsed_time
+            self.p_tree.stats[machine]['TotalEnginesOn'] += elapsed_time
+
+        return res
+
+    def get_process_chain(self, src_process_guid, machine):
+        pchain = []
+        # Due to a bug in Sysmon parent-Child relation we need
+        #to detect infinite loops here.
+        anti_loop = []
+
+        while True:
+            if src_process_guid in anti_loop:
+                log.warning("Infinite loop detected during process chain calculation (Sysmon bug)")
+                anti_loop = []
+                break
+
+            pnode = self.p_tree.processes_tree[machine][src_process_guid]
+            pchain.append(pnode)
+            anti_loop.append(src_process_guid)
+
+            if not self.p_tree.processes_tree[machine].has_key(pnode.ParentProcessGuid):
+                anti_loop = []
+                break
+            else:
+                src_process_guid = pnode.ParentProcessGuid
+
+        return pchain
+    def get_anomaly_id(self, machine, ruleid, pchain):
+
+        anomalyid = machine + str(ruleid)
+        for process in pchain:
+            anomalyid += process.guid
+
+        anomalyid = hashlib.sha1(anomalyid).hexdigest()
+        return anomalyid
+
+
+    def find_bucket(self, process, machine, RuleID):
+        while True: # node root
+
+            pchain = self.get_process_chain(process.guid, machine)
+            bucket_name = self.get_anomaly_id(machine, RuleID, pchain)
+            bucket = self.buckets.getBucket(bucket_name)
+
+            if bucket:
+                return bucket
+
+            if not self.process_tree[machine].has_key(process.ParentProcessGuid):
+                break
+
+            process = self.process_tree[machine][process.ParentProcessGuid]
+
+        log.error("Bucket not found")
+        return False
