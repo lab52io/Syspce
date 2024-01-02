@@ -169,13 +169,9 @@ def get_file_name(file_path):
 
 class InputVolatility(Input):
 
-    def __init__(self, data_buffer_in,
-                             data_condition_in, src,
-                             filepath, profile, memcache):
+    def __init__(self, data_buffer_in, data_condition_in, src,filepath, profile, memcache):
 
-        Input.__init__(self, data_buffer_in,
-                                   data_condition_in,
-                                   src)
+        Input.__init__(self, data_buffer_in,data_condition_in,src)
 
         self.name = 'Input Volatility'
         self.module_id = Module.INPUT_VOLATILITY
@@ -248,7 +244,6 @@ class InputVolatility(Input):
         registry.PluginImporter()
         registry.register_global_options(self._config, commands.Command)
         registry.register_global_options(self._config, addrspace.BaseAddressSpace)
-
 
     '''
     Name: get_registry_key()
@@ -565,6 +560,7 @@ class InputVolatility(Input):
         ###########################
 
         if self._running:
+
             proc = psxv.PsXview(self._config)
 
             pslist1 = {}
@@ -970,48 +966,6 @@ class InputVolatility(Input):
                                             z['ParentCommandLine'] = 'smss.exe'
                                             z['ParentProcessId'] = ''
                                             z['ParentProcessGuid'] = ''
-
-        ###########################
-        # Plugin privs volatility
-        ###########################
-
-        #if self._running:
-        #       priv = privm.Privs(self._config)
-
-        #       privs_1 = {}
-        #       privs_2 = {}
-        #       priv_vector = []
-
-        #       for privs in priv.calculate():
-        #               privileges = privs.get_token().privileges()
-        #               for value, present, enabled, default in privileges:
-        #                       try:
-        #                               name, desc = privm.PRIVILEGE_INFO[int(value)]
-        #                       except KeyError:
-        #                               continue
-        #                       privs_1 = {}
-        #                       privs_1['ProcessId'] = str(int(privs.UniqueProcessId))
-        #                       privs_1['Name'] = name
-        #
-        #                       privileges_logged = ["SeImpersonatePrivilege","SeAssignPrimaryPrivilege","SeTcbPrivilege","SeBackupPrivilege","SeRestorePrivilege",
-        #                                 "SeCreateTokenPrivilege","SeLoadDriverPrivilege","SeTakeOwnershipPrivilege","SeDebugPrivilege"]
-        #                       privs_1['Present'] = "False"
-        #                       privs_1['Enabled'] = "False"
-        #                       if str(name) in privileges_logged:
-        #                               if present:
-        #                                       privs_1['Present'] = "True"
-        #                               if enabled or default:
-        #                                       privs_1["Enabled"] = "True"
-        #                               priv_vector.append(privs_1)
-        #
-        #       for p in vprocess:
-        #               for x in priv_vector:
-        #                       if p['ProcessId'] == x['ProcessId']:
-        #                                       pvp = x['Name'] + "Present"
-        #                                       p[pvp] = x['Present']
-        #                                       pve = x['Name'] + "Enabled"
-        #                                       p[pve] = x['Enabled']
-
 
         # To Send to the CORE
         ############################
