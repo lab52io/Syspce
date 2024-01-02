@@ -5,3 +5,5 @@
 *.pyc
 *.vsidx
 /.vs
+/syspce.log
+/history.dat
