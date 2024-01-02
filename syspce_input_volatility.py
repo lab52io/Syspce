@@ -37,8 +37,12 @@ log = logging.getLogger('sysmoncorrelator')
 
 # Example input memory execution:
 # Param -p: Volatility profile
-# Param -m: Memory file
+# Param -m: Memory file or cache
 # python.exe syspce.py -m C:\Users\john\RAM.raw -p Win7SP1x64
+# Use cache files procedure:
+#   Option -m need prefix to cache (SHA256 value)
+#   cache files should be in cache/ directory.
+# python.exe syspce.py -m 02a63be2fcf3a63446c3c8ca9151aff963f888204d141e46c6be60ddde7c3e8d -p Win7SP1x64
 
 
 well_known_sid_re = [
@@ -154,6 +158,15 @@ well_known_sids = {
   'S-1-18-2': 'Service Asserted Identity',
 }
 
+def get_file_name(file_path):
+    # Split the path into segments using the "/" separator token
+    segments = file_path.split('\\')
+    
+    # The last segment is the filename
+    file_name = segments[-1]
+    
+    return file_name
+
 class InputVolatility(Input):
 
     def __init__(self, data_buffer_in,
@@ -235,7 +248,6 @@ class InputVolatility(Input):
         registry.PluginImporter()
         registry.register_global_options(self._config, commands.Command)
         registry.register_global_options(self._config, addrspace.BaseAddressSpace)
-
 
 
     '''
@@ -432,7 +444,7 @@ class InputVolatility(Input):
 
     def check_fields(self,pslist1):
 
-            # Check EPROCESS empty or odd fields
+        # Check EPROCESS empty or odd fields
 
         if pslist1['ProcessId'] == "":
             self.console_print("Warning ProcessId empty in: " + " Image: "+ str(pslist1['Image']))
@@ -442,8 +454,6 @@ class InputVolatility(Input):
 
         if pslist1['TerminalSessionId'] == "-1":
             self.console_print("Warning TerminalSessionId is -1: " + " Image: "+ str(pslist1['Image']) + " " + str(pslist1['ProcessId']))
-
-
 
     def find_sid_re(self,sid_string, sid_re_list):
         for reg, name in sid_re_list:
@@ -470,39 +480,48 @@ class InputVolatility(Input):
 
         return sids
 
-
     def do_action(self):
 
         ###########################
         # Memory analysis CACHE
         ###########################
 
-        self.console_print("Calculating memory hash: "+self.filepath)
-        hresult = self.sha256hash(self.filepath)
+        # Directory where syspce search cache files
+        cache_dir="cache/"
+
+        if (os.path.exists(self.filepath)):
+            self.console_print("Calculating memory hash: "+self.filepath)
+            hresult = self.sha256hash(self.filepath)
+        else:
+            file_name = get_file_name(self.filepath)
+            self.console_print("Using cache file: "+file_name)
+            hresult = file_name
+      
+        
         self.console_print("SHA256: " + hresult)
         cache = False
         # WE CHECK IF THIS MEMORY HAS CACHE
-        cache_process = hresult+"_"+"process"
+        cache_process = cache_dir+hresult+"_"+"process"
         if os.path.exists(cache_process):
             with open (cache_process, 'r') as outfile:
                 vprocess = json.load(outfile)
                 cache = True
                 outfile.close()
-        cache_threads = hresult+"_"+"threads"
+        cache_threads = cache_dir+hresult+"_"+"threads"
         if os.path.exists(cache_threads):
             with open (cache_threads, 'r') as outfile:
                 vthreads = json.load(outfile)
                 #cache = True
                 outfile.close()
 
-        cache_vads = hresult+"_"+"vads"
+        cache_vads = cache_dir+hresult+"_"+"vads"
         if os.path.exists(cache_vads):
             with open (cache_vads, 'r') as outfile:
                 vvads = json.load(outfile)
                 #cache = True
                 outfile.close()
 
-        cache_tokens = hresult+"_"+"tokens"
+        cache_tokens = cache_dir+hresult+"_"+"tokens"
         if os.path.exists(cache_tokens):
             with open (cache_tokens, 'r') as outfile:
                 vtokens = json.load(outfile)
